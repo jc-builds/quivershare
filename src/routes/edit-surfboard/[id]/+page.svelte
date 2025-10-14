@@ -1,6 +1,10 @@
 <script lang="ts">
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
+  import { get } from "svelte/store";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
   // ---------------------------------------------------------
   // 1. Surfboard data
@@ -17,14 +21,61 @@
     notes: "",
   };
 
+  let existingImages: { id: string; image_url: string }[] = [];
+
+  // ---------------------------------------------------------
+  // 1A. Fetch Existing Surfboard and associated image Data when navigating to a specific ID.
+  // ---------------------------------------------------------
+  let loading = false;
+  let message = "";
+
+  onMount(async () => {
+    const id = get(page).params.id;
+
+    // Only run if we have an ID (i.e., editing mode)
+    if (!id) return;
+
+    loading = true;
+    message = "";
+
+    const { data, error } = await supabase
+      .from("surfboards")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    const { data: imagesData, error: imagesError } = await supabase
+      .from("surfboard_images")
+      .select("id, image_url")
+      .eq("surfboard_id", id);
+
+    if (imagesError) {
+      console.error("Error loading images:", imagesError);
+    } else if (imagesData) {
+      existingImages = imagesData;
+    }
+
+    if (error) {
+      console.error("Error loading board:", error);
+      message = `❌ ${error.message}`;
+    } else if (data) {
+      surfboard = {
+        ...surfboard, // keep all existing keys to avoid missing ones
+        ...data, // overwrite with real values from Supabase
+      };
+
+      console.log("Loaded board:", surfboard);
+    }
+
+    loading = false;
+  });
+
   // ---------------------------------------------------------
   // 2. Upload & UI state
   // ---------------------------------------------------------
   let fileInput: HTMLInputElement;
   let dragActive = false;
   let files: File[] = [];
-  let loading = false;
-  let message = "";
   const MAX_IMAGES = 6;
 
   // ---------------------------------------------------------
@@ -107,6 +158,8 @@
     loading = true;
     message = "";
 
+    const id = get(page).params.id;
+
     // Convert empty strings → null for numeric fields
     const cleanedSurfboard = {
       ...surfboard,
@@ -116,24 +169,22 @@
       volume: surfboard.volume === "" ? null : surfboard.volume,
     };
 
-    // 1️⃣ Insert surfboard
-    const { data, error } = await supabase
+    // ✅ Only update (no insert logic)
+    const { error } = await supabase
       .from("surfboards")
-      .insert([cleanedSurfboard])
-      .select("id");
+      .update(cleanedSurfboard)
+      .eq("id", id);
 
-    if (error || !data) {
-      console.error("Surfboard insert error:", error);
-      message = `❌ ${error?.message}`;
+    if (error) {
+      console.error("Surfboard update error:", error);
+      message = `❌ ${error.message}`;
       loading = false;
       return;
     }
 
-    const surfboardId = data[0].id;
-
-    // 2️⃣ Upload each image
+    // ✅ Upload any new images
     for (const file of files) {
-      const filePath = `${surfboardId}/${Date.now()}_${file.name}`;
+      const filePath = `${id}/${Date.now()}_${file.name}`;
 
       const { error: uploadError } = await supabase.storage
         .from("surfboard-images")
@@ -141,7 +192,7 @@
 
       if (uploadError) {
         console.error("Upload failed:", uploadError);
-        continue; // move on to next file
+        continue;
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -150,30 +201,18 @@
 
       const { error: insertError } = await supabase
         .from("surfboard_images")
-        .insert([
-          { surfboard_id: surfboardId, image_url: publicUrlData.publicUrl },
-        ]);
+        .insert([{ surfboard_id: id, image_url: publicUrlData.publicUrl }]);
 
       if (insertError) {
         console.error("Image insert failed:", insertError);
       }
     }
 
-    // 3️⃣ Reset form state
-    message = "✅ Surfboard and images saved successfully!";
-    surfboard = {
-      name: "",
-      make: "",
-      length: "",
-      width: "",
-      thickness: "",
-      volume: "",
-      fins: "",
-      condition: "",
-      notes: "",
-    };
-    files = [];
+    message = "✅ Surfboard updated successfully!";
     loading = false;
+
+    // ✅ Redirect back to My Boards
+    await goto("/my-boards");
   }
 </script>
 
@@ -335,7 +374,23 @@
         ></textarea>
       </div>
 
-      <!-- Images -->
+      <!-- Existing Images -->
+      {#if existingImages.length > 0}
+        <p class="text-sm font-semibold text-base-content/70 mb-2">
+          Existing Images
+        </p>
+        <div class="mt-2 grid grid-cols-3 gap-2">
+          {#each existingImages as img}
+            <img
+              src={img.image_url}
+              alt="Surfboard Image"
+              class="rounded-lg object-cover h-24 w-full border border-base-300"
+            />
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Image Upload Zone -->
       <div
         class="form-control border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition"
         role="button"
