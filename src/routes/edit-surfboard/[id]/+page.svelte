@@ -3,7 +3,6 @@
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
-  import "cropperjs/dist/cropper.css";
 
   export let data: {
     surfboard: any;
