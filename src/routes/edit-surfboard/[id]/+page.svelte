@@ -77,9 +77,16 @@
     dragActive = false;
     if (!event.dataTransfer?.files?.length) return;
 
-    const dropped = Array.from(event.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/"),
-    );
+    const dropped = Array.from(event.dataTransfer.files).filter((f) => {
+      const type = f.type.toLowerCase();
+      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
+    });
+
+    if (dropped.length === 0) {
+      message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
+      return;
+    }
+
     await addSelectedImages(dropped);
   }
 
@@ -103,7 +110,24 @@
   let currentOriginalFile: File | null = null;
 
   async function addSelectedImages(selected: File[]) {
-    const total = files.length + selected.length;
+    // Filter out unsupported image formats
+    const validFiles = selected.filter((f) => {
+      const type = f.type.toLowerCase();
+      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
+    });
+
+    if (validFiles.length < selected.length) {
+      message = `⚠️ Skipped ${selected.length - validFiles.length} file(s): Only JPEG, PNG, and WebP are supported.`;
+    }
+
+    if (validFiles.length === 0) {
+      if (selected.length > 0) {
+        message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
+      }
+      return;
+    }
+
+    const total = files.length + validFiles.length;
     if (total > MAX_IMAGES) {
       const allowed = MAX_IMAGES - files.length;
       message = `⚠️ You can only upload ${MAX_IMAGES} images total. ${
@@ -113,7 +137,7 @@
       }`;
       return;
     }
-    pendingQueue.push(...selected);
+    pendingQueue.push(...validFiles);
     if (!showCropModal) {
       await startNextCrop();
     }
@@ -251,6 +275,10 @@
     }
 
     // Upload any new images (track which one becomes the thumbnail)
+    let uploadedCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
     for (let idx = 0; idx < files.length; idx++) {
       const file = files[idx];
       const filePath = `${surfboard.id}/${Date.now()}_${file.name}`;
@@ -261,6 +289,8 @@
 
       if (uploadError) {
         console.error("Upload failed:", uploadError);
+        failedCount++;
+        errors.push(`Failed to upload ${file.name}: ${uploadError.message}`);
         continue;
       }
 
@@ -275,7 +305,12 @@
 
       if (insertError) {
         console.error("Image insert failed:", insertError);
+        failedCount++;
+        errors.push(`Failed to save ${file.name} to database: ${insertError.message}`);
+        continue;
       }
+
+      uploadedCount++;
 
       if (pendingThumbIndex !== null && idx === pendingThumbIndex) {
         const { error: thumbErr } = await supabase
@@ -285,16 +320,32 @@
 
         if (thumbErr) {
           console.error("Thumbnail update error:", thumbErr);
-          message = `❌ ${thumbErr.message}`;
+          errors.push(`Thumbnail update failed: ${thumbErr.message}`);
         } else {
           surfboard.thumbnail_url = imageUrl;
         }
       }
     }
 
-    message = "✅ Surfboard updated successfully!";
+    // Show user-friendly success/error messages
+    if (failedCount > 0 && uploadedCount === 0) {
+      message = `❌ Failed to upload all images. ${errors[0]}`;
+      loading = false;
+      return;
+    } else if (failedCount > 0) {
+      message = `⚠️ Surfboard updated, but ${failedCount} image(s) failed to upload. ${uploadedCount} image(s) uploaded successfully.`;
+    } else if (uploadedCount > 0) {
+      message = `✅ Surfboard updated successfully! ${uploadedCount} image(s) uploaded.`;
+    } else {
+      message = "✅ Surfboard updated successfully!";
+    }
+    
     loading = false;
-    await goto("/my-boards");
+    
+    // Only redirect if everything succeeded or if there were no images to upload
+    if (failedCount === 0) {
+      await goto("/my-boards");
+    }
   }
 
   // ---------------------------------------------------------
@@ -669,7 +720,7 @@
         <input
           type="file"
           multiple
-          accept="image/*"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
           bind:this={fileInput}
           on:change={handleFileSelect}
           class="hidden"

@@ -39,9 +39,15 @@
     dragActive = false;
     if (!event.dataTransfer?.files?.length) return;
 
-    const droppedFiles = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/")
-    );
+    const droppedFiles = Array.from(event.dataTransfer.files).filter((file) => {
+      const type = file.type.toLowerCase();
+      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
+    });
+
+    if (droppedFiles.length === 0) {
+      message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
+      return;
+    }
 
     await compressAndAddFiles(droppedFiles);
   }
@@ -71,9 +77,14 @@
     }
 
     const compressedFiles: File[] = [];
+    const invalidFiles: string[] = [];
 
     for (const file of selected) {
-      if (!file.type.startsWith("image/")) continue;
+      const type = file.type.toLowerCase();
+      if (type !== "image/jpeg" && type !== "image/jpg" && type !== "image/png" && type !== "image/webp") {
+        invalidFiles.push(file.name);
+        continue;
+      }
 
       const compressed = await imageCompression(file, {
         maxSizeMB: 2,
@@ -84,10 +95,16 @@
       compressedFiles.push(compressed);
     }
 
+    if (invalidFiles.length > 0) {
+      message = `⚠️ Skipped ${invalidFiles.length} file(s): Only JPEG, PNG, and WebP are supported.`;
+    }
+
     files = [...files, ...compressedFiles];
-    message = `✅ Added ${compressedFiles.length} image${
-      compressedFiles.length > 1 ? "s" : ""
-    } ready to upload.`;
+    if (compressedFiles.length > 0) {
+      message = `✅ Added ${compressedFiles.length} image${
+        compressedFiles.length > 1 ? "s" : ""
+      } ready to upload.`;
+    }
   }
 
   // ---------------------------------------------------------
@@ -299,7 +316,7 @@
         <input
           type="file"
           multiple
-          accept="image/*"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
           bind:this={fileInput}
           on:change={handleFileSelect}
           class="hidden"

@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-const PROTECTED_PREFIXES = ['/create-surfboard', '/edit-surfboard'];
+const PROTECTED_PREFIXES = ['/create-surfboard', '/edit-surfboard', '/profile/edit'];
 const ALLOWLIST = ['/login', '/auth', '/auth/callback'];
 
 export const handle: Handle = async ({ event, resolve }) => {

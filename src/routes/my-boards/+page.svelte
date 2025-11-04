@@ -14,6 +14,14 @@
 
   let boards: Board[] = data.boards ?? [];
   let errorMessage = data.errorMessage ?? "";
+
+  // Convert inches to feet and inches format (e.g., 96 -> "8'0\"")
+  function formatLength(inches: number | null | undefined): string {
+    if (inches == null) return "";
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    return `${feet}'${remainingInches}"`;
+  }
 </script>
 
 <section class="p-6">
@@ -53,7 +61,7 @@
           <div class="p-4">
             <h2 class="font-semibold text-lg mb-1">{board.name}</h2>
             <p class="text-sm text-gray-400">
-              {board.length}" × {board.width}" × {board.thickness}"
+              {formatLength(board.length)} × {board.width}" × {board.thickness}"
             </p>
             <p class="text-sm mt-1">{board.condition}</p>
           </div>

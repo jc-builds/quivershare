@@ -41,6 +41,9 @@
         </label>
         <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow mt-3 w-52 right-0 z-10">
           <li class="menu-title"><span>{displayName}</span></li>
+          {#if data.profile?.username}
+            <li><a href="/profile/{data.profile.username}" data-sveltekit-prefetch>My Profile</a></li>
+          {/if}
           <li><a href="/create-surfboard" data-sveltekit-prefetch>Add Surfboard</a></li>
           <li><a href="/my-boards" data-sveltekit-prefetch>My Boards</a></li>
           <li><a href="/logout">Logout</a></li>
@@ -49,6 +52,13 @@
 
       <!-- Desktop menu -->
       <ul class="menu menu-horizontal px-1 hidden md:flex items-center gap-1">
+        {#if data.profile?.username}
+          <li>
+            <a href="/profile/{data.profile.username}" data-sveltekit-prefetch class="btn btn-ghost btn-sm">
+              Profile
+            </a>
+          </li>
+        {/if}
         <li><a href="/create-surfboard" data-sveltekit-prefetch>Add Surfboard</a></li>
         <li><a href="/my-boards" data-sveltekit-prefetch>My Boards</a></li>
         <li class="px-2">

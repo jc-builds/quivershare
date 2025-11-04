@@ -6,7 +6,7 @@ const isAutoUsername = (u: string | null | undefined) => !!u && u.startsWith('us
 
 const RESERVED = new Set([
   'admin', 'support', 'quivershare', 'api', 'login', 'logout',
-  'onboarding', 'my-boards', 'create-surfboard', 'edit-surfboard'
+  'onboarding', 'my-boards', 'create-surfboard', 'edit-surfboard', 'profile'
 ]);
 
 export const load: PageServerLoad = async ({ locals, url }) => {
