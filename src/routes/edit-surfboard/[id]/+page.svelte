@@ -1,74 +1,58 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
-  import { get } from "svelte/store";
-  import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
+  import "cropperjs/dist/cropper.css";
 
-  // ---------------------------------------------------------
-  // 1. Surfboard data
-  // ---------------------------------------------------------
-  let surfboard = {
-    name: "",
-    make: "",
-    length: "",
-    width: "",
-    thickness: "",
-    volume: "",
-    fins: "",
-    condition: "",
-    notes: "",
+  export let data: {
+    surfboard: any;
+    existingImages: { id: string; image_url: string }[] | null;
   };
 
-  let existingImages: { id: string; image_url: string }[] = [];
+  // ---------------------------------------------------------
+  // Constants / Types
+  // ---------------------------------------------------------
+  const BUCKET = "surfboard-images";
+  type ExistingImage = { id: string; image_url: string };
+
+  // Cropper.js (lazy loaded)
+  let CropperCtor: any = null;
+  onMount(async () => {
+    try {
+      const mod = await import("cropperjs");
+      CropperCtor = mod.default;
+    } catch (e) {
+      console.error("Failed to load cropperjs:", e);
+    }
+  });
+
+  // Choose your default crop aspect ratio: 1 (square), 4/3, 16/9, etc.
+  let cropAspect = 1;
 
   // ---------------------------------------------------------
-  // 1A. Fetch Existing Surfboard and associated image Data when navigating to a specific ID.
+  // 1. Surfboard data (defensive init)
   // ---------------------------------------------------------
+  const sb = data?.surfboard ?? {};
+  let surfboard = {
+    id: sb.id ?? "",
+    name: sb.name ?? "",
+    make: sb.make ?? "",
+    length: sb.length ?? "",
+    width: sb.width ?? "",
+    thickness: sb.thickness ?? "",
+    volume: sb.volume ?? "",
+    fins: sb.fins ?? "",
+    condition: sb.condition ?? "",
+    notes: sb.notes ?? "",
+    thumbnail_url: sb.thumbnail_url ?? "",
+  };
+
+  let existingImages: ExistingImage[] = (data?.existingImages ??
+    []) as ExistingImage[];
+
   let loading = false;
   let message = "";
-
-  onMount(async () => {
-    const id = get(page).params.id;
-
-    // Only run if we have an ID (i.e., editing mode)
-    if (!id) return;
-
-    loading = true;
-    message = "";
-
-    const { data, error } = await supabase
-      .from("surfboards")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    const { data: imagesData, error: imagesError } = await supabase
-      .from("surfboard_images")
-      .select("id, image_url")
-      .eq("surfboard_id", id);
-
-    if (imagesError) {
-      console.error("Error loading images:", imagesError);
-    } else if (imagesData) {
-      existingImages = imagesData;
-    }
-
-    if (error) {
-      console.error("Error loading board:", error);
-      message = `❌ ${error.message}`;
-    } else if (data) {
-      surfboard = {
-        ...surfboard, // keep all existing keys to avoid missing ones
-        ...data, // overwrite with real values from Supabase
-      };
-
-      console.log("Loaded board:", surfboard);
-    }
-
-    loading = false;
-  });
 
   // ---------------------------------------------------------
   // 2. Upload & UI state
@@ -77,6 +61,9 @@
   let dragActive = false;
   let files: File[] = [];
   const MAX_IMAGES = 6;
+
+  // Allow picking a thumbnail from NEW files before upload
+  let pendingThumbIndex: number | null = null;
 
   // ---------------------------------------------------------
   // 3. Drag + Drop handlers
@@ -91,15 +78,10 @@
     dragActive = false;
     if (!event.dataTransfer?.files?.length) return;
 
-    const droppedFiles = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/"),
+    const dropped = Array.from(event.dataTransfer.files).filter((f) =>
+      f.type.startsWith("image/"),
     );
-
-    console.log(
-      "Dropped files:",
-      droppedFiles.map((f) => f.name),
-    );
-    await compressAndAddFiles(droppedFiles);
+    await addSelectedImages(dropped);
   }
 
   // ---------------------------------------------------------
@@ -108,17 +90,20 @@
   async function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
-    console.log(
-      "Selected files:",
-      Array.from(target.files).map((f) => f.name),
-    );
-    await compressAndAddFiles(Array.from(target.files));
+    await addSelectedImages(Array.from(target.files));
   }
 
   // ---------------------------------------------------------
-  // 5. Compression logic
+  // 5. Crop-before-upload flow (lazy Cropper)
   // ---------------------------------------------------------
-  async function compressAndAddFiles(selected: File[]) {
+  let cropper: any = null;
+  let cropImgEl: HTMLImageElement;
+  let showCropModal = false;
+  let cropImageSrc = "";
+  let pendingQueue: File[] = [];
+  let currentOriginalFile: File | null = null;
+
+  async function addSelectedImages(selected: File[]) {
     const total = files.length + selected.length;
     if (total > MAX_IMAGES) {
       const allowed = MAX_IMAGES - files.length;
@@ -129,26 +114,114 @@
       }`;
       return;
     }
-
-    const compressedFiles: File[] = [];
-
-    for (const file of selected) {
-      // Skip non-images just in case
-      if (!file.type.startsWith("image/")) continue;
-
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 2, // target size ~2 MB
-        maxWidthOrHeight: 1600, // resize large photos
-        useWebWorker: true,
-      });
-
-      compressedFiles.push(compressed);
+    pendingQueue.push(...selected);
+    if (!showCropModal) {
+      await startNextCrop();
     }
+  }
 
-    files = [...files, ...compressedFiles];
-    message = `✅ Added ${compressedFiles.length} image${
-      compressedFiles.length > 1 ? "s" : ""
-    } ready to upload.`;
+  async function startNextCrop() {
+    destroyCropper();
+    currentOriginalFile = null;
+    cropImageSrc = "";
+
+    const next = pendingQueue.shift();
+    if (!next) return;
+
+    currentOriginalFile = next;
+    const dataUrl = await fileToDataURL(next);
+    cropImageSrc = dataUrl;
+    showCropModal = true; // Cropper will init on <img> load
+  }
+
+  function onCropImgLoad() {
+    if (!CropperCtor || !cropImgEl || !cropImageSrc) return;
+    destroyCropper();
+    cropper = new CropperCtor(cropImgEl, {
+      aspectRatio: cropAspect,
+      viewMode: 1,
+      background: false,
+      autoCropArea: 1,
+      dragMode: "move",
+      responsive: true,
+      checkOrientation: true, // helps with EXIF-rotated photos from phones
+    });
+  }
+
+  function destroyCropper() {
+    if (cropper && typeof cropper.destroy === "function") cropper.destroy();
+    cropper = null;
+  }
+
+  async function confirmCrop() {
+    if (!cropper || !currentOriginalFile) return;
+    const canvas = cropper.getCroppedCanvas({
+      maxWidth: 1600,
+      maxHeight: 1600,
+    });
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob(res, "image/jpeg", 0.92),
+    );
+    if (!blob) return;
+
+    const croppedFile = new File(
+      [blob],
+      currentOriginalFile.name.replace(/\.(png|jpg|jpeg|webp|gif)$/i, "") +
+        ".jpg",
+      { type: "image/jpeg" },
+    );
+
+    const compressed = await imageCompression(croppedFile, {
+      maxSizeMB: 2,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+    });
+
+    files = [...files, compressed];
+    message = `✅ Added 1 cropped image.`;
+    await closeCropModal();
+    await startNextCrop();
+  }
+
+  async function useOriginalNoCrop() {
+    if (!currentOriginalFile) return;
+    const compressed = await imageCompression(currentOriginalFile, {
+      maxSizeMB: 2,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+    });
+    files = [...files, compressed];
+    message = `✅ Added 1 image (no crop).`;
+    await closeCropModal();
+    await startNextCrop();
+  }
+
+  async function cancelCropFlow() {
+    pendingQueue = [];
+    await closeCropModal();
+  }
+
+  async function closeCropModal() {
+    destroyCropper();
+    showCropModal = false;
+    cropImageSrc = "";
+    currentOriginalFile = null;
+  }
+
+  function fileToDataURL(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function setAspect(ratio: number) {
+    cropAspect = ratio;
+    if (cropper && typeof cropper.setAspectRatio === "function") {
+      cropper.setAspectRatio(ratio);
+    }
   }
 
   // ---------------------------------------------------------
@@ -158,9 +231,6 @@
     loading = true;
     message = "";
 
-    const id = get(page).params.id;
-
-    // Convert empty strings → null for numeric fields
     const cleanedSurfboard = {
       ...surfboard,
       length: surfboard.length === "" ? null : surfboard.length,
@@ -169,11 +239,10 @@
       volume: surfboard.volume === "" ? null : surfboard.volume,
     };
 
-    // ✅ Only update (no insert logic)
     const { error } = await supabase
       .from("surfboards")
       .update(cleanedSurfboard)
-      .eq("id", id);
+      .eq("id", surfboard.id);
 
     if (error) {
       console.error("Surfboard update error:", error);
@@ -182,12 +251,13 @@
       return;
     }
 
-    // ✅ Upload any new images
-    for (const file of files) {
-      const filePath = `${id}/${Date.now()}_${file.name}`;
+    // Upload any new images (track which one becomes the thumbnail)
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = files[idx];
+      const filePath = `${surfboard.id}/${Date.now()}_${file.name}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("surfboard-images")
+        .from(BUCKET)
         .upload(filePath, file);
 
       if (uploadError) {
@@ -196,25 +266,171 @@
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from("surfboard-images")
+        .from(BUCKET)
         .getPublicUrl(filePath);
+      const imageUrl = publicUrlData.publicUrl;
 
       const { error: insertError } = await supabase
         .from("surfboard_images")
-        .insert([{ surfboard_id: id, image_url: publicUrlData.publicUrl }]);
+        .insert([{ surfboard_id: surfboard.id, image_url: imageUrl }]);
 
       if (insertError) {
         console.error("Image insert failed:", insertError);
+      }
+
+      if (pendingThumbIndex !== null && idx === pendingThumbIndex) {
+        const { error: thumbErr } = await supabase
+          .from("surfboards")
+          .update({ thumbnail_url: imageUrl })
+          .eq("id", surfboard.id);
+
+        if (thumbErr) {
+          console.error("Thumbnail update error:", thumbErr);
+          message = `❌ ${thumbErr.message}`;
+        } else {
+          surfboard.thumbnail_url = imageUrl;
+        }
       }
     }
 
     message = "✅ Surfboard updated successfully!";
     loading = false;
-
-    // ✅ Redirect back to My Boards
     await goto("/my-boards");
   }
+
+  // ---------------------------------------------------------
+  // 7. Remove existing image (with in-app modal)
+  // ---------------------------------------------------------
+  let deleting: Record<string, boolean> = {};
+  let showConfirm = false;
+  let imageToDelete: ExistingImage | null = null;
+
+  function promptDelete(img: ExistingImage) {
+    imageToDelete = img;
+    showConfirm = true;
+  }
+
+  function storagePathFromPublicUrl(publicUrl: string): string | null {
+    try {
+      const u = new URL(publicUrl);
+      const parts = u.pathname.split("/").filter(Boolean);
+      const bucketIdx = parts.findIndex((p) => p === BUCKET);
+      if (bucketIdx === -1) return null;
+      return parts.slice(bucketIdx + 1).join("/");
+    } catch {
+      return null;
+    }
+  }
+
+  async function removeImage(img: ExistingImage) {
+    if (deleting[img.id]) return;
+
+    const path = storagePathFromPublicUrl(img.image_url);
+    if (!path) {
+      message = "❌ Couldn't resolve storage path for this image.";
+      return;
+    }
+
+    deleting = { ...deleting, [img.id]: true };
+    message = "";
+
+    const { error: storageErr } = await supabase.storage
+      .from(BUCKET)
+      .remove([path]);
+    if (storageErr) {
+      console.error("Storage remove error:", storageErr);
+      message = `❌ ${storageErr.message}`;
+      deleting = { ...deleting, [img.id]: false };
+      return;
+    }
+
+    const { error: dbErr } = await supabase
+      .from("surfboard_images")
+      .delete()
+      .eq("id", img.id);
+    if (dbErr) {
+      console.error("DB delete error:", dbErr);
+      message = `❌ ${dbErr.message}`;
+      deleting = { ...deleting, [img.id]: false };
+      return;
+    }
+
+    existingImages = existingImages.filter((i) => i.id !== img.id);
+    deleting = { ...deleting, [img.id]: false };
+    message = "✅ Image removed.";
+
+    if (surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url) {
+      surfboard.thumbnail_url = "";
+    }
+  }
+
+  async function confirmDelete() {
+    if (!imageToDelete) return;
+    const img = imageToDelete;
+    showConfirm = false;
+    imageToDelete = null;
+    await removeImage(img);
+  }
+
+  // ---------------------------------------------------------
+  // 8. Thumbnail (Main image) for EXISTING images
+  // ---------------------------------------------------------
+  let settingThumb: Record<string, boolean> = {};
+
+  async function setAsThumbnail(img: ExistingImage) {
+    if (settingThumb[img.id]) return;
+    settingThumb = { ...settingThumb, [img.id]: true };
+
+    const { error } = await supabase
+      .from("surfboards")
+      .update({ thumbnail_url: img.image_url })
+      .eq("id", surfboard.id);
+
+    if (error) {
+      console.error("Thumbnail update error:", error);
+      message = `❌ ${error.message}`;
+      settingThumb = { ...settingThumb, [img.id]: false };
+      return;
+    }
+
+    surfboard.thumbnail_url = img.image_url;
+    settingThumb = { ...settingThumb, [img.id]: false };
+    message = "✅ Thumbnail updated.";
+  }
+
+  // ---------------------------------------------------------
+  // 9. Lightbox (enlarge images) + keyboard controls
+  // ---------------------------------------------------------
+  let lightboxOpen = false;
+  let lightboxIndex = 0;
+
+  function openLightbox(index: number) {
+    lightboxIndex = index;
+    lightboxOpen = true;
+  }
+  function closeLightbox() {
+    lightboxOpen = false;
+  }
+  function prevImage() {
+    if (!existingImages.length) return;
+    lightboxIndex =
+      (lightboxIndex - 1 + existingImages.length) % existingImages.length;
+  }
+  function nextImage() {
+    if (!existingImages.length) return;
+    lightboxIndex = (lightboxIndex + 1) % existingImages.length;
+  }
+
+  // Keyboard: ← → navigate, Esc to close (only while lightbox open)
+  function handleKeydown(e: KeyboardEvent) {
+    if (!lightboxOpen) return;
+    if (e.key === "ArrowLeft") prevImage();
+    else if (e.key === "ArrowRight") nextImage();
+    else if (e.key === "Escape") closeLightbox();
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <main class="min-h-screen bg-base-200 p-8 flex flex-col items-center">
   <div class="w-full max-w-lg bg-base-100 p-8 rounded-2xl shadow-lg">
@@ -265,9 +481,9 @@
           <option disabled selected>Select length</option>
           {#each Array(79) as _, i}
             {@const inches = i + 54}
-            <option value={inches}>
-              {Math.floor(inches / 12)}'{inches % 12}"
-            </option>
+            <option value={inches}
+              >{Math.floor(inches / 12)}'{inches % 12}"</option
+            >
           {/each}
         </select>
       </div>
@@ -379,13 +595,62 @@
         <p class="text-sm font-semibold text-base-content/70 mb-2">
           Existing Images
         </p>
+
         <div class="mt-2 grid grid-cols-3 gap-2">
-          {#each existingImages as img}
-            <img
-              src={img.image_url}
-              alt="Surfboard Image"
-              class="rounded-lg object-cover h-24 w-full border border-base-300"
-            />
+          {#each existingImages as img, i}
+            <div class="relative group aspect-square w-full">
+              <!-- Clickable image via button (a11y) -->
+              <button
+                type="button"
+                class="absolute inset-0 rounded-lg border border-base-300 cursor-zoom-in"
+                on:click={() => openLightbox(i)}
+                aria-label="Open image"
+              >
+                <img
+                  src={img.image_url}
+                  alt="Surfboard"
+                  class="h-full w-full object-cover rounded-lg"
+                />
+              </button>
+
+              <!-- Thumbnail badge -->
+              {#if surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url}
+                <div
+                  class="absolute top-1 left-1 text-[10px] px-2 py-0.5 rounded-full bg-primary text-white/95"
+                >
+                  Main
+                </div>
+              {/if}
+
+              <!-- Set-as-thumbnail star -->
+              <button
+                type="button"
+                class="absolute bottom-1 left-1 bg-black/50 text-white text-[10px]
+                       rounded-full px-2 h-5 flex items-center justify-center
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/70"
+                on:click={() => setAsThumbnail(img)}
+                disabled={!!settingThumb[img.id]}
+                title="Set as main image"
+                aria-label="Set as main image"
+              >
+                {settingThumb[img.id] ? "…" : "★"}
+              </button>
+
+              <!-- Remove “×” -->
+              <button
+                type="button"
+                class="absolute top-1 right-1 bg-black/50 text-white text-xs
+                       rounded-full w-5 h-5 flex items-center justify-center
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                       hover:bg-black/70"
+                on:click={() => promptDelete(img)}
+                disabled={!!deleting[img.id]}
+                aria-label="Remove image"
+                title="Remove image"
+              >
+                {deleting[img.id] ? "…" : "×"}
+              </button>
+            </div>
           {/each}
         </div>
       {/if}
@@ -417,12 +682,27 @@
 
         {#if files.length > 0}
           <div class="mt-4 grid grid-cols-3 gap-2">
-            {#each files as file}
-              <img
-                src={URL.createObjectURL(file)}
-                alt={file.name}
-                class="rounded-lg object-cover h-24 w-full"
-              />
+            {#each files as file, i}
+              <div class="relative group aspect-square w-full">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
+                  class="absolute inset-0 h-full w-full object-cover rounded-lg border border-base-300"
+                />
+
+                <!-- Pick this NEW file as the thumbnail -->
+                <button
+                  type="button"
+                  class="absolute bottom-1 left-1 bg-black/50 text-white text-[10px]
+                         rounded-full px-2 h-5 flex items-center justify-center
+                         opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/70"
+                  on:click={() => (pendingThumbIndex = i)}
+                  title="Set this new image as main after upload"
+                  aria-label="Set new image as main"
+                >
+                  {pendingThumbIndex === i ? "Main" : "★"}
+                </button>
+              </div>
             {/each}
           </div>
         {/if}
@@ -431,6 +711,8 @@
       {#if files.length > 0}
         <p class="text-xs text-gray-500 mt-2">
           {files.length}/{MAX_IMAGES} images selected
+          {#if pendingThumbIndex !== null}
+            • main will be image #{pendingThumbIndex + 1}{/if}
         </p>
       {/if}
 
@@ -450,4 +732,95 @@
       {/if}
     </form>
   </div>
+
+  <!-- In-app confirmation modal -->
+  {#if showConfirm}
+    <div
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    >
+      <div class="bg-base-100 p-6 rounded-xl shadow-lg w-72">
+        <p class="mb-5 text-sm">
+          Remove this image? This action cannot be undone.
+        </p>
+        <div class="flex gap-2 justify-end">
+          <button class="btn btn-sm" on:click={() => (showConfirm = false)}
+            >Cancel</button
+          >
+          <button class="btn btn-sm btn-error" on:click={confirmDelete}
+            >Delete</button
+          >
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Lightbox -->
+  {#if lightboxOpen}
+    <div
+      class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+    >
+      <button
+        class="absolute top-4 right-4 text-white text-2xl"
+        on:click={closeLightbox}
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <button
+        class="absolute left-4 text-white text-2xl"
+        on:click={prevImage}
+        aria-label="Previous">‹</button
+      >
+      <img
+        src={existingImages[lightboxIndex]?.image_url}
+        alt="Surfboard Image Large"
+        class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+      />
+      <button
+        class="absolute right-4 text-white text-2xl"
+        on:click={nextImage}
+        aria-label="Next">›</button
+      >
+    </div>
+  {/if}
+
+  <!-- Cropper Modal -->
+  {#if showCropModal}
+    <div
+      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-base-100 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden"
+      >
+        <div
+          class="p-3 border-b border-base-300 flex items-center justify-between"
+        >
+          <span class="font-semibold text-sm">Crop image</span>
+        </div>
+        <div class="p-3">
+          <div
+            class="relative w-full h-[50vh] bg-base-200 rounded-lg overflow-hidden"
+          >
+            <img
+              bind:this={cropImgEl}
+              src={cropImageSrc}
+              alt="Crop source"
+              class="max-h-full max-w-full block m-auto select-none"
+              on:load={onCropImgLoad}
+              draggable="false"
+            />
+          </div>
+        </div>
+        <div class="p-3 border-t border-base-300 flex justify-end gap-2">
+          <button class="btn btn-sm" on:click={useOriginalNoCrop}
+            >Use Original</button
+          >
+          <button class="btn btn-sm" on:click={cancelCropFlow}>Cancel</button>
+          <button class="btn btn-sm btn-primary" on:click={confirmCrop}
+            >Done</button
+          >
+        </div>
+      </div>
+    </div>
+  {/if}
 </main>

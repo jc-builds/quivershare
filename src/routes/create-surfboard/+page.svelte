@@ -1,10 +1,9 @@
 <script lang="ts">
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
-  import { goto } from "$app/navigation";
 
   // ---------------------------------------------------------
-  // 1. Surfboard data
+  // 1. Surfboard data (for form binding)
   // ---------------------------------------------------------
   let surfboard = {
     name: "",
@@ -24,7 +23,6 @@
   let fileInput: HTMLInputElement;
   let dragActive = false;
   let files: File[] = [];
-  let loading = false;
   let message = "";
   const MAX_IMAGES = 6;
 
@@ -42,13 +40,9 @@
     if (!event.dataTransfer?.files?.length) return;
 
     const droppedFiles = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/"),
+      file.type.startsWith("image/")
     );
 
-    console.log(
-      "Dropped files:",
-      droppedFiles.map((f) => f.name),
-    );
     await compressAndAddFiles(droppedFiles);
   }
 
@@ -58,10 +52,6 @@
   async function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
-    console.log(
-      "Selected files:",
-      Array.from(target.files).map((f) => f.name),
-    );
     await compressAndAddFiles(Array.from(target.files));
   }
 
@@ -83,12 +73,11 @@
     const compressedFiles: File[] = [];
 
     for (const file of selected) {
-      // Skip non-images just in case
       if (!file.type.startsWith("image/")) continue;
 
       const compressed = await imageCompression(file, {
-        maxSizeMB: 2, // target size ~2 MB
-        maxWidthOrHeight: 1600, // resize large photos
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1600,
         useWebWorker: true,
       });
 
@@ -102,37 +91,9 @@
   }
 
   // ---------------------------------------------------------
-  // 6. Save surfboard + upload the images
+  // 6. Upload only (future enhancement)
   // ---------------------------------------------------------
-  async function saveBoard() {
-    loading = true;
-    message = "";
-
-    // Convert empty strings → null for numeric fields
-    const cleanedSurfboard = {
-      ...surfboard,
-      length: surfboard.length === "" ? null : surfboard.length,
-      width: surfboard.width === "" ? null : surfboard.width,
-      thickness: surfboard.thickness === "" ? null : surfboard.thickness,
-      volume: surfboard.volume === "" ? null : surfboard.volume,
-    };
-
-    // 1️⃣ Insert surfboard
-    const { data, error } = await supabase
-      .from("surfboards")
-      .insert([cleanedSurfboard])
-      .select("id");
-
-    if (error || !data) {
-      console.error("Surfboard insert error:", error);
-      message = `❌ ${error?.message}`;
-      loading = false;
-      return;
-    }
-
-    const surfboardId = data[0].id;
-
-    // 2️⃣ Upload each image
+  async function uploadImages(surfboardId: string) {
     for (const file of files) {
       const filePath = `${surfboardId}/${Date.now()}_${file.name}`;
 
@@ -142,41 +103,17 @@
 
       if (uploadError) {
         console.error("Upload failed:", uploadError);
-        continue; // move on to next file
+        continue;
       }
 
       const { data: publicUrlData } = supabase.storage
         .from("surfboard-images")
         .getPublicUrl(filePath);
 
-      const { error: insertError } = await supabase
+      await supabase
         .from("surfboard_images")
-        .insert([
-          { surfboard_id: surfboardId, image_url: publicUrlData.publicUrl },
-        ]);
-
-      if (insertError) {
-        console.error("Image insert failed:", insertError);
-      }
+        .insert([{ surfboard_id: surfboardId, image_url: publicUrlData.publicUrl }]);
     }
-
-    // 3️⃣ Reset form state
-    message = "✅ Surfboard and images saved successfully!";
-    surfboard = {
-      name: "",
-      make: "",
-      length: "",
-      width: "",
-      thickness: "",
-      volume: "",
-      fins: "",
-      condition: "",
-      notes: "",
-    };
-    files = [];
-    loading = false;
-
-    await goto("/my-boards");
   }
 </script>
 
@@ -186,7 +123,8 @@
       Add a New Surfboard
     </h1>
 
-    <form class="space-y-4" on:submit|preventDefault={saveBoard}>
+    <!-- ✅ Form now posts to the server action -->
+    <form method="POST" class="space-y-4">
       <!-- Board Name -->
       <div class="form-control">
         <label for="name" class="label">
@@ -194,6 +132,7 @@
         </label>
         <input
           id="name"
+          name="name"
           type="text"
           bind:value={surfboard.name}
           placeholder="e.g. Star Cruiser"
@@ -209,6 +148,7 @@
         </label>
         <input
           id="make"
+          name="make"
           type="text"
           bind:value={surfboard.make}
           placeholder="e.g. Album, Firewire, JS"
@@ -223,6 +163,7 @@
         </label>
         <select
           id="length"
+          name="length"
           bind:value={surfboard.length}
           class="select select-bordered w-full"
         >
@@ -243,6 +184,7 @@
         </label>
         <input
           id="width"
+          name="width"
           type="number"
           step="0.25"
           min="18"
@@ -260,6 +202,7 @@
         </label>
         <input
           id="thickness"
+          name="thickness"
           type="number"
           step="0.01"
           min="2"
@@ -277,6 +220,7 @@
         </label>
         <input
           id="volume"
+          name="volume"
           type="number"
           step="0.5"
           min="20"
@@ -294,6 +238,7 @@
         </label>
         <select
           id="fins"
+          name="fins"
           bind:value={surfboard.fins}
           class="select select-bordered w-full"
         >
@@ -313,6 +258,7 @@
         </label>
         <select
           id="condition"
+          name="condition"
           bind:value={surfboard.condition}
           class="select select-bordered w-full"
         >
@@ -332,16 +278,16 @@
         </label>
         <textarea
           id="notes"
+          name="notes"
           bind:value={surfboard.notes}
           class="textarea textarea-bordered w-full"
           placeholder="Anything special about this board?"
         ></textarea>
       </div>
 
-      <!-- Images -->
+      <!-- Images (optional, not submitted yet) -->
       <div
         class="form-control border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition"
-        role="button"
         class:border-primary={dragActive}
         on:dragover|preventDefault={handleDragOver}
         on:dragleave={() => (dragActive = false)}
@@ -382,13 +328,8 @@
         </p>
       {/if}
 
-      <!-- Save Button -->
-      <button
-        type="submit"
-        class="btn btn-primary w-full mt-4"
-        disabled={loading}
-      >
-        {loading ? "Saving..." : "Save Surfboard"}
+      <button type="submit" class="btn btn-primary w-full mt-4">
+        Save Surfboard
       </button>
 
       {#if message}
