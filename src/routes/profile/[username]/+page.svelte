@@ -54,9 +54,9 @@
     return parts.length > 0 ? parts.join(', ') : (data.profile.location_label || '');
   }
 
-  // Get profile picture URL (prioritize profile_picture_url, fallback to avatar_url)
+  // Get profile picture URL (prioritize profile_picture_url, fallback to avatar_url, then default)
   function getProfilePictureUrl(): string {
-    return data.profile.profile_picture_url || data.profile.avatar_url || 'https://via.placeholder.com/150?text=No+Photo';
+    return data.profile.profile_picture_url || data.profile.avatar_url || '/default_profile_picture.jpg';
   }
 
   async function toggleFollow() {
@@ -100,7 +100,7 @@
             loading="lazy"
             on:error={(e) =>
               ((e.currentTarget as HTMLImageElement).src =
-                'https://via.placeholder.com/150?text=No+Photo')}
+                '/default_profile_picture.jpg')}
           />
         </div>
       </div>
@@ -179,8 +179,8 @@
     >
       {#each data.boards as board}
         <a
-          href={data.isOwnProfile ? `/edit-surfboard/${board.id}` : `#`}
-          data-sveltekit-preload-data={data.isOwnProfile}
+          href={data.isOwnProfile ? `/edit-surfboard/${board.id}` : `/surfboards/${board.id}`}
+          data-sveltekit-prefetch
           class="block w-full max-w-xs rounded-xl overflow-hidden bg-base-100 border border-base-300 shadow-sm
          hover:shadow-lg hover:-translate-y-[2px] transition-all duration-200 ease-out"
         >

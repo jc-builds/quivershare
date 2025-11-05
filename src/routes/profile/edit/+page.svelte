@@ -203,7 +203,7 @@
   async function removeProfilePicture() {
     if (confirm('Remove your profile picture? It will revert to your Google avatar.')) {
       profilePictureFile = null;
-      profilePicturePreview = data.profile.avatar_url || null;
+      profilePicturePreview = data.profile.avatar_url || '/default_profile_picture.jpg';
     }
   }
 
@@ -238,22 +238,31 @@
       const submitUrl = window.location.pathname;
       
       // Submit to the server action (server will handle file upload)
+      // Use redirect: 'manual' to handle SvelteKit redirects ourselves
       const response = await fetch(submitUrl, {
         method: 'POST',
-        body: formData
+        body: formData,
+        redirect: 'manual' as RequestRedirect
       });
 
-      // Handle redirect
-      if (response.redirected && response.url !== submitUrl) {
-        const redirectUrl = new URL(response.url).pathname;
-        goto(redirectUrl, { invalidateAll: true });
-        return;
+      // Handle redirect (SvelteKit returns 303 with Location header)
+      if (response.status === 303) {
+        const location = response.headers.get('location');
+        if (location) {
+          // Handle both absolute and relative URLs
+          const redirectPath = location.startsWith('http') 
+            ? new URL(location).pathname 
+            : location;
+          goto(redirectPath, { invalidateAll: true });
+          return;
+        }
       }
 
       // Check response status
       if (response.ok) {
-        // Success - reload to show changes
-        window.location.reload();
+        // Success - redirect to profile page
+        goto(`/profile/${data.profile.username}`, { invalidateAll: true });
+        return;
       } else {
         // Error response
         uploadingPicture = false;
@@ -284,7 +293,7 @@
       <div class="flex items-center gap-4">
         <div class="w-24 h-24 rounded-full overflow-hidden bg-base-300 border-4 border-base-200 flex-shrink-0">
           <img
-            src={profilePicturePreview || 'https://via.placeholder.com/150?text=No+Photo'}
+            src={profilePicturePreview || '/default_profile_picture.jpg'}
             alt="Profile"
             class="w-full h-full object-cover"
           />

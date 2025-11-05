@@ -68,7 +68,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .order('last_modified', { ascending: false });
 
   if (boardsError) {
-    console.error('Error loading boards:', boardsError);
+    console.error('Error loading boards for profile:', profile.id, boardsError);
   }
 
   // Attach a single fallback image per board
