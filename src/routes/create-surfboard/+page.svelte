@@ -12,10 +12,19 @@
     width: "",
     thickness: "",
     volume: "",
-    fins: "",
+    fin_system: "",
+    fin_setup: "",
+    style: "",
+    price: "",
     condition: "",
     notes: "",
   };
+
+  // Location fields
+  let locationQuery = "";
+  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
+  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
+  let locationDebounceHandle: any;
 
   // ---------------------------------------------------------
   // 2. Upload & UI state
@@ -108,7 +117,41 @@
   }
 
   // ---------------------------------------------------------
-  // 6. Upload only (future enhancement)
+  // 6. Location search functions
+  // ---------------------------------------------------------
+  async function searchLocationPlaces(q: string) {
+    if (!q || q.length < 2) {
+      locationSuggestions = [];
+      return;
+    }
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    locationSuggestions = data.features ?? [];
+  }
+
+  function onLocationInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    locationQuery = v;
+    selectedLocation = null;
+
+    clearTimeout(locationDebounceHandle);
+    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
+    locationQuery = s.label;
+    selectedLocation = {
+      label: s.label,
+      lat: s.lat,
+      lon: s.lon,
+      city: s.city,
+      region: s.region
+    };
+    locationSuggestions = [];
+  }
+
+  // ---------------------------------------------------------
+  // 7. Upload only (future enhancement)
   // ---------------------------------------------------------
   async function uploadImages(surfboardId: string) {
     for (const file of files) {
@@ -248,24 +291,81 @@
         />
       </div>
 
-      <!-- Fins -->
+      <!-- Fin System -->
       <div class="form-control">
-        <label for="fins" class="label">
+        <label for="fin_system" class="label">
+          <span class="label-text font-semibold">Fin System</span>
+        </label>
+        <select
+          id="fin_system"
+          name="fin_system"
+          bind:value={surfboard.fin_system}
+          class="select select-bordered w-full"
+        >
+          <option value="">Select fin system (optional)</option>
+          <option>FCS II</option>
+          <option>Futures</option>
+          <option>Glass On</option>
+          <option>FCS</option>
+        </select>
+      </div>
+
+      <!-- Fin Setup -->
+      <div class="form-control">
+        <label for="fin_setup" class="label">
           <span class="label-text font-semibold">Fin Setup</span>
         </label>
         <select
-          id="fins"
-          name="fins"
-          bind:value={surfboard.fins}
+          id="fin_setup"
+          name="fin_setup"
+          bind:value={surfboard.fin_setup}
           class="select select-bordered w-full"
         >
-          <option disabled selected>Select fins</option>
-          <option>Single</option>
-          <option>Twin</option>
+          <option value="">Select fin setup (optional)</option>
+          <option>2+1</option>
+          <option>4+1</option>
           <option>Quad</option>
-          <option>Thruster</option>
-          <option>Bonzer</option>
+          <option>Single</option>
+          <option>Tri</option>
+          <option>Tri/Quad</option>
         </select>
+      </div>
+
+
+      <!-- Style -->
+      <div class="form-control">
+        <label for="style" class="label">
+          <span class="label-text font-semibold">Board Style</span>
+        </label>
+        <select
+          id="style"
+          name="style"
+          bind:value={surfboard.style}
+          class="select select-bordered w-full"
+        >
+          <option value="">Select style (optional)</option>
+          <option>Shortboard</option>
+          <option>Longboard</option>
+          <option>Groveler</option>
+          <option>Gun</option>
+        </select>
+      </div>
+
+      <!-- Price -->
+      <div class="form-control">
+        <label for="price" class="label">
+          <span class="label-text font-semibold">Price ($)</span>
+        </label>
+        <input
+          id="price"
+          name="price"
+          type="number"
+          step="0.01"
+          min="0"
+          bind:value={surfboard.price}
+          placeholder="e.g. 850.00"
+          class="input input-bordered w-full"
+        />
       </div>
 
       <!-- Condition -->
@@ -286,6 +386,47 @@
           <option>Well-loved</option>
           <option>Needs Repair</option>
         </select>
+      </div>
+
+      <!-- Location -->
+      <div class="form-control">
+        <label for="location" class="label">
+          <span class="label-text font-semibold">Location (optional)</span>
+        </label>
+        <div class="relative">
+          <input
+            id="location"
+            type="text"
+            class="input input-bordered w-full"
+            placeholder="Start typing... e.g. San Diego, CA"
+            value={locationQuery}
+            on:input={onLocationInput}
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="location-suggestions-list"
+          />
+          {#if locationSuggestions.length > 0}
+            <ul id="location-suggestions-list" class="menu bg-base-100 rounded-box shadow-lg mt-1 w-full absolute z-10 max-h-60 overflow-y-auto">
+              {#each locationSuggestions as s}
+                <li>
+                  <button type="button" class="justify-start" on:click={() => chooseLocationSuggestion(s)}>
+                    {s.label}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        {#if selectedLocation}
+          <p class="text-xs text-base-content/60 mt-1">
+            Selected: {selectedLocation.label}
+          </p>
+        {/if}
+        <!-- Hidden fields for location data -->
+        <input type="hidden" name="city" value={selectedLocation?.city || ''} />
+        <input type="hidden" name="region" value={selectedLocation?.region || ''} />
+        <input type="hidden" name="lat" value={selectedLocation?.lat || ''} />
+        <input type="hidden" name="lon" value={selectedLocation?.lon || ''} />
       </div>
 
       <!-- Notes -->

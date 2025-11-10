@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Fetch the owner's profile
   const { data: ownerProfile, error: ownerError } = await locals.supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, profile_picture_url')
+    .select('id, username, full_name, profile_picture_url, city, region')
     .eq('id', surfboard.user_id)
     .single();
 
@@ -42,15 +42,26 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     console.warn('Image fetch error:', imgErr.message);
   }
 
-  // Check if current user owns this board
-  const currentUserId = locals.user?.id ?? null;
-  const isOwner = currentUserId === surfboard.user_id;
+  // Determine if the current user can edit this board
+  const { data: authData, error: userError } = await locals.supabase.auth.getUser();
+  if (userError) {
+    console.warn('Error fetching current user for board detail:', userError);
+  }
+  const currentUserId = authData?.user?.id ?? null;
+  const canEdit = Boolean(currentUserId && surfboard.user_id === currentUserId);
+
+  // Get up to 5 images (thumbnail + up to 4 additional)
+  const allImages = [
+    ...(surfboard.thumbnail_url ? [{ id: 'thumb', image_url: surfboard.thumbnail_url }] : []),
+    ...(images ?? [])
+  ].filter((img, index, self) => 
+    index === self.findIndex((i) => i.image_url === img.image_url)
+  ).slice(0, 5);
 
   return {
-    surfboard,
-    images: images ?? [],
+    board: surfboard,
+    images: allImages,
     owner: ownerProfile ?? null,
-    isOwner
+    canEdit
   };
 };
-

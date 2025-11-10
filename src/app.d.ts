@@ -5,7 +5,8 @@ declare global {
     interface Locals {
       supabase: SupabaseClient;
       session: Session | null;
-      user: import('@supabase/supabase-js').User | null; // ← add this
+      user: import('@supabase/supabase-js').User | null;
+      getSession: () => Promise<Session | null>;
     }
   }
 }

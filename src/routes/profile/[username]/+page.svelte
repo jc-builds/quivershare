@@ -1,12 +1,9 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-
   export let data: {
     profile: {
       id: string;
       username: string;
       full_name: string | null;
-      avatar_url: string | null;
       profile_picture_url: string | null;
       location_label: string | null;
       city: string | null;
@@ -27,15 +24,7 @@
       condition?: string;
     }>;
     isOwnProfile: boolean;
-    currentUserId: string | null;
-    isFollowing: boolean;
-    followerCount: number;
-    followingCount: number;
   };
-
-  let following = data.isFollowing;
-  let followerCount = data.followerCount;
-  let isProcessing = false;
 
   // Convert inches to feet and inches format (e.g., 96 -> "8'0\"")
   function formatLength(inches: number | null | undefined): string {
@@ -54,36 +43,11 @@
     return parts.length > 0 ? parts.join(', ') : (data.profile.location_label || '');
   }
 
-  // Get profile picture URL (prioritize profile_picture_url, fallback to avatar_url, then default)
+  // Get profile picture URL (prioritize profile_picture_url, then default)
   function getProfilePictureUrl(): string {
-    return data.profile.profile_picture_url || data.profile.avatar_url || '/default_profile_picture.jpg';
+    return data.profile.profile_picture_url || '/default_profile_picture.jpg';
   }
 
-  async function toggleFollow() {
-    if (!data.currentUserId || data.isOwnProfile || isProcessing) return;
-    
-    isProcessing = true;
-    const endpoint = following ? 'unfollow' : 'follow';
-    
-    try {
-      const response = await fetch(`/profile/${data.profile.username}/${endpoint}`, {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        following = !following;
-        followerCount += following ? 1 : -1;
-      } else {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        alert(`Failed to ${following ? 'unfollow' : 'follow'}: ${errorData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Follow error:', error);
-      alert(`Failed to ${following ? 'unfollow' : 'follow'} user`);
-    } finally {
-      isProcessing = false;
-    }
-  }
 </script>
 
 <section class="p-6 max-w-4xl mx-auto">
@@ -124,10 +88,6 @@
         {#if data.profile.bio}
           <p class="text-gray-700 mb-2">{data.profile.bio}</p>
         {/if}
-        <div class="flex gap-4 text-sm text-gray-400 mb-2">
-          <span>{followerCount} {followerCount === 1 ? 'follower' : 'followers'}</span>
-          <span>{data.followingCount} following</span>
-        </div>
         <p class="text-sm text-gray-400">
           Member since {new Date(data.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </p>
@@ -141,14 +101,6 @@
             <a href="/profile/edit" class="btn btn-sm btn-outline">
               Edit Profile
             </a>
-          {:else if data.currentUserId}
-            <button
-              class="btn btn-sm {following ? 'btn-outline' : 'btn-primary'}"
-              on:click={toggleFollow}
-              disabled={isProcessing}
-            >
-              {isProcessing ? '...' : (following ? 'Following' : 'Follow')}
-            </button>
           {/if}
         </div>
       </div>

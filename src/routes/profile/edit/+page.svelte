@@ -8,7 +8,6 @@
       id: string;
       username: string;
       full_name: string | null;
-      avatar_url: string | null;
       profile_picture_url: string | null;
       location_label: string | null;
       city: string | null;
@@ -53,8 +52,6 @@
     // Load existing profile picture
     if (data.profile.profile_picture_url) {
       profilePicturePreview = data.profile.profile_picture_url;
-    } else if (data.profile.avatar_url) {
-      profilePicturePreview = data.profile.avatar_url;
     }
   });
 
@@ -203,7 +200,7 @@
   async function removeProfilePicture() {
     if (confirm('Remove your profile picture? It will revert to your Google avatar.')) {
       profilePictureFile = null;
-      profilePicturePreview = data.profile.avatar_url || '/default_profile_picture.jpg';
+      profilePicturePreview = '/default_profile_picture.jpg';
     }
   }
 
@@ -223,7 +220,7 @@
       // Add the file to form data (server will handle upload)
       formData.set('profile_picture', profilePictureFile);
       uploadingPicture = true;
-    } else if (profilePicturePreview === null || profilePicturePreview === data.profile.avatar_url) {
+    } else if (profilePicturePreview === null || profilePicturePreview === data.profile.profile_picture_url) {
       // User wants to remove the picture
       formData.set('remove_picture', 'true');
       formData.delete('profile_picture_url'); // Remove any existing URL
@@ -304,9 +301,9 @@
             class="btn btn-sm btn-primary"
             on:click={() => fileInput?.click()}
           >
-            {profilePicturePreview && profilePicturePreview !== data.profile.avatar_url ? 'Change' : 'Upload'}
+            {profilePicturePreview && profilePicturePreview !== data.profile.profile_picture_url ? 'Change' : 'Upload'}
           </button>
-          {#if profilePicturePreview && profilePicturePreview !== data.profile.avatar_url}
+          {#if profilePicturePreview && profilePicturePreview !== data.profile.profile_picture_url}
             <button
               type="button"
               class="btn btn-sm btn-ghost"

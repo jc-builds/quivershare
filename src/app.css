@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Logo font utility */
+.font-londrina {
+	font-family: "Londrina Solid", system-ui, -apple-system, "Segoe UI", Roboto,
+		Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+		"Noto Color Emoji", sans-serif;
+}
+
 /* CropperJS styles (v2 doesn't include CSS) */
 .cropper-container {
 	direction: ltr;

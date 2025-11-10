@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
   export let data: {
-    surfboard: {
+    board: {
       id: string;
       name: string;
       make: string | null;
@@ -10,8 +11,13 @@
       width: number | null;
       thickness: number | null;
       volume: number | null;
-      fins: string | null;
+      fin_system: string | null;
+      fin_setup: string | null;
+      style: string | null;
       condition: string | null;
+      price: number | null;
+      city: string | null;
+      region: string | null;
       notes: string | null;
       thumbnail_url: string | null;
       user_id: string;
@@ -21,248 +27,395 @@
       id: string;
       username: string;
       full_name: string | null;
-      avatar_url: string | null;
       profile_picture_url: string | null;
+      city: string | null;
+      region: string | null;
     } | null;
-    isOwner: boolean;
+    canEdit: boolean;
   };
 
-  // Get all images for carousel
-  $: allImages = [
-    ...(data.surfboard.thumbnail_url ? [{ id: 'thumb', image_url: data.surfboard.thumbnail_url }] : []),
-    ...data.images
-  ].filter((img, index, self) => 
-    index === self.findIndex((i) => i.image_url === img.image_url)
-  );
-
-  // If no images, use placeholder
-  $: displayImages = allImages.length > 0 
-    ? allImages 
-    : [{ id: 'placeholder', image_url: "https://via.placeholder.com/1200x800?text=No+Image" }];
-
-  let currentImageIndex = 0;
-
-  function nextImage() {
-    currentImageIndex = (currentImageIndex + 1) % displayImages.length;
+  // Helper: Format dimensions
+  export function formatDimensions(
+    length: number | null | undefined,
+    width: number | null | undefined,
+    thickness: number | null | undefined
+  ): string {
+    const parts: string[] = [];
+    if (length != null) {
+      const feet = Math.floor(length / 12);
+      const inches = length % 12;
+      parts.push(`${feet}'${inches}"`);
+    }
+    if (width != null) parts.push(`${width}"`);
+    if (thickness != null) parts.push(`${thickness}"`);
+    return parts.length > 0 ? parts.join(' × ') : 'N/A';
   }
 
-  function prevImage() {
-    currentImageIndex = (currentImageIndex - 1 + displayImages.length) % displayImages.length;
+  // Get board title for H1 and <title>
+  $: boardTitle = (() => {
+    const parts: string[] = [];
+    if (data.board.length != null) {
+      const feet = Math.floor(data.board.length / 12);
+      const inches = data.board.length % 12;
+      parts.push(`${feet}'${inches}"`);
+    }
+    if (data.board.make) parts.push(data.board.make);
+    if (data.board.name) parts.push(data.board.name);
+    return parts.length > 0 ? parts.join(' ') : 'Untitled Board';
+  })();
+
+  // Get all images (for gallery modal)
+  $: allImages = data.images;
+  
+  // Get first 3 images for hero grid
+  $: heroImages = data.images.slice(0, 3);
+
+  // Lightbox state
+  let lightboxOpen = false;
+  let lightboxIndex = 0;
+
+  function openLightbox(index: number = 0) {
+    if (allImages.length > 0) {
+      lightboxIndex = index;
+      lightboxOpen = true;
+    }
+  }
+  
+  function openGallery() {
+    openLightbox(0);
   }
 
-  function goToImage(index: number) {
-    currentImageIndex = index;
+  function closeLightbox() {
+    lightboxOpen = false;
   }
 
-  // Convert inches to feet and inches format (e.g., 96 -> "8'0\"")
-  function formatLength(inches: number | null | undefined): string {
-    if (inches == null) return "N/A";
-    const feet = Math.floor(inches / 12);
-    const remainingInches = inches % 12;
-    return `${feet}'${remainingInches}"`;
+  function nextLightboxImage() {
+    if (allImages.length > 0) {
+      lightboxIndex = (lightboxIndex + 1) % allImages.length;
+    }
   }
 
-  // Get profile picture URL
-  function getProfilePictureUrl(): string {
-    if (!data.owner) return '/default_profile_picture.jpg';
-    return data.owner.profile_picture_url || data.owner.avatar_url || '/default_profile_picture.jpg';
+  function prevLightboxImage() {
+    if (allImages.length > 0) {
+      lightboxIndex = (lightboxIndex - 1 + allImages.length) % allImages.length;
+    }
   }
+  
+  // Handle keyboard navigation in lightbox
+  function handleLightboxKeydown(e: KeyboardEvent) {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextLightboxImage();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prevLightboxImage();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeLightbox();
+    }
+  }
+
+  // Focus trap refs for modal
+  let lightboxContainer: HTMLElement;
+  let lightboxFirstFocusable: HTMLElement;
+  let lightboxLastFocusable: HTMLElement;
+  
+  // Focus trap management
+  $: if (lightboxOpen && lightboxContainer) {
+    // Find all focusable elements
+    const focusableElements = lightboxContainer.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements.length > 0) {
+      lightboxFirstFocusable = focusableElements[0] as HTMLElement;
+      lightboxLastFocusable = focusableElements[focusableElements.length - 1] as HTMLElement;
+      // Focus first element
+      setTimeout(() => lightboxFirstFocusable?.focus(), 100);
+    }
+  }
+  
+  function trapFocus(e: KeyboardEvent) {
+    if (e.key !== 'Tab' || !lightboxOpen) return;
+    
+    if (e.shiftKey) {
+      // Shift + Tab
+      if (document.activeElement === lightboxFirstFocusable) {
+        e.preventDefault();
+        lightboxLastFocusable?.focus();
+      }
+    } else {
+      // Tab
+      if (document.activeElement === lightboxLastFocusable) {
+        e.preventDefault();
+        lightboxFirstFocusable?.focus();
+      }
+    }
+  }
+
+  // Contact seller email (placeholder for now)
+  $: sellerEmail = data.owner ? `${data.owner.username}@quivershare.com` : 'seller@quivershare.com';
 </script>
 
+<svelte:head>
+  <title>{boardTitle} | QuiverShare</title>
+</svelte:head>
+
 <section class="min-h-screen bg-base-200">
-  <!-- Back Button -->
-  <div class="sticky top-0 z-20 bg-base-200/80 backdrop-blur-sm py-4 px-6">
-    <button 
-      class="btn btn-ghost btn-sm" 
-      on:click={() => history.back()}
-    >
-      ← Back
-    </button>
-  </div>
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <!-- Breadcrumb -->
+    <nav class="mb-4" aria-label="Breadcrumb">
+      <a
+        href="/s"
+        class="text-sm text-base-content/60 hover:text-base-content hover:underline"
+      >
+        Search Results
+      </a>
+      <span class="text-sm text-base-content/60 mx-2">/</span>
+      <span class="text-sm text-base-content/60">
+        {data.board.name || 'Untitled Board'}
+      </span>
+    </nav>
 
-  <!-- Board Name -->
-  <div class="max-w-7xl mx-auto px-6 py-6">
-    <h1 class="text-4xl font-bold mb-2">{data.surfboard.name}</h1>
-    {#if data.surfboard.make}
-      <p class="text-xl text-gray-600">by {data.surfboard.make}</p>
-    {/if}
-  </div>
-
-  <!-- Image Carousel -->
-  <div class="relative w-full bg-base-300">
-    <div class="relative aspect-[4/3] w-full max-w-5xl mx-auto overflow-hidden">
-      {#each displayImages as img, index}
-        <img
-          src={img.image_url}
-          alt="{data.surfboard.name} - Image {index + 1}"
-          class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 {index === currentImageIndex ? 'opacity-100' : 'opacity-0'}"
-          loading={index === 0 ? 'eager' : 'lazy'}
-          on:error={(e) =>
-            ((e.currentTarget as HTMLImageElement).src =
-              "https://via.placeholder.com/1200x800?text=No+Image")}
-        />
-      {/each}
-
-      <!-- Navigation Arrows -->
-      {#if displayImages.length > 1}
-        <button
-          type="button"
-          class="absolute left-4 top-1/2 -translate-y-1/2 bg-base-100/90 hover:bg-base-100 rounded-full p-2 shadow-lg transition-all"
-          on:click={prevImage}
-          aria-label="Previous image"
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <h1 class="text-3xl sm:text-4xl font-bold">{boardTitle}</h1>
+      {#if data.canEdit}
+        <a
+          href={`/edit-surfboard/${data.board.id}`}
+          class="inline-flex items-center justify-center bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-primary-focus transition-colors shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="absolute right-4 top-1/2 -translate-y-1/2 bg-base-100/90 hover:bg-base-100 rounded-full p-2 shadow-lg transition-all"
-          on:click={nextImage}
-          aria-label="Next image"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        <!-- Image Indicators -->
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {#each displayImages as _, index}
-            <button
-              type="button"
-              class="w-2 h-2 rounded-full transition-all {index === currentImageIndex ? 'bg-base-100 w-8' : 'bg-base-100/50'}"
-              on:click={() => goToImage(index)}
-              aria-label="Go to image {index + 1}"
-            />
-          {/each}
-        </div>
+          Edit
+        </a>
       {/if}
     </div>
 
-    <!-- Thumbnail Strip (if multiple images) -->
-    {#if displayImages.length > 1}
-      <div class="bg-base-100 px-4 sm:px-6 py-4 overflow-x-auto">
-        <div class="flex gap-2 max-w-7xl mx-auto justify-center sm:justify-start">
-          {#each displayImages as img, index}
-            <button
-              type="button"
-              class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all {index === currentImageIndex ? 'border-primary' : 'border-transparent'}"
-              on:click={() => goToImage(index)}
-            >
-              <img
-                src={img.image_url}
-                alt="Thumbnail {index + 1}"
-                class="w-full h-full object-cover"
-                on:error={(e) =>
-                  ((e.currentTarget as HTMLImageElement).src =
-                    "https://via.placeholder.com/80x80?text=No+Image")}
-              />
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <!-- Details Section -->
-  <div class="max-w-7xl mx-auto px-6 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Main Content -->
-      <div class="lg:col-span-2">
-        <!-- Owner Info -->
-        {#if data.owner}
-          <div class="flex items-center gap-3 mb-6 pb-6 border-b border-base-300">
-            <div class="w-12 h-12 rounded-full overflow-hidden bg-base-300 border-2 border-base-200">
-              <img
-                src={getProfilePictureUrl()}
-                alt={data.owner.full_name || data.owner.username}
-                class="w-full h-full object-cover"
-                on:error={(e) =>
-                  ((e.currentTarget as HTMLImageElement).src =
-                    '/default_profile_picture.jpg')}
-              />
-            </div>
-            <div>
-              <p class="font-semibold">{data.owner.full_name || data.owner.username}</p>
-              <a 
-                href="/profile/{data.owner.username}" 
-                class="text-sm text-gray-500 hover:text-primary"
-                data-sveltekit-prefetch
+    <!-- Hero Images Grid: 3 equal tiles -->
+    <div class="w-full mb-8 max-w-6xl">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {#each Array(3) as _, i}
+          {#if heroImages[i]}
+            <div class="relative aspect-square rounded-lg overflow-hidden bg-base-300">
+              <button
+                type="button"
+                class="w-full h-full hover:opacity-90 transition-opacity"
+                on:click={() => openLightbox(i)}
+                aria-label="View {data.board.name || 'Surfboard'} image {i + 1}"
               >
-                @{data.owner.username}
-              </a>
+                <img
+                  src={heroImages[i].image_url}
+                  alt="{data.board.name || 'Surfboard'} image {i + 1}"
+                  class="w-full h-full object-cover"
+                  on:error={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=No+Image';
+                  }}
+                />
+              </button>
+              
+              <!-- "See Gallery" button overlay on right-most tile only -->
+              {#if i === 2 && allImages.length > 3}
+                <button
+                  type="button"
+                  class="absolute bottom-2 right-2 bg-base-100/90 hover:bg-base-100 text-base-content px-4 py-2 rounded-lg shadow-lg transition-all"
+                  on:click|stopPropagation={openGallery}
+                  on:keydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openGallery();
+                    }
+                  }}
+                aria-label="See gallery with {allImages.length} images"
+                >
+                  See Gallery
+                </button>
+              {/if}
             </div>
-          </div>
-        {/if}
+          {:else}
+            <!-- Placeholder slot -->
+            <div class="aspect-square rounded-lg bg-base-300/50"></div>
+          {/if}
+        {/each}
+      </div>
+    </div>
 
-        <!-- Specifications -->
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold mb-4">Specifications</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
-            {#if data.surfboard.length}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Length</p>
-                <p class="text-xl font-semibold">{formatLength(data.surfboard.length)}</p>
-              </div>
-            {/if}
-            {#if data.surfboard.width}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Width</p>
-                <p class="text-xl font-semibold">{data.surfboard.width}"</p>
-              </div>
-            {/if}
-            {#if data.surfboard.thickness}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Thickness</p>
-                <p class="text-xl font-semibold">{data.surfboard.thickness}"</p>
-              </div>
-            {/if}
-            {#if data.surfboard.volume}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Volume</p>
-                <p class="text-xl font-semibold">{data.surfboard.volume}L</p>
-              </div>
-            {/if}
-            {#if data.surfboard.fins}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Fin Setup</p>
-                <p class="text-xl font-semibold">{data.surfboard.fins}</p>
-              </div>
-            {/if}
-            {#if data.surfboard.condition}
-              <div>
-                <p class="text-sm text-gray-500 mb-1">Condition</p>
-                <p class="text-xl font-semibold">{data.surfboard.condition}</p>
-              </div>
-            {/if}
-          </div>
+    <!-- Details Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+      <!-- Left: Board Specs Card -->
+      <div class="bg-base-100 rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold mb-4">Board Specs</h2>
+        <div class="space-y-4">
+          {#if data.board.price != null}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Price</p>
+              <p class="text-2xl font-bold text-primary">${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            </div>
+          {/if}
+
+          {#if data.board.length != null || data.board.width != null || data.board.thickness != null}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Dimensions</p>
+              <p class="text-lg font-semibold">{formatDimensions(data.board.length, data.board.width, data.board.thickness)}</p>
+            </div>
+          {/if}
+
+          {#if data.board.volume != null}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Volume</p>
+              <p class="text-lg font-semibold">{data.board.volume}L</p>
+            </div>
+          {/if}
+
+          {#if data.board.fin_system}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Fin System</p>
+              <p class="text-lg font-semibold">{data.board.fin_system}</p>
+            </div>
+          {/if}
+
+          {#if data.board.fin_setup}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Fin Setup</p>
+              <p class="text-lg font-semibold">{data.board.fin_setup}</p>
+            </div>
+          {/if}
+
+          {#if data.board.style}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Style</p>
+              <p class="text-lg font-semibold">{data.board.style}</p>
+            </div>
+          {/if}
+
+          {#if data.board.condition}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Condition</p>
+              <p class="text-lg font-semibold">{data.board.condition}</p>
+            </div>
+          {/if}
+
+          {#if data.board.city || data.board.region}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Location</p>
+              <p class="text-lg font-semibold">
+                {[data.board.city, data.board.region].filter(Boolean).join(', ') || 'N/A'}
+              </p>
+            </div>
+          {/if}
+
+          {#if data.board.notes}
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Description</p>
+              <p class="text-base whitespace-pre-wrap leading-relaxed">{data.board.notes}</p>
+            </div>
+          {/if}
         </div>
-
-        {#if data.surfboard.notes}
-          <div class="mb-8">
-            <h2 class="text-2xl font-bold mb-4">About this board</h2>
-            <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">{data.surfboard.notes}</p>
-          </div>
-        {/if}
       </div>
 
-      <!-- Sidebar Actions -->
-      <div class="lg:col-span-1">
-        <div class="sticky top-24 bg-base-100 rounded-xl shadow-lg p-6 border border-base-300">
-          <div class="flex flex-col gap-3">
-            {#if data.isOwner}
-              <a href="/edit-surfboard/{data.surfboard.id}" class="btn btn-primary w-full">
-                Edit Board
-              </a>
+      <!-- Right: Contact Seller Card -->
+      <div class="bg-base-100 rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold mb-4">Contact Seller</h2>
+        {#if data.owner}
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-base-content/70 mb-1">Seller</p>
+              <p class="text-lg font-semibold">{data.owner.full_name || data.owner.username}</p>
+              <p class="text-sm text-base-content/60">@{data.owner.username}</p>
+            </div>
+
+            {#if data.owner.city || data.owner.region}
+              <div>
+                <p class="text-sm text-base-content/70 mb-1">Location</p>
+                <p class="text-lg font-semibold">
+                  {[data.owner.city, data.owner.region].filter(Boolean).join(', ') || 'N/A'}
+                </p>
+              </div>
             {/if}
-            <a href="/profile/{data.owner?.username}" class="btn btn-outline w-full">
-              View Profile
-            </a>
+
+            <div class="pt-4">
+              <a
+                href="mailto:{sellerEmail}?subject=Inquiry about {data.board.name}"
+                class="btn btn-primary w-full"
+                aria-label="Contact seller via email"
+              >
+                Contact Seller
+              </a>
+            </div>
+
+            <div class="pt-4 border-t border-base-300">
+              <p class="text-xs text-base-content/60">
+                Meet in a public place. Inspect before paying.
+              </p>
+            </div>
           </div>
-        </div>
+        {:else}
+          <p class="text-base-content/60">Seller information unavailable</p>
+        {/if}
       </div>
     </div>
   </div>
 </section>
 
+<!-- Lightbox Modal / Gallery -->
+{#if lightboxOpen}
+  <div
+    class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Image gallery"
+    on:click={closeLightbox}
+    on:keydown={handleLightboxKeydown}
+    on:keydown={trapFocus}
+    bind:this={lightboxContainer}
+  >
+    <div class="relative max-w-7xl max-h-full" on:click|stopPropagation>
+      <!-- Close button -->
+      <button
+        type="button"
+        class="absolute top-4 right-4 z-10 bg-base-100/90 hover:bg-base-100 rounded-full p-2 text-base-content"
+        on:click={closeLightbox}
+        aria-label="Close gallery"
+        tabindex="0"
+      >
+        <span class="text-2xl">×</span>
+      </button>
+
+      <!-- Image -->
+      {#if allImages[lightboxIndex]}
+        <img
+          src={allImages[lightboxIndex].image_url}
+          alt="{data.board.name || 'Surfboard'} image {lightboxIndex + 1} of {allImages.length}"
+          class="max-w-full max-h-[90vh] object-contain rounded-lg"
+          on:error={(e) => {
+            (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/1200x1200?text=No+Image';
+          }}
+        />
+      {/if}
+
+      <!-- Navigation arrows (if multiple images) -->
+      {#if allImages.length > 1}
+        <button
+          type="button"
+          class="absolute left-4 top-1/2 -translate-y-1/2 bg-base-100/90 hover:bg-base-100 rounded-full p-3 text-base-content"
+          on:click|stopPropagation={prevLightboxImage}
+          aria-label="Previous image"
+          tabindex="0"
+        >
+          <span class="text-xl">‹</span>
+        </button>
+        <button
+          type="button"
+          class="absolute right-4 top-1/2 -translate-y-1/2 bg-base-100/90 hover:bg-base-100 rounded-full p-3 text-base-content"
+          on:click|stopPropagation={nextLightboxImage}
+          aria-label="Next image"
+          tabindex="0"
+        >
+          <span class="text-xl">›</span>
+        </button>
+
+        <!-- Image counter -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-base-100/90 rounded-full px-4 py-2 text-sm">
+          {lightboxIndex + 1} / {allImages.length}
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}

@@ -13,10 +13,21 @@ export const actions: Actions = {
     const width = form.get('width') ? Number(form.get('width')) : null;
     const thickness = form.get('thickness') ? Number(form.get('thickness')) : null;
     const volume = form.get('volume') ? Number(form.get('volume')) : null;
-    const fins = form.get('fins')?.toString() ?? '';
+    const fin_system = form.get('fin_system')?.toString() || null;
+    const fin_setup = form.get('fin_setup')?.toString() || null;
+    const style = form.get('style')?.toString() || null;
+    const price = form.get('price') ? Number(form.get('price')) : null;
     const condition = form.get('condition')?.toString() ?? '';
     const notes = form.get('notes')?.toString() ?? '';
     const thumbnail_url = form.get('thumbnail_url')?.toString() ?? null;
+    
+    // Location fields
+    const city = form.get('city')?.toString() || null;
+    const region = form.get('region')?.toString() || null;
+    const lat_raw = form.get('lat')?.toString();
+    const lon_raw = form.get('lon')?.toString();
+    const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
+    const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
 
     const { data, error } = await locals.supabase
       .from('surfboards')
@@ -28,11 +39,18 @@ export const actions: Actions = {
           width,
           thickness,
           volume,
-          fins,
+          fin_system,
+          fin_setup,
+          style,
+          price,
           condition,
           notes,
           thumbnail_url,
-          user_id: user.id // ✅ the key fix
+          city,
+          region,
+          lat,
+          lon,
+          user_id: user.id
         }
       ])
       .select('id')

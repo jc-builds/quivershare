@@ -1,711 +1,731 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
+  import { get } from 'svelte/store';
 
-  // Types
-  type Quiver = {
+  export let data: { 
+    userId: string | null;
+    userLocation: string | null;
+    userLocationLat: number | null;
+    userLocationLon: number | null;
+    boards: Board[];
+    total: number;
+    page: number;
+    limit: number;
+    sort: SortOption;
+  };
+
+  // Board type
+  type Board = {
     id: string;
-    username: string;
-    avatar_url: string | null;
-    homebreak: string | null;
-    favorite_board: string | null;
+    name: string;
+    make: string | null;
+    price: number | null;
+    length: number | null;
+    width: number | null;
+    thickness: number | null;
+    volume: number | null;
+    fin_system: string | null;
+    fin_setup: string | null;
+    style: string | null;
+    condition: string | null;
+    city: string | null;
+    region: string | null;
     lat: number | null;
-    lng: number | null;
+    lon: number | null;
+    thumbnail_url: string | null;
+    images?: string[] | null;
+    user_id: string;
+    created_at: string;
+    last_modified: string | null;
   };
 
-  type MapBounds = {
-    north: number;
-    south: number;
-    east: number;
-    west: number;
-  };
+  // Sort options
+  type SortOption = 
+    | 'price_asc'
+    | 'price_desc'
+    | 'name_asc'
+    | 'name_desc'
+    | 'created_asc'
+    | 'created_desc';
 
   // State
-  let searchQuery = '';
-  let searchSuggestions: Array<{ id: string; label: string; lat: number; lon: number }> = [];
-  let selectedPlace: { label: string; lat: number; lon: number } | null = null;
-  
-  let quivers: Quiver[] = [];
-  let filteredQuivers: Quiver[] = [];
-  let loading = false;
-  let error: string | null = null;
-  let selectedQuiverId: string | null = null;
-  let hoveredQuiverId: string | null = null;
-  
-  
-  // Map state
-  let map: any = null;
-  let mapMarkers: Map<string, any> = new Map();
-  let mapBounds: MapBounds | null = null;
-  let mapDebounceTimer: any = null;
-  let mapboxToken: string | null = null;
-  let resizeHandler: (() => void) | null = null;
+  const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
+  let allBoards: Board[] = data.boards ?? [];
+  let filteredBoards: Board[] = [...allBoards];
+  let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
+  let currentPage = data.page ?? 1;
+  let totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
+  const currentUserId = data.userId;
 
-  // Load Mapbox GL JS
-  onMount(async () => {
-    // Load Mapbox GL JS if not already loaded
-    if (!(window as any).mapboxgl) {
-      await new Promise<void>((resolve) => {
-        const link = document.createElement('link');
-        link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-        
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
-        script.onload = () => resolve();
-        document.head.appendChild(script);
-      });
-    }
-    
-    // Fetch Mapbox token
-    try {
-      const res = await fetch('/api/mapbox-token');
-      const data = await res.json();
-      mapboxToken = data.token;
-      if ((window as any).mapboxgl) {
-        (window as any).mapboxgl.accessToken = mapboxToken;
-      }
-    } catch (e) {
-      console.error('Failed to load Mapbox token:', e);
-    }
-    
-    // Load from URL params
-    const params = $page.url.searchParams;
-    const place = params.get('place');
-    
-    if (place) {
-      searchQuery = place;
-      await searchLocation(place);
-    } else {
-      // Try to auto-locate
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-        });
-        await initializeMap(position.coords.latitude, position.coords.longitude, 10);
-      } catch (e) {
-        // Default to US center
-        await initializeMap(39.8283, -98.5795, 4);
-      }
-    }
-    
-    await fetchQuivers();
-  });
-
-  // Cleanup on component destroy
-  onDestroy(() => {
-    if (resizeHandler) {
-      window.removeEventListener('resize', resizeHandler);
-    }
-    if (map) {
-      map.remove();
-    }
-  });
-
-  // Debounced search
-  let searchDebounceTimer: any;
-  async function onSearchInput(e: Event) {
-    const query = (e.target as HTMLInputElement).value;
-    searchQuery = query;
-    searchSuggestions = [];
-    
-    clearTimeout(searchDebounceTimer);
-    if (query.length < 2) return;
-    
-    searchDebounceTimer = setTimeout(async () => {
-      await searchPlaces(query);
-    }, 300);
+  $: if (data.boards) {
+    allBoards = data.boards ?? [];
   }
 
-  async function searchPlaces(q: string) {
-    try {
-      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      searchSuggestions = data.features || [];
-    } catch (e) {
-      console.error('Search error:', e);
-    }
-  }
+  $: currentPage = data.page ?? 1;
+  $: totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
 
-  async function selectPlace(place: { id: string; label: string; lat: number; lon: number }) {
-    console.log('Selecting place:', place);
-    searchQuery = place.label;
-    selectedPlace = { label: place.label, lat: place.lat, lon: place.lon };
-    searchSuggestions = [];
-    // Use a lower zoom level for states/regions (6), higher for cities (12-14)
-    // Check if it's a state/region (fewer commas) vs a city (more commas)
-    const isCity = place.label.split(',').length >= 3;
-    const zoom = isCity ? 12 : 6; // States get zoom 6, cities get zoom 12
-    await initializeMap(place.lat, place.lon, zoom);
-    await updateURLParams();
-    await fetchQuivers();
-  }
+  function updateQueryParams(params: Record<string, string | null>) {
+    const current = get(page);
+    const search = new URLSearchParams(current.url.search);
 
-  async function searchLocation(query: string) {
-    console.log('Searching location:', query);
-    await searchPlaces(query);
-    console.log('Search suggestions:', searchSuggestions);
-    if (searchSuggestions.length > 0) {
-      await selectPlace(searchSuggestions[0]);
-    } else {
-      console.warn('No search suggestions found for:', query);
-    }
-  }
-
-  async function initializeMap(lat: number, lon: number, zoom: number = 10) {
-    if (typeof window === 'undefined') return;
-    
-    // Wait for Mapbox GL to be available
-    if (!(window as any).mapboxgl) {
-      await new Promise(resolve => {
-        const checkMapbox = setInterval(() => {
-          if ((window as any).mapboxgl) {
-            clearInterval(checkMapbox);
-            resolve(null);
-          }
-        }, 100);
-      });
-    }
-    
-    const mapboxgl = (window as any).mapboxgl;
-    
-    // Use cached token or fetch if needed
-    if (!mapboxToken) {
-      try {
-        const res = await fetch('/api/mapbox-token');
-        const data = await res.json();
-        mapboxToken = data.token;
-      } catch (e) {
-        console.error('Failed to load Mapbox token:', e);
-        return;
+    for (const [key, value] of Object.entries(params)) {
+      if (value === null || value === undefined) {
+        search.delete(key);
+      } else {
+        search.set(key, value);
       }
     }
-    
-    mapboxgl.accessToken = mapboxToken;
-    
-    if (map) {
-      map.remove();
-    }
-    
-    // Wait for DOM container to be ready (with retries)
-    // Desktop only - always use map-container
-    const containerId = 'map-container';
-    
-    console.log('Looking for map container:', containerId, 'Window width:', window.innerWidth);
-    
-    // Ensure the map panel is visible
-    const mapPanel = document.getElementById('map-panel');
-    if (mapPanel) {
-      mapPanel.classList.remove('hidden');
-      mapPanel.style.display = 'flex';
-      mapPanel.style.flexDirection = 'column';
-      // Force a layout recalculation
-      void mapPanel.offsetHeight;
-      console.log('✅ Forced map panel visibility');
-    }
-    // Wait a tick for layout to settle
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    console.log('All elements with id containing map:', Array.from(document.querySelectorAll('[id*="map"]')).map(el => ({ id: el.id, visible: el.offsetWidth > 0 })));
-    
-    let container = document.getElementById(containerId);
-    let retries = 0;
-    
-    while (!container && retries < 30) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      container = document.getElementById(containerId);
-      retries++;
-      if (retries % 5 === 0) {
-        console.log(`Retry ${retries}/30: Looking for ${containerId}...`);
-      }
-    }
-    
-    if (!container) {
-      console.error(`❌ Map container ${containerId} not found after ${retries} retries`);
-      console.error('Available elements:', document.querySelectorAll('[id*="map"]'));
-      console.error('Page HTML structure:', document.querySelector('.flex-1.flex.flex-col')?.outerHTML);
+
+    const queryString = search.toString();
+    const target = queryString ? `${current.url.pathname}?${queryString}` : current.url.pathname;
+    goto(target, { replaceState: true, keepFocus: true, noScroll: true });
+  }
+
+  function handleSortChange(event: Event) {
+    const value = (event.target as HTMLSelectElement).value as SortOption;
+    updateQueryParams({ sort: value, page: '1' });
+  }
+
+  function goToPage(newPage: number) {
+    if (newPage < 1 || newPage > totalPages) return;
+    updateQueryParams({ page: String(newPage) });
+  }
+
+  function handleEditClick(event: MouseEvent, boardId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    goto(`/edit-surfboard/${boardId}`);
+  }
+
+  // Location search state
+  let locationQuery = data.userLocation || '';
+  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
+  let selectedLocation: { label: string; lat: number; lon: number } | null = null;
+  let searchRadius = 50; // Default 50 miles
+  let locationDebounceHandle: any;
+  let activeLocationFilter: { location: { label: string; lat: number; lon: number }; radius: number } | null = null;
+
+  // Initialize selected location from user's profile
+  $: if (data.userLocationLat && data.userLocationLon && !selectedLocation) {
+    selectedLocation = {
+      label: data.userLocation || 'Your location',
+      lat: data.userLocationLat,
+      lon: data.userLocationLon
+    };
+  }
+
+  // Filter state
+  let selectedLength: string | null = null;
+  let selectedVolume: string | null = null;
+  let selectedFinSystem: string | null = null;
+  let selectedFinSetup: string | null = null;
+  let selectedStyle: string | null = null;
+
+  // Filter options
+  const lengthOptions = [
+    "5'6\"-6'0\"",
+    "6'0\"-6'6\"",
+    "6'6\"-7'0\"",
+    "7'0\"-8'0\"",
+    "8'0\"-9'0\"",
+    "9'0\"-10'0\"",
+    "More"
+  ];
+
+  const volumeOptions = [
+    "<25L",
+    "25L-30L",
+    "30L-35L",
+    "35L-40L",
+    "40L-45L",
+    "45L-50L",
+    "More"
+  ];
+
+  const finSystemOptions = ["FCS II", "Futures", "Glass On", "FCS"];
+  const finSetupOptions = ["2+1", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
+  const styleOptions = ["Shortboard", "Longboard", "Groveler", "Gun"];
+
+  // Location search functions
+  async function searchLocationPlaces(q: string) {
+    if (!q || q.length < 2) {
+      locationSuggestions = [];
       return;
     }
-    
-    // Wait for container to have dimensions - keep retrying until it does
-    let width = 0;
-    let height = 0;
-    let dimensionRetries = 0;
-    
-    while ((width === 0 || height === 0) && dimensionRetries < 30) {
-      width = container.offsetWidth || container.clientWidth || 0;
-      height = container.offsetHeight || container.clientHeight || 0;
-      
-      if (width === 0 || height === 0) {
-        console.log(`Waiting for container dimensions... (${dimensionRetries}/30)`, {
-          offsetWidth: container.offsetWidth,
-          offsetHeight: container.offsetHeight,
-          clientWidth: container.clientWidth,
-          clientHeight: container.clientHeight,
-          parentWidth: (container.parentElement as HTMLElement)?.offsetWidth,
-          parentHeight: (container.parentElement as HTMLElement)?.offsetHeight
-        });
-        await new Promise(resolve => setTimeout(resolve, 100));
-        dimensionRetries++;
-      }
-    }
-    
-    console.log('✅ Map container found:', container, 'Dimensions:', width, 'x', height);
-    
-    if (width === 0 || height === 0) {
-      console.error('❌ Map container still has zero dimensions after waiting!', {
-        container: container,
-        parent: container.parentElement,
-        computedStyle: window.getComputedStyle(container),
-        parentComputedStyle: container.parentElement ? window.getComputedStyle(container.parentElement) : null
-      });
-      
-      // Force dimensions as fallback - use viewport-based calculations
-      const parent = container.parentElement as HTMLElement;
-      if (parent) {
-        // Calculate based on viewport
-        const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
-        const searchBarHeight = 80; // Approximate search bar height
-        // Get parent's actual height or calculate from viewport
-        const parentWidth = 575; // Fixed width as requested
-        const parentHeight = parent.offsetHeight || window.innerHeight - 180; // Account for navbar and search bar
-        
-        // Force parent dimensions first - ensure it's visible
-        const computedStyle = window.getComputedStyle(parent);
-        console.log('Parent before:', {
-          display: computedStyle.display,
-          visibility: computedStyle.visibility,
-          width: parent.offsetWidth,
-          height: parent.offsetHeight,
-          parentParent: parent.parentElement
-        });
-        
-        // Remove hidden class if present and ensure it's visible
-        parent.classList.remove('hidden');
-        // Use flex to match the parent flex container
-        parent.style.display = 'flex';
-        parent.style.flexDirection = 'column';
-        parent.style.visibility = 'visible';
-        parent.style.height = `${parentHeight}px`;
-        parent.style.minHeight = `${parentHeight}px`;
-        parent.style.width = `${parentWidth}px`;
-        parent.style.position = 'relative';
-        parent.style.flexShrink = '0';
-        
-        // Force a reflow
-        void parent.offsetHeight;
-        
-        // Then force container dimensions
-        container.style.width = '100%';
-        container.style.height = '100%';
-        container.style.position = 'relative';
-        container.style.display = 'block';
-        
-        // Force another reflow
-        void container.offsetHeight;
-        
-        width = parentWidth;
-        height = parentHeight;
-        
-        console.log('⚠️ Forced container dimensions:', width, 'x', height);
-        console.log('Parent dimensions set to:', parent.offsetWidth, 'x', parent.offsetHeight);
-      } else {
-        console.error('❌ No parent element found!');
-        return;
-      }
-    }
-    
-    try {
-      map = new mapboxgl.Map({
-        container: containerId,
-        style: 'mapbox://styles/mapbox/light-v11',
-        center: [lon, lat],
-        zoom: zoom
-      });
-      
-      console.log('Map instance created, waiting for load...');
-      
-      map.on('load', () => {
-        console.log('✅ Map loaded successfully');
-        // Set initial map bounds
-        const bounds = map.getBounds();
-        mapBounds = {
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest()
-        };
-        // Apply filters and update pins with initial bounds
-        applyFilters();
-        updateMapPins();
-        // Trigger resize after load to ensure proper rendering
-        setTimeout(() => {
-          if (map) {
-            map.resize();
-            console.log('Map resized after load');
-          }
-        }, 100);
-      });
-      
-      map.on('error', (e: any) => {
-        console.error('Map error:', e);
-      });
-      
-      map.on('moveend', () => {
-        if (map) {
-          const bounds = map.getBounds();
-          mapBounds = {
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest()
-          };
-          
-          clearTimeout(mapDebounceTimer);
-          mapDebounceTimer = setTimeout(async () => {
-            await updateURLParams();
-            await fetchQuivers();
-          }, 500);
-        }
-      });
-      
-      // Handle window resize to recalculate map size
-      resizeHandler = () => {
-        if (map) {
-          setTimeout(() => {
-            map.resize();
-          }, 100);
-        }
-      };
-      
-      window.addEventListener('resize', resizeHandler);
-    } catch (error) {
-      console.error('Error initializing map:', error);
-    }
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    locationSuggestions = data.features ?? [];
   }
 
-  async function fetchQuivers() {
-    loading = true;
-    error = null;
+  function onLocationSearchInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    locationQuery = v;
+    selectedLocation = null;
+
+    clearTimeout(locationDebounceHandle);
+    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
+    locationQuery = s.label;
+    selectedLocation = {
+      label: s.label,
+      lat: s.lat,
+      lon: s.lon
+    };
+    locationSuggestions = [];
+  }
+
+  // Calculate distance between two coordinates using Haversine formula
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Filter functions
+  function matchesLength(board: Board, filter: string | null): boolean {
+    if (!filter || filter === 'More') return true;
+    if (!board.length) return false;
     
-    try {
-      // Mock data function - replace with real API call
-      const results = await getMockQuivers(mapBounds);
-      quivers = results;
-      console.log('✅ Fetched quivers:', quivers.length);
-      applyFilters();
-      console.log('✅ After filtering, filteredQuivers:', filteredQuivers.length);
-    } catch (e) {
-      error = 'Failed to load quivers. Please try again.';
-      console.error('Fetch error:', e);
-    } finally {
-      loading = false;
-    }
+    const inches = board.length;
+    
+    if (filter === "5'6\"-6'0\"") return inches >= 66 && inches < 72;
+    if (filter === "6'0\"-6'6\"") return inches >= 72 && inches < 78;
+    if (filter === "6'6\"-7'0\"") return inches >= 78 && inches < 84;
+    if (filter === "7'0\"-8'0\"") return inches >= 84 && inches < 96;
+    if (filter === "8'0\"-9'0\"") return inches >= 96 && inches < 108;
+    if (filter === "9'0\"-10'0\"") return inches >= 108 && inches < 120;
+    if (filter === 'More') return inches >= 120;
+    
+    return true;
+  }
+
+  function matchesVolume(board: Board, filter: string | null): boolean {
+    if (!filter || filter === 'More') return true;
+    if (!board.volume) return false;
+    
+    if (filter === "<25L") return board.volume < 25;
+    if (filter === "25L-30L") return board.volume >= 25 && board.volume < 30;
+    if (filter === "30L-35L") return board.volume >= 30 && board.volume < 35;
+    if (filter === "35L-40L") return board.volume >= 35 && board.volume < 40;
+    if (filter === "40L-45L") return board.volume >= 40 && board.volume < 45;
+    if (filter === "45L-50L") return board.volume >= 45 && board.volume < 50;
+    if (filter === "More") return board.volume >= 50;
+    
+    return true;
   }
 
   function applyFilters() {
-    // If no map bounds yet, show all quivers (for initial load)
-    if (!mapBounds) {
-      filteredQuivers = quivers;
-      console.log('No map bounds, showing all quivers:', quivers.length);
-    } else {
-      // Expand bounds significantly (50% buffer) to include nearby quivers
-      const latRange = mapBounds.north - mapBounds.south;
-      const lngRange = mapBounds.east - mapBounds.west;
-      const latBuffer = latRange * 0.5; // 50% buffer
-      const lngBuffer = lngRange * 0.5; // 50% buffer
-      
-      const expandedBounds = {
-        north: mapBounds.north + latBuffer,
-        south: mapBounds.south - latBuffer,
-        east: mapBounds.east + lngBuffer,
-        west: mapBounds.west - lngBuffer
-      };
-      
-      filteredQuivers = quivers.filter(q => {
-        // If quiver has no coordinates, show it anyway
-        if (!q.lat || !q.lng) return true;
-        // Filter by expanded map bounds
-        if (q.lat > expandedBounds.north || q.lat < expandedBounds.south ||
-            q.lng > expandedBounds.east || q.lng < expandedBounds.west) return false;
-        return true;
-      });
-      console.log('Filtered quivers by bounds:', filteredQuivers.length, 'out of', quivers.length);
-      console.log('Map bounds:', mapBounds);
-      console.log('Expanded bounds:', expandedBounds);
-    }
-    
-    updateMapPins();
-  }
-
-  function updateMapPins() {
-    if (!map || !map.loaded()) return;
-    
-    // Clear existing markers
-    mapMarkers.forEach(marker => marker.remove());
-    mapMarkers.clear();
-    
-    filteredQuivers.forEach(quiver => {
-      if (!quiver.lat || !quiver.lng) return;
-      
-      const el = document.createElement('div');
-      el.className = 'quiver-pin';
-      const isSelected = selectedQuiverId === quiver.id;
-      const isHovered = hoveredQuiverId === quiver.id;
-      const scale = isSelected || isHovered ? 'scale-125' : '';
-      const ring = isSelected ? 'ring-4 ring-primary ring-offset-2' : '';
-      
-      el.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-primary border-2 border-white shadow-lg flex items-center justify-center transition-transform ${scale} ${ring}">
-          <span class="text-white text-xs font-bold">🏄</span>
-        </div>
-      `;
-      el.setAttribute('aria-label', `Quiver: ${quiver.username}, ${quiver.homebreak || 'No homebreak'}`);
-      
-      const marker = new (window as any).mapboxgl.Marker({ 
-        element: el,
-        anchor: 'bottom'
-      })
-        .setLngLat([quiver.lng, quiver.lat])
-        .addTo(map);
-      
-      el.addEventListener('click', () => {
-        selectQuiver(quiver.id);
-      });
-      
-      el.addEventListener('mouseenter', () => {
-        hoveredQuiverId = quiver.id;
-        updateMapPins(); // Re-render to show hover state
-      });
-      
-      el.addEventListener('mouseleave', () => {
-        hoveredQuiverId = null;
-        updateMapPins(); // Re-render to hide hover state
-      });
-      
-      mapMarkers.set(quiver.id, marker);
-    });
-  }
-  
-  // Watch for selection changes to update pins
-  $: if (selectedQuiverId !== null && map) {
-    updateMapPins();
-  }
-
-  function selectQuiver(id: string) {
-    selectedQuiverId = id;
-    const quiver = filteredQuivers.find(q => q.id === id);
-    if (quiver && quiver.lat && quiver.lng && map) {
-      map.flyTo({ center: [quiver.lng, quiver.lat], zoom: 14 });
-    }
-    scrollToQuiver(id);
-  }
-
-  function scrollToQuiver(id: string) {
-    const element = document.getElementById(`quiver-${id}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-      setTimeout(() => {
-        if (selectedQuiverId !== id) {
-          element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+    filteredBoards = allBoards.filter((board) => {
+      if (activeLocationFilter) {
+        if (board.lat == null || board.lon == null) {
+          return false;
         }
-      }, 2000);
-    }
-  }
 
-  async function updateURLParams() {
-    const params = new URLSearchParams();
-    if (selectedPlace) {
-      params.set('place', selectedPlace.label);
-    }
-    
-    goto(`/s?${params.toString()}`, { replaceState: true, keepFocus: true });
-  }
+        const distance = calculateDistance(
+          activeLocationFilter.location.lat,
+          activeLocationFilter.location.lon,
+          board.lat,
+          board.lon
+        );
 
-  function clearFilters() {
-    applyFilters();
-    updateURLParams();
-  }
-
-  // Mock data function
-  async function getMockQuivers(bounds: MapBounds | null): Promise<Quiver[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Generate mock quivers - return all, let applyFilters handle the filtering
-    const mockQuivers: Quiver[] = [
-      {
-        id: '1',
-        username: 'surfpro123',
-        avatar_url: null,
-        homebreak: 'Trestles',
-        favorite_board: 'Album Twinsman',
-        lat: 33.3831,
-        lng: -117.5883
-      },
-      {
-        id: '2',
-        username: 'barrelchaser',
-        avatar_url: null,
-        homebreak: 'Pipeline',
-        favorite_board: 'JS Blak Box 3',
-        lat: 21.6617,
-        lng: -158.0533
-      },
-      {
-        id: '3',
-        username: 'loglover',
-        avatar_url: null,
-        homebreak: 'Malibu',
-        favorite_board: '9\'0" Traditional',
-        lat: 34.0319,
-        lng: -118.6758
-      },
-      {
-        id: '4',
-        username: 'eastcoast',
-        avatar_url: null,
-        homebreak: 'Rockaway',
-        favorite_board: 'Firewire Seaside',
-        lat: 40.5789,
-        lng: -73.8157
-      },
-      {
-        id: '5',
-        username: 'montauk',
-        avatar_url: null,
-        homebreak: 'Ditch Plains',
-        favorite_board: 'Channel Islands Twin Pin',
-        lat: 41.0417,
-        lng: -71.8575
+        if (distance > activeLocationFilter.radius) {
+          return false;
+        }
       }
-    ];
+
+      if (selectedLength && !matchesLength(board, selectedLength)) return false;
+      if (selectedVolume && !matchesVolume(board, selectedVolume)) return false;
+      if (selectedFinSystem && board.fin_system !== selectedFinSystem) return false;
+      if (selectedFinSetup && board.fin_setup !== selectedFinSetup) return false;
+      if (selectedStyle && board.style !== selectedStyle) return false;
+
+      return true;
+    });
+
+    applySort();
+  }
+
+  function applySort() {
+    const sorted = [...filteredBoards];
     
-    // Always return all mock quivers - filtering happens in applyFilters()
-    return mockQuivers;
+    switch (sortBy) {
+      case 'price_asc':
+        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+      case 'price_desc':
+        sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      case 'name_asc':
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        sorted.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'created_asc':
+        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case 'created_desc':
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+    }
+    
+    filteredBoards = sorted;
+  }
+
+  // Watch for filter changes
+  $: if (selectedLength !== null || selectedVolume !== null || selectedFinSystem !== null || 
+         selectedFinSetup !== null || selectedStyle !== null || activeLocationFilter !== null) {
+    console.log('🔄 Reactive filter update triggered');
+    applyFilters();
+  }
+
+  // Watch for sort changes
+  $: if (sortBy) {
+    applySort();
+  }
+
+  // Format length
+  function formatLength(inches: number | null): string {
+    if (!inches) return 'N/A';
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    return `${feet}'${remainingInches}"`;
   }
 </script>
 
-
-<div class="w-full flex flex-col bg-base-200" style="height: calc(100vh - 100px); max-height: calc(100vh - 100px);">
-  <!-- Search Bar -->
-  <div class="flex-shrink-0 bg-base-300 border-b border-base-content/10 p-4 z-10">
-    <div class="relative">
-      <input
-        type="text"
-        placeholder="Search location (e.g., Rockaway Beach, Montauk)..."
-        class="input input-bordered w-full"
-        value={searchQuery}
-        on:input={onSearchInput}
-        aria-label="Search location"
-      />
-      {#if searchSuggestions.length > 0}
-        <ul class="menu bg-base-100 rounded-box shadow-lg mt-2 w-full border border-base-300 absolute z-20 max-h-60 overflow-y-auto">
-          {#each searchSuggestions as suggestion}
-            <li>
-              <button
-                type="button"
-                class="justify-start"
-                on:click={() => selectPlace(suggestion)}
-              >
-                {suggestion.label}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+<div class="min-h-screen bg-base-200">
+  <!-- Top Bar -->
+  <div class="bg-base-100 border-b border-base-300 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <h1 class="text-2xl font-bold">
+        Used Boards for Sale Near {data.userLocation || 'your area'}
+      </h1>
+      <div class="flex items-center gap-2">
+        <label for="sort-by" class="text-sm">Sort By:</label>
+        <select
+          id="sort-by"
+          bind:value={sortBy}
+          class="select select-bordered select-sm"
+          on:change={handleSortChange}
+        >
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="name_asc">A-Z</option>
+          <option value="name_desc">Z-A</option>
+          <option value="created_asc">Oldest to Newest</option>
+          <option value="created_desc">Newest to Oldest</option>
+        </select>
+      </div>
     </div>
   </div>
 
-  <!-- Main Content: Cards + Map -->
-  <div class="flex-1 flex flex-row overflow-hidden" style="min-height: 0; height: 100%;">
-    <!-- Left Panel: Quiver Cards Grid -->
-    <div class="flex-1 flex flex-col overflow-hidden" style="min-height: 0; width: calc(100% - 575px);">
-      <div class="flex-1 overflow-y-auto p-4">
-      {#if loading}
-        <div class="p-4 space-y-4">
-          {#each Array(3) as _}
-            <div class="skeleton h-32 w-full"></div>
-          {/each}
-        </div>
-      {:else if error}
-        <div class="p-4">
-          <div class="alert alert-error">
-            <span>{error}</span>
-            <button class="btn btn-sm" on:click={fetchQuivers}>Retry</button>
+  <!-- Main Content: 2-column layout -->
+  <div class="max-w-7xl mx-auto px-6 py-6">
+    <div class="flex flex-col lg:flex-row gap-6">
+      <!-- Left: Filters (sticky on desktop) -->
+      <aside class="lg:w-64 lg:sticky lg:top-6 lg:self-start space-y-4">
+        <!-- Location Search -->
+        <div class="bg-base-100 rounded-lg p-4 border border-base-300">
+          <label for="location-search" class="label pb-2">
+            <span class="label-text font-medium text-sm">Search Location</span>
+          </label>
+          <div class="relative">
+            <input
+              id="location-search"
+              type="text"
+              class="input input-bordered input-sm w-full"
+              placeholder="Enter location..."
+              value={locationQuery}
+              on:input={onLocationSearchInput}
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="location-suggestions-list"
+            />
+            {#if locationSuggestions.length > 0}
+              <ul id="location-suggestions-list" class="menu bg-base-100 rounded-box shadow-lg mt-1 w-full absolute z-10 max-h-60 overflow-y-auto">
+                {#each locationSuggestions as s}
+                  <li>
+                    <button type="button" class="justify-start" on:click={() => chooseLocationSuggestion(s)}>
+                      {s.label}
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
           </div>
+          <div class="mt-3">
+            <label for="search-radius" class="label pb-1">
+              <span class="label-text font-medium text-sm">Within</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <input
+                id="search-radius"
+                type="number"
+                min="1"
+                max="500"
+                bind:value={searchRadius}
+                class="input input-bordered input-sm flex-1"
+              />
+              <span class="text-sm text-base-content/70">miles</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm w-full mt-3"
+            disabled={!selectedLocation}
+            on:click={() => {
+              try {
+                console.log('=== Apply Location Search Clicked ===');
+                console.log('selectedLocation:', selectedLocation);
+                console.log('searchRadius:', searchRadius);
+                console.log('allBoards count:', allBoards.length);
+                console.log('filteredBoards count (before):', filteredBoards.length);
+                
+                if (!selectedLocation) {
+                  console.error('❌ No location selected!');
+                  return;
+                }
+
+                if (!selectedLocation.lat || !selectedLocation.lon) {
+                  console.error('❌ Location missing coordinates:', selectedLocation);
+                  return;
+                }
+
+                // Calculate distance for each board (if boards had lat/lon)
+                // For now, just log what we would filter
+                console.log('📍 Filter center:', {
+                  label: selectedLocation.label,
+                  lat: selectedLocation.lat,
+                  lon: selectedLocation.lon,
+                  radius: searchRadius
+                });
+
+                // Set active filter
+                activeLocationFilter = {
+                  location: selectedLocation,
+                  radius: searchRadius
+                };
+
+                console.log('✅ Active location filter set:', activeLocationFilter);
+                
+                // Trigger filter update
+                console.log('🔄 Triggering filter update...');
+                applyFilters();
+                
+                console.log('filteredBoards count (after):', filteredBoards.length);
+                console.log('=== End Location Search ===');
+              } catch (error) {
+                console.error('❌ Error applying location search:', error);
+                console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+              }
+            }}
+          >
+            Apply Location Search
+          </button>
+          {#if activeLocationFilter}
+            <div class="mt-2 p-2 bg-primary/10 rounded text-xs">
+              <div class="text-base-content/80 font-medium mb-1">
+                Active: {activeLocationFilter.radius} miles from {activeLocationFilter.location.label}
+              </div>
+              <button
+                type="button"
+                class="btn btn-xs btn-ghost w-full"
+                on:click={() => {
+                  activeLocationFilter = null;
+                }}
+              >
+                Clear Location Filter
+              </button>
+            </div>
+          {:else if selectedLocation}
+            <div class="mt-2 text-xs text-base-content/60">
+              Ready to search within {searchRadius} miles of {selectedLocation.label}
+            </div>
+          {/if}
         </div>
-      {:else if filteredQuivers.length === 0}
-        <div class="text-center py-12">
-          <p class="text-gray-500 mb-4">No quivers found in this area.</p>
-        </div>
-      {:else}
-        <div class="grid grid-cols-3 gap-4">
-          {#each filteredQuivers as quiver (quiver.id)}
-            <a
-              id="quiver-{quiver.id}"
-              href="/profile/{quiver.username}"
-              data-sveltekit-prefetch
-              class="card bg-base-100 border border-base-300 shadow-lg hover:shadow-2xl hover:scale-105 hover:border-primary/50 transition-all duration-300 cursor-pointer transform block no-underline text-base-content {selectedQuiverId === quiver.id ? 'ring-2 ring-primary shadow-xl' : ''}"
-              on:mouseenter={() => {
-                hoveredQuiverId = quiver.id;
-                updateMapPins();
-              }}
-              on:mouseleave={() => {
-                hoveredQuiverId = null;
-                updateMapPins();
-              }}
+
+        <!-- Filters -->
+        <div class="bg-base-100 rounded-lg p-4 space-y-4 border border-base-300">
+          <h2 class="font-semibold text-lg mb-4">Filters</h2>
+
+          <!-- Length Filter -->
+          <div class="form-control">
+            <label for="filter-length" class="label">
+              <span class="label-text font-medium">Length</span>
+            </label>
+            <select
+              id="filter-length"
+              bind:value={selectedLength}
+              class="select select-bordered select-sm w-full"
             >
-              <div class="card-body p-4">
-                <div class="flex flex-col items-center text-center gap-3">
-                  <div class="avatar">
-                    <div class="w-20 h-20 rounded-full bg-base-300">
+              <option value={null}>All</option>
+              {#each lengthOptions as opt}
+                <option value={opt}>{opt}</option>
+              {/each}
+            </select>
+          </div>
+
+          <!-- Volume Filter -->
+          <div class="form-control">
+            <label for="filter-volume" class="label">
+              <span class="label-text font-medium">Volume</span>
+            </label>
+            <select
+              id="filter-volume"
+              bind:value={selectedVolume}
+              class="select select-bordered select-sm w-full"
+            >
+              <option value={null}>All</option>
+              {#each volumeOptions as opt}
+                <option value={opt}>{opt}</option>
+              {/each}
+            </select>
+          </div>
+
+          <!-- Fin System Filter -->
+          <div class="form-control">
+            <label for="filter-fin-system" class="label">
+              <span class="label-text font-medium">Fin System</span>
+            </label>
+            <select
+              id="filter-fin-system"
+              bind:value={selectedFinSystem}
+              class="select select-bordered select-sm w-full"
+            >
+              <option value={null}>All</option>
+              {#each finSystemOptions as opt}
+                <option value={opt}>{opt}</option>
+              {/each}
+            </select>
+          </div>
+
+          <!-- Fin Setup Filter -->
+          <div class="form-control">
+            <label for="filter-fin-setup" class="label">
+              <span class="label-text font-medium">Fin Setup</span>
+            </label>
+            <select
+              id="filter-fin-setup"
+              bind:value={selectedFinSetup}
+              class="select select-bordered select-sm w-full"
+            >
+              <option value={null}>All</option>
+              {#each finSetupOptions as opt}
+                <option value={opt}>{opt}</option>
+              {/each}
+            </select>
+          </div>
+
+          <!-- Style Filter -->
+          <div class="form-control">
+            <label for="filter-style" class="label">
+              <span class="label-text font-medium">Style</span>
+            </label>
+            <select
+              id="filter-style"
+              bind:value={selectedStyle}
+              class="select select-bordered select-sm w-full"
+            >
+              <option value={null}>All</option>
+              {#each styleOptions as opt}
+                <option value={opt}>{opt}</option>
+              {/each}
+            </select>
+          </div>
+
+          <!-- Clear Filters -->
+          <button
+            class="btn btn-sm btn-outline w-full mt-4"
+            on:click={() => {
+              selectedLength = null;
+              selectedVolume = null;
+              selectedFinSystem = null;
+              selectedFinSetup = null;
+              selectedStyle = null;
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </aside>
+
+      <!-- Right: Board Cards -->
+      <main class="flex-1">
+        <div class="space-y-4">
+          {#if filteredBoards.length === 0}
+            <div class="bg-base-100 rounded-lg p-8 text-center border border-base-300">
+              <p class="text-base-content/70">No boards match your filters.</p>
+            </div>
+          {:else}
+            {#each filteredBoards as board (board.id)}
+              <a
+                href="/surfboards/{board.id}"
+                data-sveltekit-prefetch
+                class="block bg-base-100 rounded-lg border border-base-300 hover:border-primary/50 hover:shadow-lg transition-all duration-200 no-underline"
+              >
+                <div class="flex flex-col md:flex-row">
+                  <!-- Left: Photo Carousel -->
+                  <div class="md:w-80 flex-shrink-0 relative bg-base-300 rounded-t-lg md:rounded-l-lg md:rounded-tr-none overflow-hidden" style="aspect-ratio: 4/3; min-height: 200px;">
+                    {#if board.images && board.images.length > 0}
+                      {#each board.images as img, index}
+                        <img
+                          src={img}
+                          alt={board.name}
+                          class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {index === 0 ? 'opacity-100' : 'opacity-0'}"
+                          loading="lazy"
+                        />
+                      {/each}
+                      
+                      {#if board.images.length > 1}
+                        <!-- Navigation arrows -->
+                        <button
+                          type="button"
+                          class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
+                          on:click|stopPropagation={(e) => {
+                            e.preventDefault();
+                            // prevImage(board.id, board.images.length); // This function is removed
+                          }}
+                        >
+                          <span class="text-sm">‹</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
+                          on:click|stopPropagation={(e) => {
+                            e.preventDefault();
+                            // nextImage(board.id, board.images.length); // This function is removed
+                          }}
+                        >
+                          <span class="text-sm">›</span>
+                        </button>
+                        
+                        <!-- Dot indicators -->
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                          {#each board.images as _, index}
+                            <div
+                              class="w-2 h-2 rounded-full {index === 0 ? 'bg-white' : 'bg-white/50'}"
+                            ></div>
+                          {/each}
+                        </div>
+                      {/if}
+                    {:else if board.thumbnail_url}
                       <img
-                        src={quiver.avatar_url || '/default_profile_picture.jpg'}
-                        alt={quiver.username}
+                        src={board.thumbnail_url}
+                        alt={board.name}
+                        class="absolute inset-0 w-full h-full object-cover"
                         loading="lazy"
-                        on:error={(e) => (e.currentTarget.src = '/default_profile_picture.jpg')}
+                        decoding="async"
                       />
+                    {:else}
+                      <img
+                        src={placeholderThumbnail}
+                        alt=""
+                        class="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                        aria-hidden="true"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Right: Metadata -->
+                  <div class="flex-1 p-4 flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <h3 class="text-xl font-bold">{board.name}</h3>
+                          {#if board.make}
+                            <p class="text-sm text-base-content/70 mt-1">{board.make}</p>
+                          {/if}
+                        </div>
+                        {#if currentUserId && board.user_id === currentUserId}
+                          <button
+                            type="button"
+                            class="inline-flex items-center bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-primary-focus transition-colors shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
+                            on:click={(event) => handleEditClick(event, board.id)}
+                            aria-label="Edit {board.name}"
+                          >
+                            Edit
+                          </button>
+                        {/if}
+                      </div>
+                      
+                      <div class="flex flex-wrap gap-4 text-sm mb-3">
+                        {#if board.price}
+                          <span class="font-semibold text-primary">${board.price}</span>
+                        {/if}
+                        {#if board.length}
+                          <span>{formatLength(board.length)}</span>
+                        {/if}
+                        {#if board.width}
+                          <span>{board.width}" wide</span>
+                        {/if}
+                        {#if board.thickness}
+                          <span>{board.thickness}" thick</span>
+                        {/if}
+                        {#if board.volume}
+                          <span>{board.volume}L</span>
+                        {/if}
+                      </div>
+
+                      <div class="flex flex-wrap gap-2 text-xs mb-3">
+                        {#if board.fin_system}
+                          <span class="badge badge-sm badge-outline">{board.fin_system}</span>
+                        {/if}
+                        {#if board.fin_setup}
+                          <span class="badge badge-sm badge-outline">{board.fin_setup}</span>
+                        {/if}
+                        {#if board.style}
+                          <span class="badge badge-sm badge-outline">{board.style}</span>
+                        {/if}
+                        {#if board.condition}
+                          <span class="badge badge-sm badge-outline">{board.condition}</span>
+                        {/if}
+                      </div>
+
+                      {#if board.city || board.region}
+                        <p class="text-sm text-base-content/60">
+                          {[board.city, board.region].filter(Boolean).join(', ')}
+                        </p>
+                      {/if}
                     </div>
                   </div>
-                  <div class="flex-1 w-full">
-                    <h3 class="font-bold text-lg mb-2">
-                      @{quiver.username}
-                    </h3>
-                    {#if quiver.homebreak}
-                      <p class="text-sm text-base-content/70 mb-2">🏄 {quiver.homebreak}</p>
-                    {/if}
-                    {#if quiver.favorite_board}
-                      <p class="text-sm text-base-content/60">⭐ {quiver.favorite_board}</p>
-                    {/if}
-                  </div>
                 </div>
-              </div>
-            </a>
-          {/each}
+              </a>
+            {/each}
+          {/if}
         </div>
-      {/if}
-      </div>
-    </div>
-
-    <!-- Right Panel: Map -->
-    <div id="map-panel" class="flex border-l-2 border-primary/30 bg-base-300 flex-shrink-0" style="width: 575px; height: 100%;">
-      <div id="map-container" class="w-full h-full"></div>
+        {#if totalPages > 1}
+          <div class="flex justify-center items-center gap-2 mt-6">
+            <button
+              class="btn btn-sm"
+              disabled={currentPage === 1}
+              on:click={() => goToPage(currentPage - 1)}
+            >
+              Previous
+            </button>
+            <span class="text-sm text-base-content/70">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              class="btn btn-sm"
+              disabled={currentPage === totalPages}
+              on:click={() => goToPage(currentPage + 1)}
+            >
+              Next
+            </button>
+          </div>
+        {/if}
+      </main>
     </div>
   </div>
 </div>
-
-<style>
-  :global(.quiver-pin) {
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-  :global(.quiver-pin:hover) {
-    transform: scale(1.1);
-  }
-</style>
-

@@ -8,9 +8,8 @@ const ALLOW = new Set<string>(['/', '/login', '/logout', '/onboarding/username']
 const isAutoUsername = (u: string | null | undefined) => !!u && u.startsWith('user_');
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-  // Use values populated in hooks.server.ts
-  const session = locals.session ?? null;
-  const user = locals.user ?? null;
+  const session = (await locals.getSession?.()) ?? locals.session ?? null;
+  const user = session?.user ?? null;
 
   let profile: { username: string | null } | null = null;
 

@@ -29,17 +29,17 @@
     <a href="/" class="btn btn-ghost text-xl" data-sveltekit-prefetch>QuiverShare</a>
   </div>
 
-  <!-- Right: Only render if logged in -->
+  <!-- Right controls -->
   {#if isAuthed}
     <div class="flex-none overflow-visible">
       <!-- Mobile menu -->
       <div class="dropdown dropdown-end md:hidden">
-        <label tabindex="0" class="btn btn-ghost" aria-label="Open menu">
+        <button type="button" class="btn btn-ghost" aria-label="Open menu">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-        </label>
-        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow mt-3 w-52 right-0 z-10">
+        </button>
+        <ul class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow mt-3 w-52 right-0 z-10">
           <li class="menu-title"><span>{displayName}</span></li>
           {#if data.profile?.username}
             <li><a href="/profile/{data.profile.username}" data-sveltekit-prefetch>View Profile</a></li>
@@ -57,13 +57,13 @@
         <li><a href="/my-boards" data-sveltekit-prefetch>My Boards</a></li>
         <li>
           <div class="dropdown dropdown-end dropdown-bottom">
-            <label tabindex="0" class="btn btn-ghost btn-sm">
+            <button type="button" class="btn btn-ghost btn-sm">
               My Profile
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
-            </label>
-            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow-lg mt-1 w-52 z-[100]">
+            </button>
+            <ul class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow-lg mt-1 w-52 z-[100]">
               <li class="menu-title"><span>{displayName}</span></li>
               {#if data.profile?.username}
                 <li><a href="/profile/{data.profile.username}" data-sveltekit-prefetch>View Profile</a></li>
@@ -74,6 +74,30 @@
           </div>
         </li>
       </ul>
+    </div>
+  {:else}
+    <div class="flex-none flex items-center gap-2 md:gap-3">
+      <a href="/s" class="btn btn-ghost btn-sm" data-sveltekit-prefetch>
+        Inventory
+      </a>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Help">
+        Help
+      </button>
+      <div class="dropdown dropdown-end">
+        <button type="button" class="btn btn-ghost btn-sm">
+          My Profile
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <ul class="menu menu-sm dropdown-content bg-base-100 rounded-box shadow mt-2 w-48 z-[100]">
+          <li>
+            <a href="/login" data-sveltekit-prefetch>
+              Login / Sign Up
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
   {/if}
 </nav>

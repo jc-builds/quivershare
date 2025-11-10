@@ -1,10 +1,12 @@
 // src/hooks.server.ts
-import { createServerClient } from '@supabase/ssr';
+import * as ssr from '@supabase/ssr';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
 const PROTECTED_PREFIXES = ['/create-surfboard', '/edit-surfboard', '/profile/edit'];
 const ALLOWLIST = ['/login', '/auth', '/auth/callback'];
+
+const { createServerClient } = ssr;
 
 export const handle: Handle = async ({ event, resolve }) => {
   const supabase = createServerClient(
@@ -12,30 +14,28 @@ export const handle: Handle = async ({ event, resolve }) => {
     PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => event.cookies.get(name),
-        set: (name, value, options) =>
-          event.cookies.set(name, value, { ...options, path: '/' }),
-        remove: (name, options) =>
-          event.cookies.delete(name, { ...options, path: '/' })
+        get: (key) => event.cookies.get(key),
+        set: (key, value, options) => event.cookies.set(key, value, { path: '/', ...options }),
+        remove: (key, options) => event.cookies.delete(key, { path: '/', ...options })
       }
     }
   );
 
   event.locals.supabase = supabase;
 
-  // 1) Load/refresh session from cookies (fast, ok for "is logged in?")
   const {
     data: { session },
     error: sessionErr
   } = await supabase.auth.getSession();
-  event.locals.session = session ?? null;
 
-  // 2) Fetch verified user (trusted identity for writes)
-  const {
-    data: { user },
-    error: userErr
-  } = await supabase.auth.getUser();
-  event.locals.user = user ?? null;
+  event.locals.session = session ?? null;
+  event.locals.user = session?.user ?? null;
+  event.locals.getSession = async () => {
+    const {
+      data: { session: refreshedSession }
+    } = await supabase.auth.getSession();
+    return refreshedSession ?? null;
+  };
 
   const path = event.url.pathname;
   const isAllowlisted = ALLOWLIST.some((p) => path === p || path.startsWith(`${p}/`));
@@ -47,9 +47,8 @@ export const handle: Handle = async ({ event, resolve }) => {
       'path=', path,
       'isProtected=', isProtected,
       'session=', session ? 'yes' : 'no',
-      'user=', user?.id ?? null,
-      sessionErr ? `(getSession error: ${sessionErr.message})` : '',
-      userErr ? `(getUser error: ${userErr.message})` : ''
+      'user=', session?.user?.id ?? null,
+      sessionErr ? `(getSession error: ${sessionErr.message})` : ''
     );
   }
 

@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   // Fetch current profile
   const { data: profile, error: profileError } = await locals.supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, profile_picture_url, location_label, city, region, country, latitude, longitude, home_break_label, home_break_lat, home_break_lon, bio')
+    .select('id, username, full_name, profile_picture_url, location_label, city, region, country, latitude, longitude, home_break_label, home_break_lat, home_break_lon, bio')
     .eq('id', userId)
     .single();
 

@@ -41,11 +41,35 @@
     width: sb.width ?? "",
     thickness: sb.thickness ?? "",
     volume: sb.volume ?? "",
-    fins: sb.fins ?? "",
+    fin_system: sb.fin_system ?? "",
+    fin_setup: sb.fin_setup ?? "",
+    style: sb.style ?? "",
+    price: sb.price ?? "",
     condition: sb.condition ?? "",
     notes: sb.notes ?? "",
     thumbnail_url: sb.thumbnail_url ?? "",
+    city: sb.city ?? "",
+    region: sb.region ?? "",
+    lat: sb.lat ?? "",
+    lon: sb.lon ?? "",
   };
+
+  // Location fields
+  let locationQuery = sb.city && sb.region ? `${sb.city}, ${sb.region}` : "";
+  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
+  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
+  let locationDebounceHandle: any;
+
+  // Initialize selected location from existing data
+  if (sb.lat && sb.lon) {
+    selectedLocation = {
+      label: locationQuery || "Selected location",
+      lat: sb.lat,
+      lon: sb.lon,
+      city: sb.city || "",
+      region: sb.region || ""
+    };
+  }
 
   let existingImages: ExistingImage[] = (data?.existingImages ??
     []) as ExistingImage[];
@@ -54,7 +78,62 @@
   let message = "";
 
   // ---------------------------------------------------------
-  // 2. Upload & UI state
+  // 2. Location search functions
+  // ---------------------------------------------------------
+  async function searchLocationPlaces(q: string) {
+    if (!q || q.length < 2) {
+      locationSuggestions = [];
+      return;
+    }
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    locationSuggestions = data.features ?? [];
+  }
+
+  function onLocationInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    locationQuery = v;
+    
+    // If user clears the input, clear location data
+    if (!v || v.trim() === "") {
+      clearLocation();
+      return;
+    }
+    
+    selectedLocation = null;
+
+    clearTimeout(locationDebounceHandle);
+    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
+    locationQuery = s.label;
+    selectedLocation = {
+      label: s.label,
+      lat: s.lat,
+      lon: s.lon,
+      city: s.city,
+      region: s.region
+    };
+    locationSuggestions = [];
+    // Update surfboard object with location data
+    surfboard.city = s.city;
+    surfboard.region = s.region;
+    surfboard.lat = s.lat;
+    surfboard.lon = s.lon;
+  }
+
+  function clearLocation() {
+    locationQuery = "";
+    selectedLocation = null;
+    surfboard.city = "";
+    surfboard.region = "";
+    surfboard.lat = "";
+    surfboard.lon = "";
+  }
+
+  // ---------------------------------------------------------
+  // 3. Upload & UI state
   // ---------------------------------------------------------
   let fileInput: HTMLInputElement;
   let dragActive = false;
@@ -256,11 +335,22 @@
 
     const cleanedSurfboard = {
       ...surfboard,
-      length: surfboard.length === "" ? null : surfboard.length,
-      width: surfboard.width === "" ? null : surfboard.width,
-      thickness: surfboard.thickness === "" ? null : surfboard.thickness,
-      volume: surfboard.volume === "" ? null : surfboard.volume,
+      length: surfboard.length === "" ? null : Number(surfboard.length),
+      width: surfboard.width === "" ? null : Number(surfboard.width),
+      thickness: surfboard.thickness === "" ? null : Number(surfboard.thickness),
+      volume: surfboard.volume === "" ? null : Number(surfboard.volume),
+      price: surfboard.price === "" ? null : Number(surfboard.price),
+      fin_system: surfboard.fin_system === "" ? null : surfboard.fin_system,
+      fin_setup: surfboard.fin_setup === "" ? null : surfboard.fin_setup,
+      style: surfboard.style === "" ? null : surfboard.style,
+      city: surfboard.city === "" ? null : surfboard.city,
+      region: surfboard.region === "" ? null : surfboard.region,
+      lat: surfboard.lat === "" ? null : Number(surfboard.lat),
+      lon: surfboard.lon === "" ? null : Number(surfboard.lon),
+      // Remove id from update payload (it's used in the .eq() clause)
+      id: undefined,
     };
+    delete cleanedSurfboard.id;
 
     const { error } = await supabase
       .from("surfboards")
@@ -589,23 +679,77 @@
         />
       </div>
 
-      <!-- Fins -->
+      <!-- Fin System -->
       <div class="form-control">
-        <label for="fins" class="label">
+        <label for="fin_system" class="label">
+          <span class="label-text font-semibold">Fin System</span>
+        </label>
+        <select
+          id="fin_system"
+          bind:value={surfboard.fin_system}
+          class="select select-bordered w-full"
+        >
+          <option value="">Select fin system (optional)</option>
+          <option>FCS II</option>
+          <option>Futures</option>
+          <option>Glass On</option>
+          <option>FCS</option>
+        </select>
+      </div>
+
+      <!-- Fin Setup -->
+      <div class="form-control">
+        <label for="fin_setup" class="label">
           <span class="label-text font-semibold">Fin Setup</span>
         </label>
         <select
-          id="fins"
-          bind:value={surfboard.fins}
+          id="fin_setup"
+          bind:value={surfboard.fin_setup}
           class="select select-bordered w-full"
         >
-          <option disabled selected>Select fins</option>
-          <option>Single</option>
-          <option>Twin</option>
+          <option value="">Select fin setup (optional)</option>
+          <option>2+1</option>
+          <option>4+1</option>
           <option>Quad</option>
-          <option>Thruster</option>
-          <option>Bonzer</option>
+          <option>Single</option>
+          <option>Tri</option>
+          <option>Tri/Quad</option>
         </select>
+      </div>
+
+
+      <!-- Style -->
+      <div class="form-control">
+        <label for="style" class="label">
+          <span class="label-text font-semibold">Board Style</span>
+        </label>
+        <select
+          id="style"
+          bind:value={surfboard.style}
+          class="select select-bordered w-full"
+        >
+          <option value="">Select style (optional)</option>
+          <option>Shortboard</option>
+          <option>Longboard</option>
+          <option>Groveler</option>
+          <option>Gun</option>
+        </select>
+      </div>
+
+      <!-- Price -->
+      <div class="form-control">
+        <label for="price" class="label">
+          <span class="label-text font-semibold">Price ($)</span>
+        </label>
+        <input
+          id="price"
+          type="number"
+          step="0.01"
+          min="0"
+          bind:value={surfboard.price}
+          placeholder="e.g. 850.00"
+          class="input input-bordered w-full"
+        />
       </div>
 
       <!-- Condition -->
@@ -625,6 +769,51 @@
           <option>Well-loved</option>
           <option>Needs Repair</option>
         </select>
+      </div>
+
+      <!-- Location -->
+      <div class="form-control">
+        <label for="location" class="label">
+          <span class="label-text font-semibold">Location (optional)</span>
+        </label>
+        <div class="relative">
+          <input
+            id="location"
+            type="text"
+            class="input input-bordered w-full"
+            placeholder="Start typing... e.g. San Diego, CA"
+            value={locationQuery}
+            on:input={onLocationInput}
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="location-suggestions-list"
+          />
+          {#if locationSuggestions.length > 0}
+            <ul id="location-suggestions-list" class="menu bg-base-100 rounded-box shadow-lg mt-1 w-full absolute z-10 max-h-60 overflow-y-auto">
+              {#each locationSuggestions as s}
+                <li>
+                  <button type="button" class="justify-start" on:click={() => chooseLocationSuggestion(s)}>
+                    {s.label}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        {#if selectedLocation}
+          <div class="flex items-center justify-between mt-1">
+            <p class="text-xs text-base-content/60">
+              Selected: {selectedLocation.label}
+            </p>
+            <button
+              type="button"
+              class="btn btn-xs btn-ghost"
+              on:click={clearLocation}
+            >
+              Clear
+            </button>
+          </div>
+        {/if}
       </div>
 
       <!-- Notes -->
