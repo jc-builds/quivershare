@@ -18,7 +18,8 @@ export const load: PageServerLoad = async ({ locals }) => {
       width,
       thickness,
       condition,
-      surfboard_images(image_url)
+      surfboard_images(image_url),
+      boosts(status)
     `)
     .eq('user_id', userId)
     .order('last_modified', { ascending: false });
@@ -32,7 +33,8 @@ export const load: PageServerLoad = async ({ locals }) => {
   // 4) Attach a single fallback image per board
   const boardsWithImage = (data ?? []).map((board) => ({
     ...board,
-    image_url: board.surfboard_images?.[0]?.image_url || null
+    image_url: board.surfboard_images?.[0]?.image_url || null,
+    boosts: board.boosts ?? []
   }));
 
   // 5) Return to +page.svelte

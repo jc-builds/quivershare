@@ -12,6 +12,7 @@
     width?: number;
     thickness?: number;
     condition?: string;
+    boosts?: { status: string }[];
   };
 
   let boards: Board[] = data.boards ?? [];
@@ -25,65 +26,139 @@
     return `${feet}'${remainingInches}"`;
   }
 
+  let boostingId: string | null = null;
+
+  async function boostBoard(event: MouseEvent, boardId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (boostingId) return;
+    boostingId = boardId;
+    try {
+      const res = await fetch('/api/boost', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ surfboard_id: boardId })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error ?? 'Failed to boost board');
+      }
+      alert('Boost successful!');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Boost failed';
+      alert(message);
+    } finally {
+      boostingId = null;
+    }
+  }
+
   function handleEditClick(event: MouseEvent, boardId: string) {
     event.preventDefault();
     event.stopPropagation();
     goto(`/edit-surfboard/${boardId}`);
   }
+
+  function isBoardLive(board: Board) {
+    return board.boosts?.some((boost) => boost?.status === 'live') ?? false;
+  }
+
+  function viewBoard(boardId: string) {
+    goto(`/surfboards/${boardId}`);
+  }
 </script>
 
 <section class="p-6">
-  <h1 class="text-3xl font-bold mb-6 text-center">My Boards</h1>
-  <div class="flex justify-center mb-6">
-    <a href="/create-surfboard" class="btn btn-primary"> + Add Board </a>
-  </div>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 text-center sm:text-left gap-4">
+    <h1 class="text-3xl font-bold">My Boards</h1>
+    <a href="/create-surfboard" class="btn btn-primary">+ Add Board</a>
+  </div>  
+
 
   {#if errorMessage}
     <p class="text-center text-red-500">Error: {errorMessage}</p>
   {:else if boards.length === 0}
     <p class="text-center text-gray-400">You haven’t added any boards yet.</p>
   {:else}
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center"
-    >
-      {#each boards as board}
-        <div class="relative w-full max-w-xs rounded-xl overflow-hidden bg-base-100 border border-base-300 shadow-sm hover:shadow-lg hover:-translate-y-[2px] transition-all duration-200 ease-out group">
-          <a
-            href={`/surfboards/${board.id}`}
-            data-sveltekit-prefetch
-            class="block"
-          >
-            <div class="relative aspect-square w-full bg-base-300">
-              <img
-                src={board.thumbnail_url ??
-                  board.image_url ??
-                  "https://via.placeholder.com/800x600?text=No+Image"}
-                alt={board.name}
-                class="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-                on:error={(e) =>
-                  ((e.currentTarget as HTMLImageElement).src =
-                    "https://via.placeholder.com/800x600?text=No+Image")}
-              />
-              <!-- Edit button overlay (only visible on hover) -->
-              <button
-                type="button"
-                class="absolute top-2 right-2 bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary-focus shadow-lg z-10"
-                on:click={(e) => handleEditClick(e, board.id)}
-              >
-                Edit
-              </button>
-            </div>
-            <div class="p-4">
-              <h2 class="font-semibold text-lg mb-1">{board.name}</h2>
-              <p class="text-sm text-gray-400">
-                {formatLength(board.length)} × {board.width}" × {board.thickness}"
-              </p>
-              <p class="text-sm mt-1">{board.condition}</p>
-            </div>
-          </a>
-        </div>
-      {/each}
+    <div class="overflow-x-auto">
+      <table class="table table-zebra w-full min-w-[720px]">
+        <thead>
+          <tr>
+            <th>Thumb</th>
+            <th>Name</th>
+            <th>Dimensions</th>
+            <th>Condition</th>
+            <th>Boost</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each boards as board}
+            {@const live = isBoardLive(board)}
+            <tr>
+              <td>
+                <div class="avatar">
+                  <div class="mask mask-squircle w-16 h-16 bg-base-300">
+                    <img
+                      src={board.thumbnail_url ??
+                        board.image_url ??
+                        "https://via.placeholder.com/800x600?text=No+Image"}
+                      alt={board.name}
+                      loading="lazy"
+                      on:error={(e) =>
+                        ((e.currentTarget as HTMLImageElement).src =
+                          "https://via.placeholder.com/800x600?text=No+Image")}
+                    />
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="font-semibold">{board.name}</div>
+                <div class="text-xs text-base-content/60">ID: {board.id}</div>
+              </td>
+              <td>
+                <div class="text-sm text-base-content/80">
+                  {formatLength(board.length)} × {board.width}" × {board.thickness}"
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-ghost">{board.condition ?? '—'}</span>
+              </td>
+              <td>
+                <span class={`badge ${live ? 'badge-success' : 'badge-neutral'}`}>
+                  {live ? 'Live' : 'Not live'}
+                </span>
+              </td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    on:click={() => viewBoard(board.id)}
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-info"
+                    on:click={(e) => handleEditClick(e, board.id)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class={`btn btn-sm ${live ? 'btn-disabled' : 'btn-primary'}`}
+                    on:click={(event) => boostBoard(event, board.id)}
+                    disabled={live || boostingId === board.id}
+                    title={live ? 'Boost active' : undefined}
+                  >
+                    {live ? 'Live' : boostingId === board.id ? 'Boosting…' : 'Boost'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
     </div>
   {/if}
 </section>
