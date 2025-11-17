@@ -22,16 +22,32 @@
       width?: number;
       thickness?: number;
       condition?: string;
+      price?: number | null;
     }>;
     isOwnProfile: boolean;
   };
 
-  // Convert inches to feet and inches format (e.g., 96 -> "8'0\"")
-  function formatLength(inches: number | null | undefined): string {
-    if (inches == null) return "";
-    const feet = Math.floor(inches / 12);
-    const remainingInches = inches % 12;
-    return `${feet}'${remainingInches}"`;
+  // Format dimensions (reused from board page)
+  function formatDimensions(
+    length: number | null | undefined,
+    width: number | null | undefined,
+    thickness: number | null | undefined
+  ): string {
+    const parts: string[] = [];
+    if (length != null) {
+      const feet = Math.floor(length / 12);
+      const inches = length % 12;
+      parts.push(`${feet}'${inches}"`);
+    }
+    if (width != null) parts.push(`${width}"`);
+    if (thickness != null) parts.push(`${thickness}"`);
+    return parts.length > 0 ? parts.join(' × ') : 'N/A';
+  }
+
+  // Format price as currency
+  function formatPrice(price: number | null | undefined): string {
+    if (price == null) return '—';
+    return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Format location string
@@ -74,7 +90,6 @@
         <h1 class="text-3xl font-bold mb-1">
           {data.profile.full_name || data.profile.username}
         </h1>
-        <p class="text-gray-500 mb-2">@{data.profile.username}</p>
         {#if formatLocation()}
           <p class="text-gray-600 mb-2">
             📍 {formatLocation()}
@@ -107,57 +122,72 @@
     </div>
   </div>
 
-  <!-- Surfboards Section -->
+  <!-- Active Listings Section -->
   <div class="mb-4">
-    <h2 class="text-2xl font-bold mb-4">
-      {data.isOwnProfile ? 'My Boards' : "Surfboards"} ({data.boards.length})
-    </h2>
+    <h2 class="text-2xl font-bold mb-4">Active Listings</h2>
   </div>
 
   {#if data.boards.length === 0}
     <div class="text-center py-12 bg-base-100 rounded-xl">
       <p class="text-gray-400">
-        {data.isOwnProfile ? "You haven't added any boards yet." : "No boards yet."}
+        This user has no active listings.
       </p>
-      {#if data.isOwnProfile}
-        <a href="/create-surfboard" class="btn btn-primary mt-4">
-          + Add Board
-        </a>
-      {/if}
     </div>
   {:else}
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center"
-    >
-      {#each data.boards as board}
-        <a
-          href={data.isOwnProfile ? `/edit-surfboard/${board.id}` : `/surfboards/${board.id}`}
-          data-sveltekit-prefetch
-          class="block w-full max-w-xs rounded-xl overflow-hidden bg-base-100 border border-base-300 shadow-sm
-         hover:shadow-lg hover:-translate-y-[2px] transition-all duration-200 ease-out"
-        >
-          <div class="relative aspect-square w-full bg-base-300">
-            <img
-              src={board.thumbnail_url ??
-                board.image_url ??
-                "https://via.placeholder.com/800x600?text=No+Image"}
-              alt={board.name}
-              class="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-              on:error={(e) =>
-                ((e.currentTarget as HTMLImageElement).src =
-                  "https://via.placeholder.com/800x600?text=No+Image")}
-            />
-          </div>
-          <div class="p-4">
-            <h3 class="font-semibold text-lg mb-1">{board.name}</h3>
-            <p class="text-sm text-gray-400">
-              {formatLength(board.length)} × {board.width}" × {board.thickness}"
-            </p>
-            <p class="text-sm mt-1">{board.condition}</p>
-          </div>
-        </a>
-      {/each}
+    <div class="bg-base-100 rounded-xl shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Thumb</th>
+              <th>Name</th>
+              <th>Dims</th>
+              <th>Asking Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each data.boards as board}
+              <tr>
+                <td>
+                  <div class="avatar">
+                    <div class="mask mask-squircle w-16 h-16 bg-base-300">
+                      <img
+                        src={board.thumbnail_url ??
+                          board.image_url ??
+                          "https://via.placeholder.com/800x600?text=No+Image"}
+                        alt={board.name}
+                        loading="lazy"
+                        on:error={(e) =>
+                          ((e.currentTarget as HTMLImageElement).src =
+                            "https://via.placeholder.com/800x600?text=No+Image")}
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <a
+                    href={`/surfboards/${board.id}`}
+                    data-sveltekit-prefetch
+                    class="font-semibold hover:text-primary hover:underline"
+                  >
+                    {board.name}
+                  </a>
+                </td>
+                <td>
+                  <div class="text-sm text-base-content/80">
+                    {formatDimensions(board.length, board.width, board.thickness)}
+                  </div>
+                </td>
+                <td>
+                  <div class="font-semibold text-primary">
+                    {formatPrice(board.price)}
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     </div>
   {/if}
 </section>

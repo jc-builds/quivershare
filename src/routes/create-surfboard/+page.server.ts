@@ -61,6 +61,74 @@ export const actions: Actions = {
       return fail(500, { message: 'Failed to save surfboard' });
     }
 
+    // Handle image URLs if provided
+    const imageUrls = form.getAll('image_urls') as string[];
+    if (imageUrls.length > 0 && data?.id) {
+      const imageInserts = imageUrls
+        .filter(url => url && url.trim() !== '')
+        .map(image_url => ({
+          surfboard_id: data.id,
+          image_url
+        }));
+
+      if (imageInserts.length > 0) {
+        const { error: imgError } = await locals.supabase
+          .from('surfboard_images')
+          .insert(imageInserts);
+
+        if (imgError) {
+          console.error('Image insert error:', imgError.message);
+          // Don't fail the whole request, just log it
+        }
+      }
+    }
+
     throw redirect(303, '/my-boards');
+  },
+  uploadImages: async ({ request, locals }) => {
+    const user = locals.user;
+    if (!user) return fail(401, { message: 'Unauthorized' });
+
+    const form = await request.formData();
+    const surfboardId = form.get('surfboard_id')?.toString();
+    const imageUrls = form.getAll('image_urls') as string[];
+
+    if (!surfboardId) {
+      return fail(400, { message: 'Missing surfboard_id' });
+    }
+
+    if (imageUrls.length === 0) {
+      return fail(400, { message: 'No image URLs provided' });
+    }
+
+    // Verify the surfboard belongs to the user
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('id')
+      .eq('id', surfboardId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (boardError || !board) {
+      return fail(403, { message: 'Surfboard not found or access denied' });
+    }
+
+    const imageInserts = imageUrls
+      .filter(url => url && url.trim() !== '')
+      .map(image_url => ({
+        surfboard_id: surfboardId,
+        image_url
+      }));
+
+    const { error: imgError } = await locals.supabase
+      .from('surfboard_images')
+      .insert(imageInserts);
+
+    if (imgError) {
+      console.error('Image insert error:', imgError.message);
+      return fail(500, { message: 'Failed to save images' });
+    }
+
+    return { success: true };
   }
 };

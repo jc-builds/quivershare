@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { enhance } from '$app/forms';
 
   export let data: {
     board: {
@@ -21,6 +22,7 @@
       notes: string | null;
       thumbnail_url: string | null;
       user_id: string;
+      state?: 'active' | 'inactive';
     };
     images: Array<{ id: string; image_url: string }>;
     owner: {
@@ -33,6 +35,25 @@
     } | null;
     canEdit: boolean;
   };
+
+  export let form;
+
+  // Local state for the toggle
+  let boardState: 'active' | 'inactive' = data.board.state ?? 'active';
+  let updatingState = false;
+
+  // Update state when form succeeds
+  $: if (form?.success && form?.state) {
+    boardState = form.state as 'active' | 'inactive';
+    updatingState = false;
+  }
+
+  // Reset updating state if form fails
+  $: if (form?.error) {
+    updatingState = false;
+    // Revert to original state on error
+    boardState = data.board.state ?? 'active';
+  }
 
   // Helper: Format dimensions
   export function formatDimensions(
@@ -180,12 +201,37 @@
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
       <h1 class="text-3xl sm:text-4xl font-bold">{boardTitle}</h1>
       {#if data.canEdit}
-        <a
-          href={`/edit-surfboard/${data.board.id}`}
-          class="inline-flex items-center justify-center bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-primary-focus transition-colors shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200"
-        >
-          Edit
-        </a>
+        <div class="flex items-center gap-3">
+          <!-- State Toggle -->
+          <form method="POST" action="?/updateState" use:enhance>
+            <input type="hidden" name="state" value={boardState === 'active' ? 'inactive' : 'active'} />
+            <label class="flex items-center gap-2 cursor-pointer">
+              <span class="text-sm text-base-content/70">State:</span>
+              <input
+                type="checkbox"
+                class={`toggle toggle-sm ${boardState === 'active' ? 'toggle-success' : 'toggle-error'}`}
+                checked={boardState === 'active'}
+                disabled={updatingState}
+                on:change={(e) => {
+                  const targetState = e.currentTarget.checked ? 'active' : 'inactive';
+                  updatingState = true;
+                  boardState = targetState;
+                  e.currentTarget.form?.requestSubmit();
+                }}
+              />
+              <span class="text-sm font-medium">
+                {boardState === 'active' ? 'Active' : 'Inactive'}
+              </span>
+            </label>
+          </form>
+          
+          <a
+            href={`/edit-surfboard/${data.board.id}`}
+            class="inline-flex items-center justify-center bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-primary-focus transition-colors shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-200"
+          >
+            Edit
+          </a>
+        </div>
       {/if}
     </div>
 

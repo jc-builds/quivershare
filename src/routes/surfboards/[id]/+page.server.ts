@@ -1,5 +1,5 @@
 // src/routes/surfboards/[id]/+page.server.ts
-import { error } from '@sveltejs/kit';
+import { error, fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -64,4 +64,52 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     owner: ownerProfile ?? null,
     canEdit
   };
+};
+
+export const actions: Actions = {
+  updateState: async ({ request, locals, params }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { message: 'Unauthorized' });
+    }
+
+    const id = params.id;
+    if (!id) {
+      return fail(400, { message: 'Missing board ID' });
+    }
+
+    // Verify the board belongs to the user
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
+    if (boardError || !board) {
+      return fail(404, { message: 'Surfboard not found' });
+    }
+
+    if (board.user_id !== user.id) {
+      return fail(403, { message: 'Access denied' });
+    }
+
+    const form = await request.formData();
+    const newState = form.get('state')?.toString();
+
+    if (newState !== 'active' && newState !== 'inactive') {
+      return fail(400, { message: 'Invalid state value' });
+    }
+
+    const { error: updateError } = await locals.supabase
+      .from('surfboards')
+      .update({ state: newState })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('State update error:', updateError.message);
+      return fail(500, { message: 'Failed to update state' });
+    }
+
+    return { success: true, state: newState };
+  }
 };

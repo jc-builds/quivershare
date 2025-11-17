@@ -49,7 +49,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Check if current user is viewing their own profile
   const isOwnProfile = (locals.user?.id ?? null) === profile.id;
 
-  // Fetch this user's surfboards
+  // Fetch this user's active surfboards only
   const { data: boards, error: boardsError } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -60,9 +60,12 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       width,
       thickness,
       condition,
+      price,
+      state,
       surfboard_images(image_url)
     `)
     .eq('user_id', profile.id)
+    .eq('state', 'active')
     .order('last_modified', { ascending: false });
 
   if (boardsError) {

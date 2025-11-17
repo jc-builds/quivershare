@@ -1,5 +1,5 @@
 // src/routes/my-boards/+page.server.ts
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -18,6 +18,8 @@ export const load: PageServerLoad = async ({ locals }) => {
       width,
       thickness,
       condition,
+      created_at,
+      state,
       surfboard_images(image_url),
       boosts(status)
     `)
@@ -43,3 +45,5 @@ export const load: PageServerLoad = async ({ locals }) => {
     errorMessage: null
   };
 };
+
+export const actions: Actions = {};

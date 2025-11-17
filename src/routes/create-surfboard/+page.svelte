@@ -151,28 +151,66 @@
   }
 
   // ---------------------------------------------------------
-  // 7. Upload only (future enhancement)
+  // 7. Form submission handler
   // ---------------------------------------------------------
-  async function uploadImages(surfboardId: string) {
-    for (const file of files) {
-      const filePath = `${surfboardId}/${Date.now()}_${file.name}`;
+  let submitting = false;
 
-      const { error: uploadError } = await supabase.storage
-        .from("surfboard-images")
-        .upload(filePath, file);
+  async function handleSubmit(event: Event) {
+    event.preventDefault();
+    if (submitting) return;
 
-      if (uploadError) {
-        console.error("Upload failed:", uploadError);
-        continue;
+    submitting = true;
+    message = "";
+
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    // Upload images to storage first and collect URLs
+    const imageUrls: string[] = [];
+    if (files.length > 0) {
+      // We'll upload after the surfboard is created, so we need a temporary ID
+      // For now, upload with a temp path and we'll move them after
+      const tempId = `temp_${Date.now()}`;
+      
+      for (const file of files) {
+        const filePath = `${tempId}/${Date.now()}_${file.name}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("surfboard-images")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Upload failed:", uploadError);
+          message = `⚠️ Failed to upload some images: ${uploadError.message}`;
+          continue;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("surfboard-images")
+          .getPublicUrl(filePath);
+
+        imageUrls.push(publicUrlData.publicUrl);
       }
+    }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("surfboard-images")
-        .getPublicUrl(filePath);
+    // Add image URLs to form data
+    imageUrls.forEach(url => {
+      formData.append('image_urls', url);
+    });
 
-      await supabase
-        .from("surfboard_images")
-        .insert([{ surfboard_id: surfboardId, image_url: publicUrlData.publicUrl }]);
+    // Submit the form
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      // Redirect handled by server
+      window.location.href = '/my-boards';
+    } else {
+      const result = await response.json();
+      message = result.message || 'Failed to save surfboard';
+      submitting = false;
     }
   }
 </script>
@@ -184,7 +222,7 @@
     </h1>
 
     <!-- ✅ Form now posts to the server action -->
-    <form method="POST" class="space-y-4">
+    <form method="POST" class="space-y-4" on:submit|preventDefault={handleSubmit}>
       <!-- Board Name -->
       <div class="form-control">
         <label for="name" class="label">
@@ -486,8 +524,8 @@
         </p>
       {/if}
 
-      <button type="submit" class="btn btn-primary w-full mt-4">
-        Save Surfboard
+      <button type="submit" class="btn btn-primary w-full mt-4" disabled={submitting}>
+        {submitting ? 'Saving...' : 'Save Surfboard'}
       </button>
 
       {#if message}

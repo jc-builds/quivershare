@@ -3,11 +3,14 @@
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
+  import { enhance } from '$app/forms';
 
   export let data: {
     surfboard: any;
     existingImages: { id: string; image_url: string }[] | null;
   };
+
+  export let form;
 
   // ---------------------------------------------------------
   // Constants / Types
@@ -52,7 +55,26 @@
     region: sb.region ?? "",
     lat: sb.lat ?? "",
     lon: sb.lon ?? "",
+    state: sb.state ?? 'active',
   };
+
+  // Local state for the toggle
+  let boardState: 'active' | 'inactive' = surfboard.state === 'active' ? 'active' : 'inactive';
+  let updatingState = false;
+
+  // Update state when form succeeds
+  $: if (form?.success && form?.state) {
+    boardState = form.state as 'active' | 'inactive';
+    surfboard.state = boardState;
+    updatingState = false;
+  }
+
+  // Reset updating state if form fails
+  $: if (form?.error) {
+    updatingState = false;
+    // Revert to original state on error
+    boardState = (sb.state ?? 'active') === 'active' ? 'active' : 'inactive';
+  }
 
   // Location fields
   let locationQuery = sb.city && sb.region ? `${sb.city}, ${sb.region}` : "";
@@ -368,6 +390,8 @@
     let uploadedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
+    const imageUrls: string[] = [];
+    let thumbnailUrl: string | null = null;
 
     for (let idx = 0; idx < files.length; idx++) {
       const file = files[idx];
@@ -389,31 +413,57 @@
         .getPublicUrl(filePath);
       const imageUrl = publicUrlData.publicUrl;
 
-      const { error: insertError } = await supabase
-        .from("surfboard_images")
-        .insert([{ surfboard_id: surfboard.id, image_url: imageUrl }]);
-
-      if (insertError) {
-        console.error("Image insert failed:", insertError);
-        failedCount++;
-        errors.push(`Failed to save ${file.name} to database: ${insertError.message}`);
-        continue;
-      }
-
+      // Store URL for batch insert via server action
+      imageUrls.push(imageUrl);
       uploadedCount++;
 
       if (pendingThumbIndex !== null && idx === pendingThumbIndex) {
-        const { error: thumbErr } = await supabase
-          .from("surfboards")
-          .update({ thumbnail_url: imageUrl })
-          .eq("id", surfboard.id);
+        thumbnailUrl = imageUrl;
+      }
+    }
 
-        if (thumbErr) {
-          console.error("Thumbnail update error:", thumbErr);
-          errors.push(`Thumbnail update failed: ${thumbErr.message}`);
-        } else {
-          surfboard.thumbnail_url = imageUrl;
+    // Insert images via server action
+    if (imageUrls.length > 0) {
+      const formData = new FormData();
+      imageUrls.forEach(url => {
+        formData.append('image_urls', url);
+      });
+
+      const response = await fetch(`/edit-surfboard/${surfboard.id}?/uploadImages`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'accept': 'application/json'
         }
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        failedCount += imageUrls.length;
+        errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
+        uploadedCount = 0;
+        imageUrls.length = 0; // Clear since insert failed
+      }
+    }
+
+    // Update thumbnail if needed
+    if (thumbnailUrl) {
+      const formData = new FormData();
+      formData.append('thumbnail_url', thumbnailUrl);
+
+      const response = await fetch(`/edit-surfboard/${surfboard.id}?/updateThumbnail`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        surfboard.thumbnail_url = thumbnailUrl;
+      } else {
+        const result = await response.json();
+        errors.push(`Thumbnail update failed: ${result.message || 'Unknown error'}`);
       }
     }
 
@@ -465,36 +515,31 @@
   async function removeImage(img: ExistingImage) {
     if (deleting[img.id]) return;
 
-    const path = storagePathFromPublicUrl(img.image_url);
-    if (!path) {
-      message = "❌ Couldn't resolve storage path for this image.";
-      return;
-    }
-
     deleting = { ...deleting, [img.id]: true };
     message = "";
 
-    const { error: storageErr } = await supabase.storage
-      .from(BUCKET)
-      .remove([path]);
-    if (storageErr) {
-      console.error("Storage remove error:", storageErr);
-      message = `❌ ${storageErr.message}`;
+    // Call server action to delete image
+    const formData = new FormData();
+    formData.append('image_id', img.id);
+    formData.append('image_url', img.image_url);
+
+    const response = await fetch(`/edit-surfboard/${surfboard.id}?/deleteImage`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error("Delete error:", result);
+      message = `❌ ${result.message || 'Failed to delete image'}`;
       deleting = { ...deleting, [img.id]: false };
       return;
     }
 
-    const { error: dbErr } = await supabase
-      .from("surfboard_images")
-      .delete()
-      .eq("id", img.id);
-    if (dbErr) {
-      console.error("DB delete error:", dbErr);
-      message = `❌ ${dbErr.message}`;
-      deleting = { ...deleting, [img.id]: false };
-      return;
-    }
-
+    // Remove from local state
     existingImages = existingImages.filter((i) => i.id !== img.id);
     deleting = { ...deleting, [img.id]: false };
     message = "✅ Image removed.";
@@ -574,9 +619,33 @@
 
 <main class="min-h-screen bg-base-200 p-8 flex flex-col items-center">
   <div class="w-full max-w-lg bg-base-100 p-8 rounded-2xl shadow-lg">
-    <h1 class="text-3xl font-bold text-center text-primary mb-6">
-      Edit Surfboard
-    </h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-3xl font-bold text-primary">
+        Edit Surfboard
+      </h1>
+      <!-- State Toggle -->
+      <form method="POST" action="?/updateState" use:enhance>
+        <input type="hidden" name="state" value={boardState === 'active' ? 'inactive' : 'active'} />
+        <label class="flex items-center gap-2 cursor-pointer">
+          <span class="text-sm text-base-content/70">State:</span>
+          <input
+            type="checkbox"
+            class={`toggle toggle-sm ${boardState === 'active' ? 'toggle-success' : 'toggle-error'}`}
+            checked={boardState === 'active'}
+            disabled={updatingState}
+            on:change={(e) => {
+              const targetState = e.currentTarget.checked ? 'active' : 'inactive';
+              updatingState = true;
+              boardState = targetState;
+              e.currentTarget.form?.requestSubmit();
+            }}
+          />
+          <span class="text-sm font-medium">
+            {boardState === 'active' ? 'Active' : 'Inactive'}
+          </span>
+        </label>
+      </form>
+    </div>
 
     <form class="space-y-4" on:submit|preventDefault={saveBoard}>
       <!-- Board Name -->

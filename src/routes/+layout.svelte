@@ -39,7 +39,13 @@
     <div class="flex items-center justify-between">
       <!-- Left: Brand -->
       <div class="flex-1">
-        <a href="/" class="btn btn-ghost text-xl" data-sveltekit-prefetch>QuiverShare</a>
+        <a href="/" class="btn btn-ghost p-0 h-auto" data-sveltekit-prefetch>
+          <img 
+            src="/FullLogo_Transparent_NoBuffer.png" 
+            alt="QuiverShare" 
+            class="h-10 w-auto"
+          />
+        </a>
       </div>
 
       <!-- Right controls -->

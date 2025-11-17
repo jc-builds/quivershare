@@ -13,6 +13,8 @@
     thickness?: number;
     condition?: string;
     boosts?: { status: string }[];
+    created_at?: string; // ISO timestamp
+    state?: 'active' | 'inactive';
   };
 
   let boards: Board[] = data.boards ?? [];
@@ -26,30 +28,15 @@
     return `${feet}'${remainingInches}"`;
   }
 
-  let boostingId: string | null = null;
-
-  async function boostBoard(event: MouseEvent, boardId: string) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (boostingId) return;
-    boostingId = boardId;
-    try {
-      const res = await fetch('/api/boost', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ surfboard_id: boardId })
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(payload?.error ?? 'Failed to boost board');
-      }
-      alert('Boost successful!');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Boost failed';
-      alert(message);
-    } finally {
-      boostingId = null;
-    }
+  function formatDate(dateString: string | undefined): string {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', {
+      year: '2-digit',
+      month: 'numeric',
+      day: 'numeric'
+    });
   }
 
   function handleEditClick(event: MouseEvent, boardId: string) {
@@ -58,9 +45,6 @@
     goto(`/edit-surfboard/${boardId}`);
   }
 
-  function isBoardLive(board: Board) {
-    return board.boosts?.some((boost) => boost?.status === 'live') ?? false;
-  }
 
   function viewBoard(boardId: string) {
     goto(`/surfboards/${boardId}`);
@@ -85,15 +69,16 @@
           <tr>
             <th>Thumb</th>
             <th>Name</th>
+            <th>Created</th>
             <th>Dimensions</th>
             <th>Condition</th>
+            <th>State</th>
             <th>Boost</th>
             <th class="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {#each boards as board}
-            {@const live = isBoardLive(board)}
             <tr>
               <td>
                 <div class="avatar">
@@ -116,6 +101,11 @@
                 <div class="text-xs text-base-content/60">ID: {board.id}</div>
               </td>
               <td>
+                <div class="text-sm text-base-content/70">
+                  {formatDate(board.created_at)}
+                </div>
+              </td>
+              <td>
                 <div class="text-sm text-base-content/80">
                   {formatLength(board.length)} × {board.width}" × {board.thickness}"
                 </div>
@@ -124,9 +114,18 @@
                 <span class="badge badge-ghost">{board.condition ?? '—'}</span>
               </td>
               <td>
-                <span class={`badge ${live ? 'badge-success' : 'badge-neutral'}`}>
-                  {live ? 'Live' : 'Not live'}
+                <span class={`badge ${board.state === 'active' ? 'badge-success' : 'badge-error'}`}>
+                  {board.state ?? 'unknown'}
                 </span>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline"
+                  on:click={() => goto(`/surfboards/${board.id}/boost`)}
+                >
+                  Manage Boost
+                </button>
               </td>
               <td>
                 <div class="flex justify-end gap-2">
@@ -143,15 +142,6 @@
                     on:click={(e) => handleEditClick(e, board.id)}
                   >
                     Edit
-                  </button>
-                  <button
-                    type="button"
-                    class={`btn btn-sm ${live ? 'btn-disabled' : 'btn-primary'}`}
-                    on:click={(event) => boostBoard(event, board.id)}
-                    disabled={live || boostingId === board.id}
-                    title={live ? 'Boost active' : undefined}
-                  >
-                    {live ? 'Live' : boostingId === board.id ? 'Boosting…' : 'Boost'}
                   </button>
                 </div>
               </td>
