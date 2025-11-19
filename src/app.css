@@ -17,6 +17,44 @@
   --font-family-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif,
     "Segoe UI Emoji", "Segoe UI Symbol";
+
+  /* Design tokens - Radix-inspired color system */
+  /* Grays / neutrals */
+  --background: #020617;           /* very dark slate */
+  --surface: #020617;
+  --surface-elevated: #020617;     /* can bump this lighter if you want more contrast */
+  --border: #1f2937;               /* slate-800-ish */
+  --foreground: #e5e7eb;           /* slate-200 */
+  --muted: #111827;                /* slate-900 */
+  --muted-foreground: #9ca3af;     /* slate-400 */
+
+  /* Sky accent inspired by Radix sky */
+  --primary-soft: #082d41;         /* deep, subtle bg */
+  --primary-soft-alt: #08354c;     /* slightly brighter */
+  --primary: #2ec8ee;              /* bright sky accent */
+  --primary-alt: #68ddfd;          /* lighter sky accent */
+  --primary-foreground: #020617;   /* dark text on bright sky */
+
+  /* Secondary / accent */
+  --accent: #38bdf8;               /* sky-400 vibe */
+  --accent-foreground: #020617;
+
+  /* Status colors */
+  --success: #22c55e;
+  --success-foreground: #022c22;
+  --warning: #facc15;
+  --warning-foreground: #1f2937;
+  --destructive: #ef4444;
+  --destructive-foreground: #f9fafb;
+}
+
+/* Example alternative accent theme (optional, for future toggling) */
+.theme-mint {
+  --primary-soft: #033a34;
+  --primary-soft-alt: #01453d;
+  --primary: #25d0ab;
+  --primary-alt: #70e1c8;
+  --primary-foreground: #022c22;
 }
 
 /* Force the Notion/Inter look on nav lists and their children (anchors/buttons) */

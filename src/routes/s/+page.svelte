@@ -302,19 +302,19 @@
   }
 </script>
 
-<div class="min-h-screen bg-base-200">
+<div class="min-h-screen bg-background">
   <!-- Top Bar -->
-  <div class="bg-base-100 border-b border-base-300 px-6 py-4">
+  <div class="bg-surface-elevated/80 border-b border-border px-6 py-4 backdrop-blur-sm">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h1 class="text-2xl font-bold">
+      <h1 class="text-2xl font-bold text-foreground">
         Used Boards for Sale Near {data.userLocation || 'your area'}
       </h1>
-      <div class="flex items-center gap-2">
-        <label for="sort-by" class="text-sm">Sort By:</label>
+      <div class="flex items-center gap-3">
+        <label for="sort-by" class="text-sm text-muted-foreground">Sort By:</label>
         <select
           id="sort-by"
           bind:value={sortBy}
-          class="select select-bordered select-sm"
+          class="rounded-lg border border-border bg-surface-elevated px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           on:change={handleSortChange}
         >
           <option value="price_asc">Price: Low to High</option>
@@ -334,15 +334,15 @@
       <!-- Left: Filters (sticky on desktop) -->
       <aside class="lg:w-64 lg:sticky lg:top-6 lg:self-start space-y-4">
         <!-- Location Search -->
-        <div class="bg-base-100 rounded-lg p-4 border border-base-300">
-          <label for="location-search" class="label pb-2">
-            <span class="label-text font-medium text-sm">Search Location</span>
+        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 border border-border shadow-sm">
+          <label for="location-search" class="block mb-2">
+            <span class="font-medium text-sm text-foreground">Search Location</span>
           </label>
           <div class="relative">
             <input
               id="location-search"
               type="text"
-              class="input input-bordered input-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               placeholder="Enter location..."
               value={locationQuery}
               on:input={onLocationSearchInput}
@@ -351,10 +351,10 @@
               aria-controls="location-suggestions-list"
             />
             {#if locationSuggestions.length > 0}
-              <ul id="location-suggestions-list" class="menu bg-base-100 rounded-box shadow-lg mt-1 w-full absolute z-10 max-h-60 overflow-y-auto">
+              <ul id="location-suggestions-list" class="absolute left-0 right-0 z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
                 {#each locationSuggestions as s}
                   <li>
-                    <button type="button" class="justify-start" on:click={() => chooseLocationSuggestion(s)}>
+                    <button type="button" class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg" on:click={() => chooseLocationSuggestion(s)}>
                       {s.label}
                     </button>
                   </li>
@@ -362,25 +362,25 @@
               </ul>
             {/if}
           </div>
-          <div class="mt-3">
-            <label for="search-radius" class="label pb-1">
-              <span class="label-text font-medium text-sm">Within</span>
+          <div class="mt-4">
+            <label for="search-radius" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Within</span>
             </label>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
               <input
                 id="search-radius"
                 type="number"
                 min="1"
                 max="500"
                 bind:value={searchRadius}
-                class="input input-bordered input-sm flex-1"
+                class="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               />
-              <span class="text-sm text-base-content/70">miles</span>
+              <span class="text-sm text-muted-foreground whitespace-nowrap">miles</span>
             </div>
           </div>
           <button
             type="button"
-            class="btn btn-primary btn-sm w-full mt-3"
+            class="inline-flex w-full items-center justify-center rounded-lg border border-border bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             disabled={!selectedLocation}
             on:click={() => {
               try {
@@ -432,13 +432,13 @@
             Apply Location Search
           </button>
           {#if activeLocationFilter}
-            <div class="mt-2 p-2 bg-primary/10 rounded text-xs">
-              <div class="text-base-content/80 font-medium mb-1">
+            <div class="mt-4 p-3 bg-primary-soft/30 rounded-lg border border-primary/20">
+              <div class="text-foreground font-medium mb-2 text-xs">
                 Active: {activeLocationFilter.radius} miles from {activeLocationFilter.location.label}
               </div>
               <button
                 type="button"
-                class="btn btn-xs btn-ghost w-full"
+                class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
                 on:click={() => {
                   activeLocationFilter = null;
                 }}
@@ -447,25 +447,25 @@
               </button>
             </div>
           {:else if selectedLocation}
-            <div class="mt-2 text-xs text-base-content/60">
+            <div class="mt-4 text-xs text-muted-foreground">
               Ready to search within {searchRadius} miles of {selectedLocation.label}
             </div>
           {/if}
         </div>
 
         <!-- Filters -->
-        <div class="bg-base-100 rounded-lg p-4 space-y-4 border border-base-300">
-          <h2 class="font-semibold text-lg mb-4">Filters</h2>
+        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 space-y-4 border border-border shadow-sm">
+          <h2 class="font-semibold text-lg mb-4 text-foreground">Filters</h2>
 
           <!-- Length Filter -->
-          <div class="form-control">
-            <label for="filter-length" class="label">
-              <span class="label-text font-medium">Length</span>
+          <div>
+            <label for="filter-length" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Length</span>
             </label>
             <select
               id="filter-length"
               bind:value={selectedLength}
-              class="select select-bordered select-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             >
               <option value={null}>All</option>
               {#each lengthOptions as opt}
@@ -475,14 +475,14 @@
           </div>
 
           <!-- Volume Filter -->
-          <div class="form-control">
-            <label for="filter-volume" class="label">
-              <span class="label-text font-medium">Volume</span>
+          <div>
+            <label for="filter-volume" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Volume</span>
             </label>
             <select
               id="filter-volume"
               bind:value={selectedVolume}
-              class="select select-bordered select-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             >
               <option value={null}>All</option>
               {#each volumeOptions as opt}
@@ -492,14 +492,14 @@
           </div>
 
           <!-- Fin System Filter -->
-          <div class="form-control">
-            <label for="filter-fin-system" class="label">
-              <span class="label-text font-medium">Fin System</span>
+          <div>
+            <label for="filter-fin-system" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Fin System</span>
             </label>
             <select
               id="filter-fin-system"
               bind:value={selectedFinSystem}
-              class="select select-bordered select-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             >
               <option value={null}>All</option>
               {#each finSystemOptions as opt}
@@ -509,14 +509,14 @@
           </div>
 
           <!-- Fin Setup Filter -->
-          <div class="form-control">
-            <label for="filter-fin-setup" class="label">
-              <span class="label-text font-medium">Fin Setup</span>
+          <div>
+            <label for="filter-fin-setup" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Fin Setup</span>
             </label>
             <select
               id="filter-fin-setup"
               bind:value={selectedFinSetup}
-              class="select select-bordered select-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             >
               <option value={null}>All</option>
               {#each finSetupOptions as opt}
@@ -526,14 +526,14 @@
           </div>
 
           <!-- Style Filter -->
-          <div class="form-control">
-            <label for="filter-style" class="label">
-              <span class="label-text font-medium">Style</span>
+          <div>
+            <label for="filter-style" class="block mb-2">
+              <span class="font-medium text-sm text-foreground">Style</span>
             </label>
             <select
               id="filter-style"
               bind:value={selectedStyle}
-              class="select select-bordered select-sm w-full"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             >
               <option value={null}>All</option>
               {#each styleOptions as opt}
@@ -544,7 +544,7 @@
 
           <!-- Clear Filters -->
           <button
-            class="btn btn-sm btn-outline w-full mt-4"
+            class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated mt-4"
             on:click={() => {
               selectedLength = null;
               selectedVolume = null;
@@ -562,19 +562,19 @@
       <main class="flex-1">
         <div class="space-y-4">
           {#if filteredBoards.length === 0}
-            <div class="bg-base-100 rounded-lg p-8 text-center border border-base-300">
-              <p class="text-base-content/70">No boards match your filters.</p>
+            <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
+              <p class="text-muted-foreground">No boards match your filters.</p>
             </div>
           {:else}
             {#each filteredBoards as board (board.id)}
               <a
                 href="/surfboards/{board.id}"
                 data-sveltekit-prefetch
-                class="block bg-base-100 rounded-lg border border-base-300 hover:border-primary/50 hover:shadow-lg transition-all duration-200 no-underline"
+                class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-md transition-all duration-200 no-underline"
               >
                 <div class="flex flex-col md:flex-row">
                   <!-- Left: Photo Carousel -->
-                  <div class="md:w-80 flex-shrink-0 relative bg-base-300 rounded-t-lg md:rounded-l-lg md:rounded-tr-none overflow-hidden" style="aspect-ratio: 4/3; min-height: 200px;">
+                  <div class="md:w-80 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden" style="aspect-ratio: 4/3; min-height: 200px;">
                     {#if board.images && board.images.length > 0}
                       {#each board.images as img, index}
                         <img
@@ -638,19 +638,19 @@
                   </div>
 
                   <!-- Right: Metadata -->
-                  <div class="flex-1 p-4 flex flex-col justify-between">
+                  <div class="flex-1 p-5 md:p-6 flex flex-col justify-between">
                     <div>
-                      <div class="flex items-start justify-between gap-3 mb-2">
+                      <div class="flex items-start justify-between gap-3 mb-3">
                         <div>
-                          <h3 class="text-xl font-bold">{board.name}</h3>
+                          <h3 class="text-xl font-bold text-foreground">{board.name}</h3>
                           {#if board.make}
-                            <p class="text-sm text-base-content/70 mt-1">{board.make}</p>
+                            <p class="text-sm text-muted-foreground mt-1">{board.make}</p>
                           {/if}
                         </div>
                         {#if currentUserId && board.user_id === currentUserId}
                           <button
                             type="button"
-                            class="inline-flex items-center bg-primary text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-primary-focus transition-colors shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100"
+                            class="inline-flex items-center rounded-lg border border-border bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-alt shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
                             on:click={(event) => handleEditClick(event, board.id)}
                             aria-label="Edit {board.name}"
                           >
@@ -659,7 +659,7 @@
                         {/if}
                       </div>
                       
-                      <div class="flex flex-wrap gap-4 text-sm mb-3">
+                      <div class="flex flex-wrap gap-4 text-sm mb-4 text-foreground">
                         {#if board.price}
                           <span class="font-semibold text-primary">${board.price}</span>
                         {/if}
@@ -677,23 +677,23 @@
                         {/if}
                       </div>
 
-                      <div class="flex flex-wrap gap-2 text-xs mb-3">
+                      <div class="flex flex-wrap gap-2 text-xs mb-4">
                         {#if board.fin_system}
-                          <span class="badge badge-sm badge-outline">{board.fin_system}</span>
+                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.fin_system}</span>
                         {/if}
                         {#if board.fin_setup}
-                          <span class="badge badge-sm badge-outline">{board.fin_setup}</span>
+                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.fin_setup}</span>
                         {/if}
                         {#if board.style}
-                          <span class="badge badge-sm badge-outline">{board.style}</span>
+                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.style}</span>
                         {/if}
                         {#if board.condition}
-                          <span class="badge badge-sm badge-outline">{board.condition}</span>
+                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.condition}</span>
                         {/if}
                       </div>
 
                       {#if board.city || board.region}
-                        <p class="text-sm text-base-content/60">
+                        <p class="text-sm text-muted-foreground">
                           {[board.city, board.region].filter(Boolean).join(', ')}
                         </p>
                       {/if}
@@ -705,19 +705,19 @@
           {/if}
         </div>
         {#if totalPages > 1}
-          <div class="flex justify-center items-center gap-2 mt-6">
+          <div class="flex justify-center items-center gap-3 mt-8">
             <button
-              class="btn btn-sm"
+              class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
               disabled={currentPage === 1}
               on:click={() => goToPage(currentPage - 1)}
             >
               Previous
             </button>
-            <span class="text-sm text-base-content/70">
+            <span class="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <button
-              class="btn btn-sm"
+              class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
               disabled={currentPage === totalPages}
               on:click={() => goToPage(currentPage + 1)}
             >
