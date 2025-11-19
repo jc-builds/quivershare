@@ -51,94 +51,106 @@
   }
 </script>
 
-<section class="p-6">
+<section class="bg-background text-foreground min-h-screen p-6">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 text-center sm:text-left gap-4">
-    <h1 class="text-3xl font-bold">My Boards</h1>
-    <a href="/create-surfboard" class="btn btn-primary">+ Add Board</a>
+    <h1 class="text-3xl font-semibold tracking-tight text-foreground">My Boards</h1>
+    <a 
+      href="/create-surfboard" 
+      class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      + Add Board
+    </a>
   </div>  
 
 
   {#if errorMessage}
-    <p class="text-center text-red-500">Error: {errorMessage}</p>
+    <p class="text-center text-red-400">Error: {errorMessage}</p>
   {:else if boards.length === 0}
-    <p class="text-center text-gray-400">You haven’t added any boards yet.</p>
+    <p class="text-center text-muted-foreground">You haven't added any boards yet.</p>
   {:else}
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full min-w-[720px]">
+    <div class="overflow-x-auto border border-border rounded-xl bg-surface-elevated">
+      <table class="w-full text-left text-sm min-w-[720px]">
         <thead>
-          <tr>
-            <th>Thumb</th>
-            <th>Name</th>
-            <th>Created</th>
-            <th>Dimensions</th>
-            <th>Condition</th>
-            <th>State</th>
-            <th>Boost</th>
-            <th class="text-right">Actions</th>
+          <tr class="bg-surface text-muted-foreground uppercase text-xs tracking-wide border-b border-border">
+            <th class="px-4 py-3 font-medium">Thumb</th>
+            <th class="px-4 py-3 font-medium">Name</th>
+            <th class="px-4 py-3 font-medium">Created</th>
+            <th class="px-4 py-3 font-medium">Dimensions</th>
+            <th class="px-4 py-3 font-medium">Condition</th>
+            <th class="px-4 py-3 font-medium">State</th>
+            <th class="px-4 py-3 font-medium">Boost</th>
+            <th class="px-4 py-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {#each boards as board}
-            <tr>
-              <td>
-                <div class="avatar">
-                  <div class="mask mask-squircle w-16 h-16 bg-base-300">
-                    <img
-                      src={board.thumbnail_url ??
-                        board.image_url ??
-                        "https://via.placeholder.com/800x600?text=No+Image"}
-                      alt={board.name}
-                      loading="lazy"
-                      on:error={(e) =>
-                        ((e.currentTarget as HTMLImageElement).src =
-                          "https://via.placeholder.com/800x600?text=No+Image")}
-                    />
-                  </div>
+            <tr class="border-b border-border/50 hover:bg-surface/70 transition-colors">
+              <td class="px-4 py-3">
+                <div class="w-16 h-16 rounded-md overflow-hidden bg-surface border border-border">
+                  <img
+                    src={board.thumbnail_url ??
+                      board.image_url ??
+                      "https://via.placeholder.com/800x600?text=No+Image"}
+                    alt={board.name}
+                    class="object-cover w-full h-full"
+                    loading="lazy"
+                    on:error={(e) =>
+                      ((e.currentTarget as HTMLImageElement).src =
+                        "https://via.placeholder.com/800x600?text=No+Image")}
+                  />
                 </div>
               </td>
-              <td>
-                <div class="font-semibold">{board.name}</div>
-                <div class="text-xs text-base-content/60">ID: {board.id}</div>
+              <td class="px-4 py-3">
+                <div class="font-semibold text-foreground">{board.name}</div>
+                <div class="text-xs text-muted-foreground">ID: {board.id}</div>
               </td>
-              <td>
-                <div class="text-sm text-base-content/70">
+              <td class="px-4 py-3">
+                <div class="text-sm text-muted-foreground">
                   {formatDate(board.created_at)}
                 </div>
               </td>
-              <td>
-                <div class="text-sm text-base-content/80">
+              <td class="px-4 py-3">
+                <div class="text-sm text-foreground">
                   {formatLength(board.length)} × {board.width}" × {board.thickness}"
                 </div>
               </td>
-              <td>
-                <span class="badge badge-ghost">{board.condition ?? '—'}</span>
-              </td>
-              <td>
-                <span class={`badge ${board.state === 'active' ? 'badge-success' : 'badge-error'}`}>
-                  {board.state ?? 'unknown'}
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface text-foreground border border-border">
+                  {board.condition ?? '—'}
                 </span>
               </td>
-              <td>
+              <td class="px-4 py-3">
+                {#if board.state === 'active'}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-primary text-primary-foreground">
+                    {board.state}
+                  </span>
+                {:else}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface text-muted-foreground border border-border">
+                    {board.state ?? 'unknown'}
+                  </span>
+                {/if}
+              </td>
+              <td class="px-4 py-3">
                 <button
                   type="button"
-                  class="btn btn-sm btn-outline"
+                  class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
                   on:click={() => goto(`/surfboards/${board.id}/boost`)}
                 >
                   Manage Boost
                 </button>
               </td>
-              <td>
+              <td class="px-4 py-3">
                 <div class="flex justify-end gap-2">
                   <button
                     type="button"
-                    class="btn btn-sm"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
                     on:click={() => viewBoard(board.id)}
                   >
                     View
                   </button>
                   <button
                     type="button"
-                    class="btn btn-sm btn-info"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
                     on:click={(e) => handleEditClick(e, board.id)}
                   >
                     Edit

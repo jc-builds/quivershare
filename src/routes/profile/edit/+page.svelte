@@ -278,17 +278,17 @@
   }
 </script>
 
-<section class="p-6 max-w-2xl mx-auto">
-  <h1 class="text-3xl font-bold mb-6">Edit Profile</h1>
+<section class="min-h-screen bg-background text-foreground px-4 py-6 sm:py-8 max-w-2xl mx-auto">
+  <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight mb-6 text-foreground">Edit Profile</h1>
 
   <form method="POST" on:submit|preventDefault={handleSubmit} class="space-y-6">
     <!-- Profile Picture -->
-    <div class="form-control">
-      <label class="label" for="profile-picture-input">
-        <span class="label-text font-semibold">Profile Picture</span>
+    <div class="space-y-1">
+      <label class="block text-sm font-medium text-muted-foreground" for="profile-picture-input">
+        Profile Picture
       </label>
       <div class="flex items-center gap-4">
-        <div class="w-24 h-24 rounded-full overflow-hidden bg-base-300 border-4 border-base-200 flex-shrink-0">
+        <div class="w-24 h-24 rounded-full overflow-hidden bg-surface border-4 border-border flex-shrink-0">
           <img
             src={profilePicturePreview || '/default_profile_picture.jpg'}
             alt="Profile"
@@ -298,7 +298,7 @@
         <div class="flex gap-2">
           <button
             type="button"
-            class="btn btn-sm btn-primary"
+            class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background shadow-sm"
             on:click={() => fileInput?.click()}
           >
             {profilePicturePreview && profilePicturePreview !== data.profile.profile_picture_url ? 'Change' : 'Upload'}
@@ -306,7 +306,7 @@
           {#if profilePicturePreview && profilePicturePreview !== data.profile.profile_picture_url}
             <button
               type="button"
-              class="btn btn-sm btn-ghost"
+              class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-transparent bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               on:click={removeProfilePicture}
             >
               Remove
@@ -322,100 +322,102 @@
           class="hidden"
         />
       </div>
-      <p class="text-xs text-gray-500 mt-2">
+      <p class="text-xs text-muted-foreground mt-2">
         Square images work best. Max 1MB.
       </p>
     </div>
 
     <!-- Bio -->
-    <div class="form-control">
-      <label for="bio" class="label">
-        <span class="label-text font-semibold">Bio</span>
+    <div class="space-y-1">
+      <label for="bio" class="block text-sm font-medium text-muted-foreground">
+        Bio
       </label>
       <textarea
         id="bio"
         name="bio"
         bind:value={bio}
-        class="textarea textarea-bordered w-full"
+        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         placeholder="Tell us about yourself..."
         rows="4"
         maxlength="500"
       ></textarea>
-      <p class="text-xs text-gray-500 mt-1">
+      <p class="text-xs text-muted-foreground mt-1">
         {bio.length}/500 characters
       </p>
     </div>
 
     <!-- Home Break -->
-    <div class="form-control">
-      <label for="home_break" class="label">
-        <span class="label-text font-semibold">Home Break</span>
+    <div class="space-y-1">
+      <label for="home_break" class="block text-sm font-medium text-muted-foreground">
+        Home Break
       </label>
-      <input
-        id="home_break"
-        class="input input-bordered w-full"
-        name="home_break_query"
-        placeholder="Start typing... e.g. Trestles, Pipeline"
-        value={homeBreakQuery}
-        on:input={onHomeBreakInput}
-        autocomplete="off"
-      />
+      <div class="relative">
+        <input
+          id="home_break"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          name="home_break_query"
+          placeholder="Start typing... e.g. Trestles, Pipeline"
+          value={homeBreakQuery}
+          on:input={onHomeBreakInput}
+          autocomplete="off"
+        />
 
-      {#if suggestions.length > 0}
-        <ul class="menu bg-base-100 rounded-box shadow mt-2 w-full border border-base-300">
-          {#each suggestions as s}
-            <li>
-              <button type="button" class="justify-start" on:click={() => chooseSuggestion(s)}>
-                {s.label}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+        {#if suggestions.length > 0}
+          <ul class="absolute z-10 mt-2 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
+            {#each suggestions as s}
+              <li>
+                <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseSuggestion(s)}>
+                  {s.label}
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
 
       <input type="hidden" name="home_break_label" value={homeBreakLabel} />
       <input type="hidden" name="home_break_lat" value={homeBreakLat} />
       <input type="hidden" name="home_break_lon" value={homeBreakLon} />
-      <p class="text-xs text-gray-500 mt-1">
+      <p class="text-xs text-muted-foreground mt-1">
         Your favorite surf spot or home break
       </p>
     </div>
 
     <!-- Current Location (read-only) -->
-    <div class="form-control">
-      <label class="label" for="location-input">
-        <span class="label-text font-semibold">Location</span>
+    <div class="space-y-1">
+      <label class="block text-sm font-medium text-muted-foreground" for="location-input">
+        Location
       </label>
       <input
         id="location-input"
         type="text"
         value={data.profile.location_label || [data.profile.city, data.profile.region, data.profile.country].filter(Boolean).join(', ') || 'Not set'}
-        class="input input-bordered w-full"
+        class="w-full rounded-lg border border-border bg-surface text-sm text-muted-foreground px-3 py-2 cursor-not-allowed opacity-70"
         disabled
       />
-      <p class="text-xs text-gray-500 mt-1">
+      <p class="text-xs text-muted-foreground mt-1">
         Update your location during onboarding
       </p>
     </div>
 
     {#if form?.message}
-      <div class="alert alert-info">
-        <span>{form.message}</span>
+      <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
+        <span class="text-muted-foreground">{form.message}</span>
       </div>
     {/if}
 
     {#if form?.error}
-      <div class="alert alert-error">
+      <div class="mt-4 rounded-lg border border-red-500/60 bg-surface p-3 text-sm text-red-400">
         <span>{form.error}</span>
       </div>
     {/if}
 
     <!-- Submit Buttons -->
     <div class="flex gap-2 justify-end">
-      <a href="/profile/{data.profile.username}" class="btn btn-ghost">
+      <a href="/profile/{data.profile.username}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         Cancel
       </a>
-      <button type="submit" class="btn btn-primary" disabled={uploadingPicture}>
+      <button type="submit" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed" disabled={uploadingPicture}>
         {uploadingPicture ? 'Saving...' : 'Save Changes'}
       </button>
     </div>
@@ -425,8 +427,8 @@
 <!-- Crop Modal -->
 {#if showCropModal}
   <div class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-    <div class="bg-base-100 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
-      <h2 class="text-xl font-bold mb-4">Crop Profile Picture</h2>
+    <div class="bg-surface-elevated border border-border rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-auto shadow-xl text-foreground">
+      <h2 class="text-lg sm:text-xl font-semibold mb-4">Crop Profile Picture</h2>
       
       <div class="mb-4" style="max-width: 100%; max-height: 60vh;">
         <img
@@ -439,13 +441,13 @@
       </div>
 
       <div class="flex gap-2 justify-end">
-        <button type="button" class="btn btn-ghost" on:click={closeCropModal}>
+        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={closeCropModal}>
           Cancel
         </button>
-        <button type="button" class="btn btn-ghost" on:click={useOriginalNoCrop}>
+        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={useOriginalNoCrop}>
           Use Original
         </button>
-        <button type="button" class="btn btn-primary" on:click={confirmCrop}>
+        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={confirmCrop}>
           Crop & Use
         </button>
       </div>

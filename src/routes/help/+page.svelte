@@ -76,56 +76,62 @@
   />
 </svelte:head>
 
-<section class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
-  <header class="mb-10">
-    <h1 class="text-3xl font-bold tracking-tight">Help & FAQ</h1>
-    <p class="mt-3 text-base opacity-80">Quick answers for getting the most out of QuiverShare.</p>
+<section class="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-10 sm:py-12 max-w-3xl mx-auto">
+  <header class="mb-8 sm:mb-10">
+    <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Help & FAQ</h1>
+    <p class="mt-3 text-sm sm:text-base text-muted-foreground">Quick answers for getting the most out of QuiverShare.</p>
   </header>
 
-  <div class="space-y-4">
+  <div class="space-y-3 sm:space-y-4">
     {#each faqs as item (item.id)}
-      <div id={item.id} class="collapse collapse-arrow bg-base-200/50 rounded-xl border border-base-300">
-        <input type="checkbox" aria-label={`Toggle answer for ${item.q}`} />
-        <div class="collapse-title text-base font-medium">
-          {item.q}
-        </div>
-        <div class="collapse-content">
+      <details
+        id={item.id}
+        class="group rounded-xl border border-border bg-surface-elevated/80 shadow-sm overflow-hidden"
+      >
+        <summary
+          class="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 cursor-pointer select-none"
+        >
+          <span class="text-sm sm:text-base font-medium text-foreground">
+            {item.q}
+          </span>
+          <span
+            class="ml-3 text-xs sm:text-sm text-muted-foreground transition-transform duration-200 group-open:rotate-90"
+            aria-hidden="true"
+          >
+            ▸
+          </span>
+        </summary>
+        <div class="px-4 sm:px-5 pb-4 pt-2 border-t border-border/70">
           {#if item.a.trim().startsWith('-')}
-            <ul class="list-disc pl-6 space-y-1 text-[15px] leading-7">
+            <ul class="list-disc pl-6 space-y-1 text-[15px] leading-7 text-foreground">
               {#each item.a.split('\n').filter(Boolean) as line}
                 {#if line.trim().startsWith('-')}
-                  <li>{line.replace(/^-\\s*/, '')}</li>
+                  <li>{line.replace(/^-\s*/, '')}</li>
                 {:else}
                   <li>{line}</li>
                 {/if}
               {/each}
             </ul>
           {:else}
-            <p class="text-[15px] leading-7 whitespace-pre-line">{item.a}</p>
+            <p class="text-[15px] leading-7 whitespace-pre-line text-foreground">{item.a}</p>
           {/if}
         </div>
-      </div>
+      </details>
     {/each}
   </div>
 
-  <footer class="mt-10">
-    <div class="join join-vertical sm:join-horizontal gap-3 sm:gap-0">
-      <a href="/create-surfboard" class="btn btn-primary join-item">List a Board</a>
-      <a href="/s" class="btn btn-outline join-item">Browse Boards</a>
+  <footer class="mt-10 sm:mt-12">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a href="/create-surfboard" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        List a Board
+      </a>
+      <a href="/s" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        Browse Boards
+      </a>
     </div>
-    <p class="mt-4 text-sm opacity-70">
-      Still stuck? Email <a class="link" href="mailto:cooneyjack@microsoft.com">cooneyjack@microsoft.com</a>.
+    <p class="mt-4 text-sm text-muted-foreground">
+      Still stuck? Email <a class="text-primary hover:text-primary-alt underline underline-offset-2" href="mailto:cooneyjack@microsoft.com">cooneyjack@microsoft.com</a>.
     </p>
   </footer>
 </section>
-
-<style>
-  .collapse .collapse-title {
-    cursor: pointer;
-  }
-
-  .collapse input {
-    display: none;
-  }
-</style>
 

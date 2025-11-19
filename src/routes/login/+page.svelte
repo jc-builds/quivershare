@@ -17,12 +17,22 @@
   }
 </script>
 
-<section class="flex flex-col items-center justify-start min-h-screen pt-56 text-center space-y-8">
+<section class="min-h-screen bg-background text-foreground flex flex-col items-center justify-center text-center px-4 py-24 space-y-6">
   {#if data.user}
-    <h1 class="text-3xl font-bold">You’re already signed in</h1>
-    <a class="btn btn-primary px-6 py-3 text-lg rounded-lg" href="/my-boards">Go to My Boards</a>
+    <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">You're already signed in</h1>
+    <a 
+      class="inline-flex items-center justify-center px-6 py-3 rounded-lg text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background" 
+      href="/my-boards"
+    >
+      Go to My Boards
+    </a>
   {:else}
-    <h1 class="text-3xl font-bold">Sign in to QuiverShare</h1>
-    <a class="btn btn-primary px-6 py-3 text-lg rounded-lg" href="/auth/start">Sign in with Google</a>
+    <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">Sign in to QuiverShare</h1>
+    <a 
+      class="inline-flex items-center justify-center px-6 py-3 rounded-lg text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background" 
+      href="/auth/start"
+    >
+      Sign in with Google
+    </a>
   {/if}
 </section>

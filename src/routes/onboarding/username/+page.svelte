@@ -155,20 +155,26 @@
   }
 </script>
 
-<section class="max-w-md mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-4">Finish setup</h1>
+<section class="max-w-md mx-auto px-4 py-8 sm:px-6 bg-background text-foreground">
+  <h1 class="text-2xl font-semibold tracking-tight mb-2 text-foreground">Finish setup</h1>
+  <p class="text-sm text-muted-foreground mb-6">
+    Set up your QuiverShare profile so other surfers know who you are.
+  </p>
 
-  <form method="POST" enctype="multipart/form-data" class="space-y-4">
+  <form method="POST" enctype="multipart/form-data" class="space-y-5 bg-surface-elevated/90 border border-border rounded-xl px-5 py-6 shadow-sm">
     <input type="hidden" name="redirectTo" value={redirectTo} />
 
     <!-- Username (required) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Username <span class="text-error">*</span></span></div>
+    <div class="space-y-1.5">
+      <label for="username" class="block text-xs font-medium text-muted-foreground">
+        Username <span class="text-red-400">*</span>
+      </label>
       <input
+        id="username"
         name="username"
         bind:value={username}
         placeholder="3–20 chars: a–z 0–9 _"
-        class="input input-bordered w-full"
+        class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         minlength="3"
         maxlength="20"
         pattern={usernamePattern}
@@ -179,40 +185,44 @@
         aria-errormessage="username-error"
       />
       {#if form?.fieldErrors?.username}
-        <div id="username-error" class="text-error text-sm mt-1">{form.fieldErrors.username}</div>
+        <p id="username-error" class="mt-1 text-xs text-red-400">{form.fieldErrors.username}</p>
       {/if}
-    </label>
+    </div>
 
     <!-- Full Name (optional) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Full Name (optional)</span></div>
+    <div class="space-y-1.5">
+      <label for="full_name" class="block text-xs font-medium text-muted-foreground">
+        Full Name (optional)
+      </label>
       <input
+        id="full_name"
         name="full_name"
         bind:value={fullName}
         placeholder="Your full name"
-        class="input input-bordered w-full"
+        class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         maxlength="100"
         autocomplete="name"
         aria-invalid={!!form?.fieldErrors?.full_name}
         aria-errormessage="full_name-error"
       />
       {#if form?.fieldErrors?.full_name}
-        <div id="full_name-error" class="text-error text-sm mt-1">{form.fieldErrors.full_name}</div>
+        <p id="full_name-error" class="mt-1 text-xs text-red-400">{form.fieldErrors.full_name}</p>
       {/if}
-    </label>
+    </div>
 
     <!-- Profile Picture (optional) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Profile Picture (optional)</span></div>
+    <div class="space-y-2">
+      <span class="block text-xs font-medium text-muted-foreground">
+        Profile Picture (optional)
+      </span>
       <div class="flex items-center gap-4">
-        <div class="avatar">
-          <div class="w-20 h-20 rounded-full bg-base-300">
-            <img
-              src={profilePicturePreview || '/default_profile_picture.jpg'}
-              alt="Profile preview"
-              on:error={(e) => (e.currentTarget.src = '/default_profile_picture.jpg')}
-            />
-          </div>
+        <div class="w-20 h-20 rounded-full bg-surface border border-border overflow-hidden flex items-center justify-center">
+          <img
+            src={profilePicturePreview || '/default_profile_picture.jpg'}
+            alt="Profile preview"
+            class="w-full h-full object-cover"
+            on:error={(e) => ((e.currentTarget as HTMLImageElement).src = '/default_profile_picture.jpg')}
+          />
         </div>
         <div class="flex-1">
           <input
@@ -220,12 +230,12 @@
             name="profile_picture"
             accept="image/jpeg,image/jpg,image/png,image/webp"
             on:change={handleProfilePictureSelect}
-            class="file-input file-input-bordered file-input-sm w-full"
+            class="block w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-surface file:text-foreground file:text-xs file:font-medium hover:file:bg-surface-elevated cursor-pointer"
           />
           {#if profilePicturePreview && profilePicturePreview !== '/default_profile_picture.jpg'}
             <button
               type="button"
-              class="btn btn-sm btn-ghost mt-2"
+              class="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground hover:text-foreground"
               on:click={removeProfilePicture}
             >
               Remove
@@ -234,36 +244,41 @@
         </div>
       </div>
       {#if form?.fieldErrors?.profile_picture}
-        <div class="text-error text-sm mt-1">{form.fieldErrors.profile_picture}</div>
+        <p class="mt-1 text-xs text-red-400">{form.fieldErrors.profile_picture}</p>
       {/if}
-    </label>
+    </div>
 
     <!-- Location (optional) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Location (optional)</span></div>
-      <input
-        class="input input-bordered w-full"
-        name="locationQuery"
-        placeholder="Start typing... e.g. Brooklyn"
-        value={locationQuery}
-        on:input={onLocationInput}
-        autocomplete="off"
-        aria-autocomplete="list"
-        aria-expanded={locationSuggestions.length > 0}
-        aria-controls="location-suggestions"
-      />
+    <div class="space-y-1.5">
+      <label for="location" class="block text-xs font-medium text-muted-foreground">
+        Location (optional)
+      </label>
+      <div class="relative">
+        <input
+          id="location"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          name="locationQuery"
+          placeholder="Start typing... e.g. Brooklyn"
+          value={locationQuery}
+          on:input={onLocationInput}
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-expanded={locationSuggestions.length > 0}
+          aria-controls="location-suggestions"
+        />
 
-      {#if locationSuggestions.length > 0}
-        <ul id="location-suggestions" class="menu bg-base-100 rounded-box shadow mt-2 w-full">
-          {#each locationSuggestions as s}
-            <li>
-              <button type="button" class="justify-start" on:click={() => chooseLocationSuggestion(s)}>
-                {s.label}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+        {#if locationSuggestions.length > 0}
+          <ul id="location-suggestions" class="mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-md text-sm z-20 absolute">
+            {#each locationSuggestions as s}
+              <li>
+                <button type="button" class="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-surface/80 transition-colors" on:click={() => chooseLocationSuggestion(s)}>
+                  {s.label}
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
 
       <!-- Hidden fields sent to server on submit -->
       <input type="hidden" name="place_id" value={loc_id} />
@@ -273,64 +288,72 @@
       <input type="hidden" name="city" value={loc_city} />
       <input type="hidden" name="region" value={loc_region} />
       <input type="hidden" name="country" value={loc_country} />
-    </label>
+    </div>
 
     <!-- Home Break (optional) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Home Break (optional)</span></div>
-      <input
-        class="input input-bordered w-full"
-        name="homeBreakQuery"
-        placeholder="Start typing... e.g. Rockaway Beach"
-        value={homeBreakQuery}
-        on:input={onHomeBreakInput}
-        autocomplete="off"
-        aria-autocomplete="list"
-        aria-expanded={homeBreakSuggestions.length > 0}
-        aria-controls="homebreak-suggestions"
-      />
+    <div class="space-y-1.5">
+      <label for="home_break" class="block text-xs font-medium text-muted-foreground">
+        Home Break (optional)
+      </label>
+      <div class="relative">
+        <input
+          id="home_break"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          name="homeBreakQuery"
+          placeholder="Start typing... e.g. Rockaway Beach"
+          value={homeBreakQuery}
+          on:input={onHomeBreakInput}
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-expanded={homeBreakSuggestions.length > 0}
+          aria-controls="homebreak-suggestions"
+        />
 
-      {#if homeBreakSuggestions.length > 0}
-        <ul id="homebreak-suggestions" class="menu bg-base-100 rounded-box shadow mt-2 w-full">
-          {#each homeBreakSuggestions as s}
-            <li>
-              <button type="button" class="justify-start" on:click={() => chooseHomeBreakSuggestion(s)}>
-                {s.label}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+        {#if homeBreakSuggestions.length > 0}
+          <ul id="homebreak-suggestions" class="mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-md text-sm z-20 absolute">
+            {#each homeBreakSuggestions as s}
+              <li>
+                <button type="button" class="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-surface/80 transition-colors" on:click={() => chooseHomeBreakSuggestion(s)}>
+                  {s.label}
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
 
       <!-- Hidden fields sent to server on submit -->
       <input type="hidden" name="home_break_label" value={homeBreakLabel} />
       <input type="hidden" name="home_break_id" value={hb_id} />
       <input type="hidden" name="home_break_lat" value={hb_lat} />
       <input type="hidden" name="home_break_lon" value={hb_lon} />
-    </label>
+    </div>
 
     <!-- Magic Board (optional) -->
-    <label class="form-control w-full">
-      <div class="label"><span class="label-text">Magic Board (optional)</span></div>
+    <div class="space-y-1.5">
+      <label for="magic_board" class="block text-xs font-medium text-muted-foreground">
+        Magic Board (optional)
+      </label>
       <input
+        id="magic_board"
         name="magic_board"
         bind:value={magicBoard}
         placeholder="Your favorite board"
-        class="input input-bordered w-full"
+        class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         maxlength="200"
         aria-invalid={!!form?.fieldErrors?.magic_board}
         aria-errormessage="magic_board-error"
       />
       {#if form?.fieldErrors?.magic_board}
-        <div id="magic_board-error" class="text-error text-sm mt-1">{form.fieldErrors.magic_board}</div>
+        <p id="magic_board-error" class="mt-1 text-xs text-red-400">{form.fieldErrors.magic_board}</p>
       {/if}
-    </label>
+    </div>
 
     {#if form?.message}
-      <p class="text-error text-sm">{form.message}</p>
+      <p class="text-sm text-red-400">{form.message}</p>
     {/if}
 
-    <button class="btn btn-primary w-full" type="submit" disabled={pickingLocation || pickingHomeBreak}>
+    <button class="inline-flex items-center justify-center w-full rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed" type="submit" disabled={pickingLocation || pickingHomeBreak}>
       Save
     </button>
   </form>

@@ -5,7 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Make Tailwind/DaisyUI default to your sans stack (set in tailwind.config.cjs) */
+/* Make Tailwind default to your sans stack (set in tailwind.config.js) */
 @layer base {
   html {
     font-family: theme('fontFamily.sans');
