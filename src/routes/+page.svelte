@@ -70,6 +70,14 @@
             List a board
           </a>
         </div>
+        <div class="flex flex-col items-center text-center mt-4">
+          <p class="text-xs sm:text-sm text-muted-foreground mt-2">
+            Right now we're focused on New York, New Jersey, and the East Coast while we grow. More regions coming soon.
+          </p>
+          <p class="text-xs sm:text-sm text-muted-foreground">
+            Early sellers get <span class="font-semibold text-primary">one free 14-day Boost per board listed</span>, paid ads for your listing on Instagram and Facebook.
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -198,6 +206,71 @@
           </button>
         </form>
       </div>
+    </div>
+  </section>
+
+  <!-- How it works Section -->
+  <section
+    class="border-t border-border bg-background py-16 md:py-20"
+    aria-labelledby="how-it-works-title"
+  >
+    <div class="mx-auto max-w-4xl px-4 md:px-6 lg:px-8">
+      <div class="mb-10 text-center">
+        <h2
+          id="how-it-works-title"
+          class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-3"
+        >
+          How QuiverShare works
+        </h2>
+        <p class="text-base md:text-lg text-muted-foreground">
+          A simple flow for both surfers and sellers / shops.
+        </p>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3 md:gap-8">
+        <!-- Step 1 -->
+        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
+          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
+            Step 1
+          </p>
+          <h3 class="mb-2 text-base font-semibold text-foreground">
+            Browse boards near you
+          </h3>
+          <p class="text-sm leading-relaxed text-muted-foreground">
+            Enter your location, pick a radius, and see used boards nearby. Filter by size, style, or price when you're ready.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
+          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
+            Step 2
+          </p>
+          <h3 class="mb-2 text-base font-semibold text-foreground">
+            List your board in minutes
+          </h3>
+          <p class="text-sm leading-relaxed text-muted-foreground">
+            Add photos, dims, fin setup, and price. Your listing is built around the details surfers actually care about.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
+          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
+            Step 3
+          </p>
+          <h3 class="mb-2 text-base font-semibold text-foreground">
+            Boost to reach more surfers
+          </h3>
+          <p class="text-sm leading-relaxed text-muted-foreground">
+            Run ads for your board on Instagram and Facebook using Meta's audience data, so the right people see it.
+          </p>
+        </div>
+      </div>
+
+      <p class="mt-8 text-center text-sm text-muted-foreground">
+        Boosts are currently offered as <span class="font-semibold text-primary">free credits to early sellers</span>, to help get your board seen!
+      </p>
     </div>
   </section>
 

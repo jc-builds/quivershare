@@ -37,6 +37,76 @@
 
   // Get main image for display
   $: mainImage = data.images[0]?.image_url || data.board.thumbnail_url;
+
+  // Boost status logic
+  $: currentBoost = data.currentBoost;
+  $: hasActiveBoost = data.hasActiveBoost;
+
+  // Status label mapping
+  $: boostStatusLabel = currentBoost
+    ? currentBoost.status === 'pending'
+      ? 'Pending review'
+      : currentBoost.status === 'live'
+      ? 'Delivering'
+      : currentBoost.status === 'completed'
+      ? 'Completed'
+      : currentBoost.status
+    : null;
+
+  // Status helper text
+  $: boostStatusHelper = currentBoost
+    ? currentBoost.status === 'pending'
+      ? 'Your Boost request is pending review.'
+      : currentBoost.status === 'live'
+      ? 'Your Boost is currently running.'
+      : currentBoost.status === 'completed'
+      ? 'Your last Boost has completed. You can request another one below.'
+      : null
+    : null;
+
+  // Format date for display
+  function formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Location autocomplete state
+  let locationQuery = '';
+  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
+  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
+  let locationDebounceHandle: any;
+
+  // Location search functions
+  async function searchLocationPlaces(q: string) {
+    if (!q || q.length < 2) {
+      locationSuggestions = [];
+      return;
+    }
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    locationSuggestions = data.features ?? [];
+  }
+
+  function onLocationInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    locationQuery = v;
+    selectedLocation = null;
+
+    clearTimeout(locationDebounceHandle);
+    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
+    locationQuery = s.label;
+    selectedLocation = {
+      label: s.label,
+      lat: s.lat,
+      lon: s.lon,
+      city: s.city,
+      region: s.region
+    };
+    locationSuggestions = [];
+  }
 </script>
 
 <svelte:head>
@@ -65,7 +135,35 @@
     </nav>
 
     <!-- Header -->
-    <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Boost this board</h1>
+    <div class="flex items-center gap-2 mb-2">
+      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Boost This Board</h1>
+      <!-- Help Icon with Tooltip -->
+      <div class="relative group">
+        <button
+          type="button"
+          class="flex items-center justify-center w-5 h-5 rounded-full border border-border bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="What's a Boost?"
+        >
+          <span class="text-xs font-medium">?</span>
+        </button>
+        <!-- Tooltip -->
+        <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 sm:w-80 p-3 bg-surface-elevated border border-border rounded-lg shadow-lg text-xs text-foreground opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150 z-50 pointer-events-none">
+          <p class="font-semibold mb-1.5 text-foreground">What's a Boost?</p>
+          <p class="text-muted-foreground leading-relaxed">
+            A Boost is a 14-day paid Instagram + Facebook promotion for your board targeting local surfers. It typically reaches around 3,000 people. 
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description Blurb -->
+    <p class="text-sm sm:text-base text-foreground/80 mb-4 sm:mb-6">
+      A Boost is a 14-day paid ad for your board on Instagram and Facebook, typically reaching around 3,000 local surfers.
+    </p>
+    <p class="text-sm sm:text-base text-foreground/80 mb-6">
+      For a limited time, pilot clients receive <span class="font-semibold text-primary">one free Boost</span> for every surfboard they list.
+    </p>
+    
 
     <!-- Board Summary Card -->
     <div class="bg-surface-elevated/90 rounded-xl border border-border shadow-sm p-5 sm:p-6">
@@ -91,7 +189,7 @@
 
           {#if data.board.price != null}
             <div>
-              <p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Price</p>
+              <p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Asking Price</p>
               <p class="text-lg sm:text-xl font-semibold text-primary">
                 ${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
@@ -142,15 +240,69 @@
 
     <!-- Boost Form Card -->
     <div class="bg-surface-elevated/90 rounded-xl border border-border shadow-sm p-5 sm:p-6">
-      <h2 class="text-lg sm:text-xl font-semibold mb-4 text-foreground">Boost settings</h2>
+      <h2 class="text-lg sm:text-xl font-semibold mb-4 text-foreground">Boost Settings</h2>
 
       {#if form?.success}
         <div class="mb-6 rounded-lg border border-border/60 bg-emerald-500/10 text-emerald-300 px-4 py-3 text-sm">
           <span>{form.message || 'Boost request submitted successfully!'}</span>
         </div>
+      {:else if form?.message && !form?.success}
+        <div class="mb-6 rounded-lg border border-red-500/60 bg-surface p-3 text-sm text-red-400">
+          <span>{form.message}</span>
+        </div>
       {/if}
 
-      <form method="POST" class="space-y-6 sm:space-y-7 max-w-xl" use:enhance>
+      <!-- Current Boost Status Card -->
+      {#if currentBoost}
+        <div class="mb-6 rounded-xl border border-border/70 bg-surface-elevated/80 px-4 py-3">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {hasActiveBoost ? 'Current Boost' : 'Last Boost'}
+            </p>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium {currentBoost.status === 'pending'
+                ? 'bg-warning/20 text-warning'
+                : currentBoost.status === 'live'
+                ? 'bg-primary/20 text-primary'
+                : 'bg-muted text-muted-foreground'}"
+            >
+              {boostStatusLabel}
+            </span>
+          </div>
+
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="text-muted-foreground">Target area: </span>
+              <span class="text-foreground">{currentBoost.target_area}</span>
+            </div>
+            <div>
+              <span class="text-muted-foreground">Dates: </span>
+              <span class="text-foreground">
+                {formatDate(currentBoost.start_date)} – {formatDate(currentBoost.end_date)}
+              </span>
+            </div>
+            <div>
+              <span class="text-muted-foreground">Type: </span>
+              <span class="text-foreground">
+                {currentBoost.kind === 'free' ? 'Free Boost' : 'Paid Boost'}
+              </span>
+            </div>
+          </div>
+
+          {#if boostStatusHelper}
+            <p class="mt-3 text-xs text-muted-foreground">{boostStatusHelper}</p>
+          {/if}
+        </div>
+      {/if}
+
+      {#if hasActiveBoost}
+        <!-- Active boost - hide form and show message -->
+        <div class="rounded-lg border border-border/60 bg-surface/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>You already have a Boost in progress for this board.</p>
+        </div>
+      {:else}
+        <!-- No active boost - show form -->
+        <form method="POST" class="space-y-6 sm:space-y-7 max-w-xl" use:enhance>
         <!-- Hidden: board id -->
         <input type="hidden" name="board_id" value={data.board.id} />
 
@@ -159,114 +311,76 @@
           <label for="target_area" class="block text-xs font-medium text-muted-foreground">
             Target area
           </label>
+          <div class="relative">
+            <input
+              type="text"
+              id="target_area"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              placeholder="Start typing... e.g. Rockaway Beach, NY"
+              value={locationQuery}
+              on:input={onLocationInput}
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="location-suggestions-list"
+              required
+            />
+            {#if locationSuggestions.length > 0}
+              <ul
+                id="location-suggestions-list"
+                class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg text-sm"
+              >
+                {#each locationSuggestions as s}
+                  <li>
+                    <button
+                      type="button"
+                      class="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-surface transition-colors"
+                      on:click={() => chooseLocationSuggestion(s)}
+                    >
+                      {s.label}
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+          {#if selectedLocation}
+            <p class="mt-1 text-xs text-muted-foreground">
+              Selected: {selectedLocation.label}
+            </p>
+          {/if}
+          <p class="mt-1 text-xs text-muted-foreground">
+            Select a location where you want your board to be promoted. Boosts will target surfers in this area.
+          </p>
+          <!-- Hidden field to submit the selected location label -->
+          <input type="hidden" name="target_area" value={selectedLocation?.label || ''} />
+        </div>
+
+        <!-- Start Date -->
+        <div class="space-y-1.5">
+          <label for="start_date" class="block text-xs font-medium text-muted-foreground">
+            Start date
+          </label>
           <input
-            type="text"
-            id="target_area"
-            name="target_area"
+            type="date"
+            id="start_date"
+            name="start_date"
             class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            placeholder="e.g. Rockaway Beach, NY or 11231 + 25 miles"
+            value={new Date().toISOString().split('T')[0]}
             required
           />
           <p class="mt-1 text-xs text-muted-foreground">
-            City/region or zip + optional radius (e.g. 'Rockaway Beach, NY', '11231 + 25 miles').
+            Boosts run for 14 days from the selected start date.
           </p>
         </div>
 
-        <!-- Audience Skill Level -->
-        <div class="space-y-1.5">
-          <label for="skill_level" class="block text-xs font-medium text-muted-foreground">
-            Surfer skill level
-          </label>
-          <select id="skill_level" name="skill_level" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-            <option value="">Select skill level</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-            <option value="not_sure">Not sure</option>
-          </select>
-        </div>
-
-        <!-- Age Range -->
-        <div class="space-y-1.5">
-          <label for="age_range" class="block text-xs font-medium text-muted-foreground">
-            Age range
-          </label>
-          <select id="age_range" name="age_range" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-            <option value="18-55" selected>18-55 (default)</option>
-            <option value="16-25">16-25</option>
-            <option value="25-45">25-45</option>
-            <option value="45+">45+</option>
-            <option value="all">All</option>
-          </select>
-        </div>
-
-        <!-- Duration / Dates -->
-        <div class="space-y-1.5">
-          <div class="text-xs font-medium text-muted-foreground mb-1">Duration / Dates</div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label for="start_date" class="block text-xs font-medium text-muted-foreground">
-                Start date
-              </label>
-              <input
-                type="date"
-                id="start_date"
-                name="start_date"
-                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                value={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            <div>
-              <label for="end_date" class="block text-xs font-medium text-muted-foreground">
-                End date
-              </label>
-              <input
-                type="date"
-                id="end_date"
-                name="end_date"
-                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              />
-            </div>
+          <!-- Submit Button -->
+          <div class="pt-4">
+            <button type="submit" class="inline-flex items-center justify-center w-full rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed">
+              Submit Boost Request
+            </button>
           </div>
-        </div>
-
-        <!-- Boost Goal -->
-        <div class="space-y-1.5">
-          <label for="goal" class="block text-xs font-medium text-muted-foreground">
-            Boost goal
-          </label>
-          <select id="goal" name="goal" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
-            <option value="">Select goal</option>
-            <option value="sell_fast">Sell fast</option>
-            <option value="more_views">Get more views</option>
-            <option value="more_messages">Get more messages</option>
-          </select>
-        </div>
-
-        <!-- Optional Notes -->
-        <div class="space-y-1.5">
-          <label for="notes" class="block text-xs font-medium text-muted-foreground">
-            Anything else I should know?
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground min-h-[120px] resize-vertical shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            rows="4"
-            placeholder="Example: great for beginners, firm on price, open to trades, etc."
-          ></textarea>
-          <p class="mt-1 text-xs text-muted-foreground">
-            Example: great for beginners, firm on price, open to trades, etc.
-          </p>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="pt-4">
-          <button type="submit" class="inline-flex items-center justify-center w-full rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold shadow-sm hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed">
-            Submit Boost Request
-          </button>
-        </div>
-      </form>
+        </form>
+      {/if}
     </div>
   </div>
 </section>

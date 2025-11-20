@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
+  import { browser } from '$app/environment';
 
   export let data: { 
     userId: string | null;
@@ -105,6 +106,7 @@
   let searchRadius = 50; // Default 50 miles
   let locationDebounceHandle: any;
   let activeLocationFilter: { location: { label: string; lat: number; lon: number }; radius: number } | null = null;
+  let initializedFromQuery = false;
 
   // Initialize selected location from user's profile
   $: if (data.userLocationLat && data.userLocationLon && !selectedLocation) {
@@ -176,6 +178,65 @@
     };
     locationSuggestions = [];
   }
+
+  // Hydrate location filter from URL query parameters (from homepage search)
+  $: (async () => {
+    // Only run on client-side and only once
+    if (!browser || initializedFromQuery) return;
+
+    const $page = get(page);
+    const searchParams = $page.url.searchParams;
+
+    const q = searchParams.get('q');
+    const distanceParam = searchParams.get('distance');
+
+    if (!q) return; // nothing to hydrate from
+    initializedFromQuery = true;
+
+    try {
+      console.log('🌐 Hydrating location filter from query params:', { q, distanceParam });
+
+      // Set the visible input value
+      locationQuery = q;
+
+      // Use existing API to resolve the place
+      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const features = data.features ?? [];
+
+      if (!features.length) {
+        console.warn('No features returned for q=', q);
+        return;
+      }
+
+      const first = features[0];
+
+      selectedLocation = {
+        label: first.label,
+        lat: first.lat,
+        lon: first.lon
+      };
+
+      // Hydrate radius from query or fall back to default
+      const parsedDistance = distanceParam ? Number(distanceParam) : NaN;
+      if (!Number.isNaN(parsedDistance) && parsedDistance > 0) {
+        searchRadius = parsedDistance;
+      }
+
+      activeLocationFilter = {
+        location: selectedLocation,
+        radius: searchRadius
+      };
+
+      console.log('✅ Active location filter hydrated from query:', activeLocationFilter);
+
+      // Apply filters with this new activeLocationFilter
+      applyFilters();
+      console.log('filteredBoards after hydration:', filteredBoards.length);
+    } catch (err) {
+      console.error('❌ Error hydrating location from query params:', err);
+    }
+  })();
 
   // Calculate distance between two coordinates using Haversine formula
   function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

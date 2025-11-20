@@ -9,9 +9,13 @@
     session: import('@supabase/supabase-js').Session | null;
     user: import('@supabase/supabase-js').User | null;
     profile: { username: string | null; profile_picture_url: string | null } | null;
+    boostCredits: { total_credits: number | null } | null;
   };
 
   const isAuthed = !!data.session;
+
+  // Compute boost balance (default to 0 if null or missing)
+  const boostBalance = data.boostCredits?.total_credits ?? 0;
 
   const displayName =
     data.profile?.username
@@ -116,6 +120,15 @@
     <!-- Right: auth / profile / buttons -->
     <div class="flex items-center gap-3">
       {#if isAuthed}
+        <!-- Boost balance button (desktop) -->
+        <button
+          type="button"
+          class="hidden md:inline-flex items-center rounded-full border border-border bg-surface-elevated/80 px-3 py-1 text-xs font-medium text-foreground hover:border-primary/60 hover:bg-surface-elevated transition-colors"
+          aria-label={`Boost balance: ${boostBalance}`}
+        >
+          <span class="nav-li-font">Boost Balance: <span class="font-semibold ml-1">{boostBalance}</span></span>
+        </button>
+
         <!-- Desktop profile menu -->
         <div class="relative hidden md:block" bind:this={profileMenuElement}>
           <button 
@@ -208,6 +221,10 @@
             <div class="px-4 py-3 border-b border-border">
               <p class="text-sm font-medium text-foreground">{displayName}</p>
             </div>
+            <div class="px-4 py-2 text-sm text-muted-foreground flex items-center justify-between border-b border-border">
+              <span>Balance</span>
+              <span class="font-semibold">{boostBalance}</span>
+            </div>
             <div class="py-1 nav-li-font">
               {#if data.profile?.username}
                 <a 
@@ -268,11 +285,23 @@
 
 <slot />
 
-<!-- Keep the footer for logged-in users only -->
-{#if isAuthed}
-  <footer class="w-full p-4 bg-surface border-t border-border mt-8">
-    <div class="mx-auto text-center text-sm text-muted-foreground">
-      <p>© {new Date().getFullYear()} QuiverShare — All rights reserved</p>
+<!-- Global Footer -->
+<footer class="w-full bg-surface border-t border-border mt-12">
+  <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-6 text-center space-y-2">
+    <p class="text-sm text-muted-foreground">
+      © {new Date().getFullYear()} QuiverShare — Built by surfers, for surfers.
+    </p>
+
+    <p class="text-sm text-muted-foreground">
+      Contact: 
+      <a href="mailto:support@quivershare.com" class="hover:text-foreground underline">
+        info@quivershare.com
+      </a>
+    </p>
+
+    <div class="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+      <a href="/terms" class="hover:text-foreground underline">Terms of Service</a>
+      <a href="/privacy" class="hover:text-foreground underline">Privacy Policy</a>
     </div>
-  </footer>
-{/if}
+  </div>
+</footer>

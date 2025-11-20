@@ -11,16 +11,34 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   const session = (await locals.getSession?.()) ?? locals.session ?? null;
   const user = session?.user ?? null;
 
-  let profile: { username: string | null } | null = null;
+  let profile: { username: string | null; profile_picture_url: string | null } | null = null;
+  let boostCredits: { total_credits: number | null } | null = null;
 
   if (user) {
     const { data } = await locals.supabase
       .from('profiles')
-      .select('username')
+      .select('username, profile_picture_url')
       .eq('id', user.id)
       .maybeSingle();
 
     profile = data ?? null;
+
+    // Fetch boost credits for authenticated users
+    const { data: creditsRow, error: creditsError } = await locals.supabase
+      .from('boost_credits')
+      .select('total_credits')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!creditsError && creditsRow) {
+      boostCredits = {
+        total_credits: creditsRow.total_credits ?? null
+      };
+    } else {
+      boostCredits = {
+        total_credits: null
+      };
+    }
 
     // If logged in but missing/auto username, force onboarding (except on allowed paths)
     const pathname = url.pathname;
@@ -36,6 +54,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   return {
     session,
     user,
-    profile
+    profile,
+    boostCredits
   };
 };
