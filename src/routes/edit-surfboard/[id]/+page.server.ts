@@ -10,12 +10,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   const id = params.id;
 
-  // Fetch the board for THIS user
+  // Fetch the board for THIS user (exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
     .select('*')
     .eq('id', id)
     .eq('user_id', uid)
+    .eq('is_deleted', false)
     .single();
 
   if (boardErr || !surfboard) {

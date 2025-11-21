@@ -15,16 +15,21 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
   const { data: profile, error } = await locals.supabase
     .from('profiles')
-    .select('username')
+    .select('username, is_deleted')
     .eq('id', session.user.id)
     .maybeSingle();
 
   if (error) {
-    // Don’t block onboarding on a transient read failure—send them into the form.
+    // Don't block onboarding on a transient read failure—send them into the form.
     return {};
   }
 
-  // If username exists AND isn’t auto-generated, skip onboarding
+  // If profile is deleted, always show onboarding form (reactivation case)
+  if (profile?.is_deleted === true) {
+    return {};
+  }
+
+  // If username exists AND isn't auto-generated, skip onboarding
   if (profile?.username && !isAutoUsername(profile.username)) {
     const to = url.searchParams.get('redirectTo') || '/';
     throw redirect(303, to);
@@ -166,7 +171,9 @@ export const actions: Actions = {
     const update: Record<string, any> = { 
       id: session.user.id, 
       username,
-      profile_picture_url
+      profile_picture_url,
+      is_deleted: false,
+      deleted_at: null
     };
     
     if (full_name !== null) {

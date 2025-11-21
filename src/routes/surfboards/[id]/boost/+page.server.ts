@@ -52,11 +52,12 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw error(404, 'Surfboard not found');
   }
 
-  // Fetch the board
+  // Fetch the board (exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
     .select('*')
     .eq('id', id)
+    .eq('is_deleted', false)
     .single();
 
   if (boardErr || !surfboard) {
@@ -151,6 +152,7 @@ export const actions: Actions = {
       .from('surfboards')
       .select('user_id')
       .eq('id', boardId)
+      .eq('is_deleted', false)
       .single();
 
     if (!board || board.user_id !== user.id) {

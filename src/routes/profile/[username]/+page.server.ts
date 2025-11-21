@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // First try with all fields
   const result = await locals.supabase
     .from('profiles')
-    .select('id, username, full_name, profile_picture_url, location_label, city, region, country, home_break_label, bio, created_at')
+    .select('id, username, full_name, profile_picture_url, location_label, city, region, country, home_break_label, bio, created_at, is_deleted')
     .ilike('username', username)
     .maybeSingle();
   
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   if (profileError && profileError.code === 'PGRST116') {
     const baseResult = await locals.supabase
       .from('profiles')
-      .select('id, username, full_name, profile_picture_url, location_label, city, region, country, created_at')
+      .select('id, username, full_name, profile_picture_url, location_label, city, region, country, created_at, is_deleted')
       .ilike('username', username)
       .maybeSingle();
     
@@ -46,10 +46,15 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw error(404, 'Profile not found');
   }
 
+  // Check if profile is deleted
+  if (profile.is_deleted) {
+    throw error(404, 'This user no longer exists');
+  }
+
   // Check if current user is viewing their own profile
   const isOwnProfile = (locals.user?.id ?? null) === profile.id;
 
-  // Fetch this user's active surfboards only
+  // Fetch this user's active surfboards only (exclude deleted)
   const { data: boards, error: boardsError } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -66,6 +71,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     `)
     .eq('user_id', profile.id)
     .eq('state', 'active')
+    .eq('is_deleted', false)
     .order('last_modified', { ascending: false });
 
   if (boardsError) {

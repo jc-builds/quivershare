@@ -9,22 +9,24 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw error(404, 'Surfboard not found');
   }
 
-  // Fetch the board (public access - anyone can view)
+  // Fetch the board (public access - anyone can view, but exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
     .select('*')
     .eq('id', id)
+    .eq('is_deleted', false)
     .single();
 
   if (boardErr || !surfboard) {
     throw error(404, 'Surfboard not found');
   }
 
-  // Fetch the owner's profile
+  // Fetch the owner's profile (exclude deleted)
   const { data: ownerProfile, error: ownerError } = await locals.supabase
     .from('profiles')
-    .select('id, username, full_name, profile_picture_url, city, region')
+    .select('id, username, full_name, profile_picture_url, city, region, is_deleted')
     .eq('id', surfboard.user_id)
+    .eq('is_deleted', false)
     .single();
 
   if (ownerError) {
@@ -78,11 +80,12 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing board ID' });
     }
 
-    // Verify the board belongs to the user
+    // Verify the board belongs to the user and is not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('user_id')
       .eq('id', id)
+      .eq('is_deleted', false)
       .single();
 
     if (boardError || !board) {

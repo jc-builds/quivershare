@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import imageCompression from 'browser-image-compression';
   import { goto } from '$app/navigation';
+  import { enhance } from '$app/forms';
 
   export let data: {
     profile: {
@@ -27,6 +28,11 @@
   // Profile form state
   let bio = data.profile.bio || '';
   let homeBreakLabel = data.profile.home_break_label || '';
+
+  // Delete account confirmation state
+  let showDeleteConfirm = false;
+  let deleteConfirmText = '';
+  const requiredConfirmText = 'DELETE';
 
   // Profile picture upload
   let fileInput: HTMLInputElement;
@@ -282,6 +288,7 @@
   <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight mb-6 text-foreground">Edit Profile</h1>
 
   <form method="POST" on:submit|preventDefault={handleSubmit} class="space-y-6">
+    <input type="hidden" name="intent" value="updateProfile" />
     <!-- Profile Picture -->
     <div class="space-y-1">
       <label class="block text-sm font-medium text-muted-foreground" for="profile-picture-input">
@@ -422,7 +429,99 @@
       </button>
     </div>
   </form>
+
+  <!-- Delete Account Section -->
+  <div class="mt-12 pt-8 border-t border-border">
+    <h2 class="text-lg font-semibold text-foreground mb-2">Danger Zone</h2>
+    <p class="text-sm text-muted-foreground mb-4">
+      Once you delete your account, there is no going back. Please be certain.
+    </p>
+    <button
+      type="button"
+      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      on:click={() => {
+        showDeleteConfirm = true;
+        deleteConfirmText = '';
+      }}
+    >
+      Delete account
+    </button>
+  </div>
 </section>
+
+<!-- Delete Account Confirmation Modal -->
+{#if showDeleteConfirm}
+  <div 
+    class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" 
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-account-title"
+    on:click={() => showDeleteConfirm = false} 
+    on:keydown={(e) => e.key === 'Escape' && (showDeleteConfirm = false)}
+    tabindex="-1"
+  >
+    <div 
+      class="bg-surface-elevated border border-border rounded-xl p-6 max-w-md w-full shadow-xl text-foreground" 
+      on:click|stopPropagation={(e) => e.stopPropagation()}
+    >
+      <h2 id="delete-account-title" class="text-xl font-semibold mb-4 text-foreground">Delete Account</h2>
+      
+      <div class="space-y-4 mb-6">
+        <p class="text-sm text-foreground">
+          Are you sure you want to delete your account? This action cannot be undone.
+        </p>
+        
+        <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+          <p class="font-medium text-foreground mb-2">What will happen:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Your account will be permanently deleted</li>
+            <li>All active listings will be removed from search</li>
+            <li>Boosts and credits will no longer be usable</li>
+            <li>You will be logged out and won't be able to log back in</li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <label for="delete-confirm" class="block text-sm font-medium text-foreground">
+            Type <span class="font-mono font-semibold text-red-400">{requiredConfirmText}</span> to confirm:
+          </label>
+          <input
+            id="delete-confirm"
+            type="text"
+            bind:value={deleteConfirmText}
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+            placeholder={requiredConfirmText}
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <form method="POST" use:enhance>
+        <input type="hidden" name="intent" value="deleteAccount" />
+        <input type="hidden" name="confirm_text" value={deleteConfirmText} />
+        <div class="flex gap-2 justify-end">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            on:click={() => {
+              showDeleteConfirm = false;
+              deleteConfirmText = '';
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={deleteConfirmText !== requiredConfirmText}
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
 
 <!-- Crop Modal -->
 {#if showCropModal}

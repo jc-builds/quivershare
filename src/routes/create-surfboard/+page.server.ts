@@ -80,6 +80,23 @@ export const actions: Actions = {
           console.error('Image insert error:', imgError.message);
           // Don't fail the whole request, just log it
         }
+
+        // Set default thumbnail if none was provided
+        if (!thumbnail_url && data?.id) {
+          const nonEmptyUrls = imageUrls.filter(url => url && url.trim() !== '');
+          if (nonEmptyUrls.length > 0) {
+            const defaultThumb = nonEmptyUrls[0];
+            const { error: thumbError } = await locals.supabase
+              .from('surfboards')
+              .update({ thumbnail_url: defaultThumb })
+              .eq('id', data.id);
+
+            if (thumbError) {
+              console.error('Thumbnail defaulting error:', thumbError.message);
+              // Do not fail the request — worst case the board has no thumbnail
+            }
+          }
+        }
       }
     }
 

@@ -17,11 +17,21 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   if (user) {
     const { data } = await locals.supabase
       .from('profiles')
-      .select('username, profile_picture_url')
+      .select('username, profile_picture_url, is_deleted')
       .eq('id', user.id)
       .maybeSingle();
 
     profile = data ?? null;
+
+    // If profile is deleted, redirect to onboarding for reactivation
+    if (profile && profile.is_deleted === true) {
+      const pathname = url.pathname;
+      // Only redirect if not already on onboarding page
+      if (pathname !== '/onboarding/username') {
+        throw redirect(303, '/onboarding/username?reactivate=1');
+      }
+      // If already on onboarding, let them through
+    }
 
     // Fetch boost credits for authenticated users
     const { data: creditsRow, error: creditsError } = await locals.supabase

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) throw redirect(303, '/login');
   const userId = locals.user.id;
 
-  // 2) Fetch only this user's boards
+  // 2) Fetch only this user's boards (exclude deleted)
   const { data, error } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -24,6 +24,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       boosts(status)
     `)
     .eq('user_id', userId)
+    .eq('is_deleted', false)
     .order('last_modified', { ascending: false });
 
   // 3) Handle errors
