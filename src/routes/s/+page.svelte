@@ -146,8 +146,8 @@
   ];
 
   const finSystemOptions = ["FCS II", "Futures", "Glass On", "FCS"];
-  const finSetupOptions = ["2+1", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
-  const styleOptions = ["Shortboard", "Longboard", "Groveler", "Gun"];
+  const finSetupOptions = ["2+1", "Twin", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
+  const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler", "Gun"];
 
   // Location search functions
   async function searchLocationPlaces(q: string) {

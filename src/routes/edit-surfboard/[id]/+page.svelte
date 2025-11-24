@@ -781,6 +781,7 @@
         >
           <option value="">Select fin setup (optional)</option>
           <option>2+1</option>
+          <option>Twin</option>
           <option>4+1</option>
           <option>Quad</option>
           <option>Single</option>
@@ -802,6 +803,7 @@
         >
           <option value="">Select style (optional)</option>
           <option>Shortboard</option>
+          <option>Mid-length</option>
           <option>Longboard</option>
           <option>Groveler</option>
           <option>Gun</option>

@@ -383,6 +383,7 @@
         >
           <option value="">Select style (optional)</option>
           <option>Shortboard</option>
+          <option>Mid-length</option>
           <option>Longboard</option>
           <option>Groveler</option>
           <option>Gun</option>

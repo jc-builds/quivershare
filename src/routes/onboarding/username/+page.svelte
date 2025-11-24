@@ -173,7 +173,7 @@
         id="username"
         name="username"
         bind:value={username}
-        placeholder="3–20 chars: a–z 0–9 _"
+        placeholder="3–20 chars • lowercase, numbers, and _"
         class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         minlength="3"
         maxlength="20"

@@ -42,18 +42,35 @@
   let boardState: 'active' | 'inactive' = data.board.state ?? 'active';
   let updatingState = false;
 
-  // Update state when form succeeds
-  $: if (form?.success && form?.state) {
+  // Update state when form succeeds (only for updateState action)
+  $: if (form?.context === 'updateState' && form?.success && form?.state) {
     boardState = form.state as 'active' | 'inactive';
     updatingState = false;
   }
 
-  // Reset updating state if form fails
-  $: if (form && 'message' in form && !form.success) {
+  // Reset updating state if form fails (only for updateState action)
+  $: if (form?.context === 'updateState' && form && 'message' in form && !form.success) {
     updatingState = false;
     // Revert to original state on error
     boardState = data.board.state ?? 'active';
   }
+
+  // Contact form state
+  let firstName = '';
+  let lastName = '';
+  let email = '';
+  let phone = '';
+  
+  // Initialize message with board details
+  function getInitialMessage(): string {
+    const boardName = data.board.name || 'this board';
+    const priceText = data.board.price != null 
+      ? ` for $${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : '';
+    return `I'd like to know if the ${boardName} you have listed on QuiverShare${priceText} is still available.`;
+  }
+  
+  let message = getInitialMessage();
 
   // Helper: Format dimensions
   export function formatDimensions(
@@ -173,8 +190,14 @@
     }
   }
 
-  // Contact seller email (placeholder for now)
-  $: sellerEmail = data.owner ? `${data.owner.username}@quivershare.com` : 'seller@quivershare.com';
+  // Reset contact form on successful submission
+  $: if (form?.context === 'contactSeller' && form?.success) {
+    firstName = '';
+    lastName = '';
+    email = '';
+    phone = '';
+    message = getInitialMessage();
+  }
 </script>
 
 <svelte:head>
@@ -229,6 +252,13 @@
               </span>
             </label>
           </form>
+          
+          <a
+            href={`/surfboards/${data.board.id}/boost`}
+            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Manage Boost
+          </a>
           
           <a
             href={`/edit-surfboard/${data.board.id}`}
@@ -369,7 +399,12 @@
             <div>
               <p class="text-sm text-muted-foreground mb-1">Seller</p>
               <p class="text-lg font-semibold text-foreground">{data.owner.full_name || data.owner.username}</p>
-              <p class="text-sm text-muted-foreground">@{data.owner.username}</p>
+              <a
+                href="/profile/{data.owner.username}"
+                class="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
+              >
+                @{data.owner.username}
+              </a>
             </div>
 
             {#if data.owner.city || data.owner.region}
@@ -382,13 +417,106 @@
             {/if}
 
             <div class="pt-4">
-              <a
-                href="mailto:{sellerEmail}?subject=Inquiry about {data.board.name}"
-                class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                aria-label="Contact seller via email"
-              >
-                Contact Seller
-              </a>
+              <form method="POST" action="?/contactSeller" use:enhance class="space-y-4">
+                <!-- First Name -->
+                <div class="space-y-1">
+                  <label for="first_name" class="block text-sm font-medium text-muted-foreground">
+                    First Name <span class="text-red-400">*</span>
+                  </label>
+                  <input
+                    id="first_name"
+                    name="first_name"
+                    type="text"
+                    bind:value={firstName}
+                    required
+                    class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    placeholder="Your first name"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div class="space-y-1">
+                  <label for="last_name" class="block text-sm font-medium text-muted-foreground">
+                    Last Name
+                  </label>
+                  <input
+                    id="last_name"
+                    name="last_name"
+                    type="text"
+                    bind:value={lastName}
+                    class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    placeholder="Your last name (optional)"
+                  />
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-1">
+                  <label for="email" class="block text-sm font-medium text-muted-foreground">
+                    Email <span class="text-red-400">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    bind:value={email}
+                    required
+                    class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+
+                <!-- Phone -->
+                <div class="space-y-1">
+                  <label for="phone" class="block text-sm font-medium text-muted-foreground">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    bind:value={phone}
+                    class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    placeholder="(555) 123-4567 (optional)"
+                  />
+                </div>
+
+                <!-- Message -->
+                <div class="space-y-1">
+                  <label for="message" class="block text-sm font-medium text-muted-foreground">
+                    Message <span class="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    bind:value={message}
+                    required
+                    rows="4"
+                    class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition resize-y"
+                    placeholder="Your message to the seller"
+                  ></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                  type="submit"
+                  class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Send Message
+                </button>
+
+                <!-- Success/Error Messages -->
+                {#if form?.context === 'contactSeller'}
+                  {#if form.success}
+                    <p class="text-sm text-green-600 dark:text-green-400">
+                      {form.message || 'Your message has been sent to the seller.'}
+                    </p>
+                  {:else if form.message}
+                    <p class="text-sm text-red-400">
+                      {form.message}
+                    </p>
+                  {/if}
+                {/if}
+              </form>
             </div>
 
             <div class="pt-4 border-t border-border">
