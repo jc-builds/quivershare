@@ -180,7 +180,6 @@
         pattern={usernamePattern}
         autocomplete="username"
         required
-        autofocus
         aria-invalid={!!form?.fieldErrors?.username}
         aria-errormessage="username-error"
       />

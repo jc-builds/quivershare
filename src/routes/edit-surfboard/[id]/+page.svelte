@@ -1067,7 +1067,7 @@
       >
       <img
         src={existingImages[lightboxIndex]?.image_url}
-        alt="Surfboard Image Large"
+        alt="Enlarged view of the selected surfboard"
         class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
       />
       <button

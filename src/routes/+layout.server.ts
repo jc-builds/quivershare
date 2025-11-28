@@ -11,7 +11,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   const session = (await locals.getSession?.()) ?? null;
   const user = locals.user;
 
-  let profile: { username: string | null; profile_picture_url: string | null } | null = null;
+  let profile: { username: string | null; profile_picture_url: string | null; is_deleted?: boolean | null } | null = null;
   let boostCredits: { total_credits: number | null } | null = null;
 
   if (user) {

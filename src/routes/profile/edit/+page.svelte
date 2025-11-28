@@ -462,7 +462,9 @@
   >
     <div 
       class="bg-surface-elevated border border-border rounded-xl p-6 max-w-md w-full shadow-xl text-foreground" 
+      role="presentation"
       on:click|stopPropagation={(e) => e.stopPropagation()}
+      on:keydown={(e) => e.stopPropagation()}
     >
       <h2 id="delete-account-title" class="text-xl font-semibold mb-4 text-foreground">Delete Account</h2>
       
