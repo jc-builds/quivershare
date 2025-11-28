@@ -364,18 +364,114 @@
 </script>
 
 <div class="min-h-screen bg-background">
-  <!-- Top Bar -->
-  <div class="bg-surface-elevated/80 border-b border-border px-6 py-4 backdrop-blur-sm">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h1 class="text-2xl font-bold text-foreground">
-        Used Boards for Sale Near {data.userLocation || 'your area'}
-      </h1>
-      <div class="flex items-center gap-3">
-        <label for="sort-by" class="text-sm text-muted-foreground">Sort By:</label>
+  <!-- Mobile Filter Bar (mobile only) -->
+  <div class="block lg:hidden bg-surface-elevated/80 border-b border-border px-4 py-3">
+    <div class="max-w-7xl mx-auto space-y-3">
+      <!-- Location + Radius Row -->
+      <div class="flex gap-2">
+        <div class="flex-1 relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            class="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+            placeholder="Location"
+            value={locationQuery}
+            on:input={onLocationSearchInput}
+            autocomplete="off"
+            aria-autocomplete="list"
+            aria-controls="mobile-location-suggestions-list"
+          />
+          {#if locationSuggestions.length > 0}
+            <ul id="mobile-location-suggestions-list" class="absolute left-0 right-0 z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
+              {#each locationSuggestions as s}
+                <li>
+                  <button type="button" class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg" on:click={() => chooseLocationSuggestion(s)}>
+                    {s.label}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+        <div class="w-20">
+          <input
+            type="number"
+            min="1"
+            max="500"
+            bind:value={searchRadius}
+            class="w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+            placeholder="mi"
+          />
+        </div>
+        {#if selectedLocation}
+          <button
+            type="button"
+            class="px-3 py-2 rounded-lg border border-border bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors whitespace-nowrap"
+            on:click={() => {
+              if (selectedLocation && selectedLocation.lat && selectedLocation.lon) {
+                activeLocationFilter = {
+                  location: selectedLocation,
+                  radius: searchRadius
+                };
+                applyFilters();
+              }
+            }}
+          >
+            Apply
+          </button>
+        {/if}
+      </div>
+      
+      <!-- Filter Dropdowns Row -->
+      <div class="grid grid-cols-3 gap-2">
         <select
-          id="sort-by"
+          bind:value={selectedLength}
+          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+        >
+          <option value={null}>Length</option>
+          {#each lengthOptions as opt}
+            <option value={opt}>{opt}</option>
+          {/each}
+        </select>
+        <select
+          bind:value={selectedVolume}
+          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+        >
+          <option value={null}>Volume</option>
+          {#each volumeOptions as opt}
+            <option value={opt}>{opt}</option>
+          {/each}
+        </select>
+        <select
+          bind:value={selectedStyle}
+          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+        >
+          <option value={null}>Style</option>
+          {#each styleOptions as opt}
+            <option value={opt}>{opt}</option>
+          {/each}
+        </select>
+      </div>
+      
+      {#if activeLocationFilter}
+        <div class="text-xs text-muted-foreground">
+          Active: {activeLocationFilter.radius}mi from {activeLocationFilter.location.label}
+          <a href="/s" data-sveltekit-reload class="ml-2 text-primary hover:underline">Clear</a>
+        </div>
+      {/if}
+      
+      <!-- Sort By (mobile) -->
+      <div class="flex items-center gap-2 pt-2 border-t border-border">
+        <label for="sort-by-mobile" class="text-xs text-muted-foreground whitespace-nowrap">Sort:</label>
+        <select
+          id="sort-by-mobile"
           bind:value={sortBy}
-          class="rounded-lg border border-border bg-surface-elevated px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          class="flex-1 rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           on:change={handleSortChange}
         >
           <option value="price_asc">Price: Low to High</option>
@@ -392,8 +488,8 @@
   <!-- Main Content: 2-column layout -->
   <div class="max-w-7xl mx-auto px-6 py-6">
     <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Left: Filters (sticky on desktop) -->
-      <aside class="lg:w-64 lg:sticky lg:top-6 lg:self-start space-y-4">
+      <!-- Left: Filters (sticky on desktop, hidden on mobile) -->
+      <aside class="hidden lg:block lg:w-64 lg:sticky lg:top-6 lg:self-start space-y-4">
         <!-- Location Search -->
         <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 border border-border shadow-sm">
           <label for="location-search" class="block mb-2">
@@ -497,15 +593,13 @@
               <div class="text-foreground font-medium mb-2 text-xs">
                 Active: {activeLocationFilter.radius} miles from {activeLocationFilter.location.label}
               </div>
-              <button
-                type="button"
-                class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
-                on:click={() => {
-                  activeLocationFilter = null;
-                }}
-              >
-                Clear Location Filter
-              </button>
+                <a
+                  href="/s"
+                  data-sveltekit-reload
+                  class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+                >
+                  Clear Location Filter
+                </a>
             </div>
           {:else if selectedLocation}
             <div class="mt-4 text-xs text-muted-foreground">
@@ -604,18 +698,33 @@
           </div>
 
           <!-- Clear Filters -->
-          <button
+          <a
+            href="/s"
+            data-sveltekit-reload
             class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated mt-4"
-            on:click={() => {
-              selectedLength = null;
-              selectedVolume = null;
-              selectedFinSystem = null;
-              selectedFinSetup = null;
-              selectedStyle = null;
-            }}
           >
             Clear Filters
-          </button>
+          </a>
+        </div>
+
+        <!-- Sort By (desktop) -->
+        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 border border-border shadow-sm">
+          <label for="sort-by-desktop" class="block mb-2">
+            <span class="font-medium text-sm text-foreground">Sort By</span>
+          </label>
+          <select
+            id="sort-by-desktop"
+            bind:value={sortBy}
+            class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+            on:change={handleSortChange}
+          >
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name_asc">A-Z</option>
+            <option value="name_desc">Z-A</option>
+            <option value="created_asc">Oldest to Newest</option>
+            <option value="created_desc">Newest to Oldest</option>
+          </select>
         </div>
       </aside>
 
@@ -635,7 +744,7 @@
               >
                 <div class="flex flex-col md:flex-row">
                   <!-- Left: Photo Carousel -->
-                  <div class="md:w-80 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden" style="aspect-ratio: 4/3; min-height: 200px;">
+                  <div class="md:w-56 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden aspect-[3/4] min-h-[160px]">
                     {#if board.images && board.images.length > 0}
                       {#each board.images as img, index}
                         <img

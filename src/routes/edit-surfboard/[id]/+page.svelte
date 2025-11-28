@@ -3,14 +3,11 @@
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
-  import { enhance } from '$app/forms';
 
   export let data: {
     surfboard: any;
     existingImages: { id: string; image_url: string }[] | null;
   };
-
-  export let form;
 
   // ---------------------------------------------------------
   // Constants / Types
@@ -58,22 +55,12 @@
     state: sb.state ?? 'active',
   };
 
-  // Local state for the toggle
-  let boardState: 'active' | 'inactive' = surfboard.state === 'active' ? 'active' : 'inactive';
-  let updatingState = false;
+  // Use state directly from surfboard data
+  $: boardState = surfboard.state === 'active' ? 'active' : 'inactive';
 
-  // Update state when form succeeds
-  $: if (form?.success && form?.state) {
-    boardState = form.state as 'active' | 'inactive';
-    surfboard.state = boardState;
-    updatingState = false;
-  }
-
-  // Reset updating state if form fails
-  $: if (form && 'error' in form && form.error) {
-    updatingState = false;
-    // Revert to original state on error
-    boardState = (sb.state ?? 'active') === 'active' ? 'active' : 'inactive';
+  // Toggle state locally
+  function toggleState() {
+    surfboard.state = surfboard.state === 'active' ? 'inactive' : 'active';
   }
 
   // Location fields
@@ -624,30 +611,21 @@
         Edit Surfboard
       </h1>
       <!-- State Toggle -->
-      <form method="POST" action="?/updateState" use:enhance>
-        <input type="hidden" name="state" value={boardState === 'active' ? 'inactive' : 'active'} />
-        <label class="flex items-center gap-3 cursor-pointer select-none">
-          <span class="text-xs uppercase tracking-wide text-muted-foreground">State:</span>
-          <input
-            type="checkbox"
-            class="sr-only peer"
-            checked={boardState === 'active'}
-            disabled={updatingState}
-            on:change={(e) => {
-              const targetState = e.currentTarget.checked ? 'active' : 'inactive';
-              updatingState = true;
-              boardState = targetState;
-              e.currentTarget.form?.requestSubmit();
-            }}
-          />
-          <div class="w-9 h-5 rounded-full border border-border bg-surface flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-disabled:opacity-60">
-            <div class="h-4 w-4 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-4"></div>
-          </div>
-          <span class="text-xs font-medium text-muted-foreground">
-            {boardState === 'active' ? 'Active' : 'Inactive'}
-          </span>
-        </label>
-      </form>
+      <label class="flex items-center gap-3 cursor-pointer select-none">
+        <span class="text-xs uppercase tracking-wide text-muted-foreground">State:</span>
+        <input
+          type="checkbox"
+          class="sr-only peer"
+          checked={boardState === 'active'}
+          on:change={toggleState}
+        />
+        <div class="w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-checked:border-primary bg-gray-200 border-gray-300">
+          <div class="h-4 w-4 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-4"></div>
+        </div>
+        <span class="text-xs font-medium {boardState === 'active' ? 'text-foreground' : 'text-gray-700'}">
+          {boardState === 'active' ? 'Active' : 'Inactive'}
+        </span>
+      </label>
     </div>
 
     <form class="space-y-4" on:submit|preventDefault={saveBoard}>

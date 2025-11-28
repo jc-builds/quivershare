@@ -72,10 +72,10 @@
         </div>
         <div class="flex flex-col items-center text-center mt-4">
           <p class="text-xs sm:text-sm text-muted-foreground mt-2">
-            Right now we're focused on New York, New Jersey, and the East Coast while we grow. More regions coming soon.
+            Right now we're focused on New York, New Jersey, and the East Coast while we grow. We'll focus on other regions soon.
           </p>
           <p class="text-xs sm:text-sm text-muted-foreground">
-            Early sellers get <span class="font-semibold text-primary">one free 14-day Boost per board listed</span>, paid ads for your listing on Instagram and Facebook.
+            Early adopters get <span class="font-semibold text-primary">one free 14-day Boost per board listed</span>, paid ads for your listing on Instagram and Facebook.
           </p>
         </div>
       </div>
@@ -298,7 +298,7 @@
             Built for Surfboards
           </h3>
           <p class="text-sm leading-relaxed text-muted-foreground">
-            QuiverShare focuses only on surfboards—no furniture, no random classifieds. Search by length, volume, fin setup, and more.
+            QuiverShare focuses only on surfboards, no furniture, no random classifieds. Search by length, volume, fin setup, and more.
           </p>
         </div>
         <div class="feature-card rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm transition-all hover:shadow-md hover:border-border/80">

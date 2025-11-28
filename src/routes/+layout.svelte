@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import favicon from "$lib/assets/favicon.svg";
   import "../app.css";
 
@@ -12,7 +13,7 @@
     boostCredits: { total_credits: number | null } | null;
   };
 
-  const isAuthed = !!data.session;
+  const isAuthed = !!data.user;
 
   // Compute boost balance (default to 0 if null or missing)
   const boostBalance = data.boostCredits?.total_credits ?? 0;
@@ -105,20 +106,19 @@
       />
     </a>
 
-    <!-- Center: nav links (if any) -->
-    <div class="hidden items-center gap-6 text-sm text-muted-foreground md:flex nav-li-font">
-      {#if isAuthed}
-        <a href="/s" class="hover:text-foreground" data-sveltekit-prefetch>Browse Boards</a>
-        <a href="/my-boards" class="hover:text-foreground" data-sveltekit-prefetch>My Boards</a>
-      {:else}
-        <a href="/s" class="hover:text-foreground" data-sveltekit-prefetch>Browse Boards</a>
-        <a href="/help" class="hover:text-foreground" data-sveltekit-prefetch>Help</a>
-        <a href="/about" class="hover:text-foreground" data-sveltekit-prefetch>About</a>
-      {/if}
-    </div>
-
-    <!-- Right: auth / profile / buttons -->
-    <div class="flex items-center gap-3">
+    <!-- Right: unified navigation (nav links + actions) -->
+    <div class="ml-auto flex items-center gap-4 md:gap-6">
+      <!-- Desktop nav links -->
+      <div class="hidden md:flex items-center gap-6 text-sm text-muted-foreground nav-li-font">
+        {#if isAuthed}
+          <a href="/s" class="hover:text-foreground" data-sveltekit-prefetch>Browse Boards</a>
+          <a href="/my-boards" class="hover:text-foreground" data-sveltekit-prefetch>My Boards</a>
+        {:else}
+          <a href="/s" class="hover:text-foreground" data-sveltekit-prefetch>Browse Boards</a>
+          <a href="/help" class="hover:text-foreground" data-sveltekit-prefetch>Help</a>
+          <a href="/about" class="hover:text-foreground" data-sveltekit-prefetch>About</a>
+        {/if}
+      </div>
       {#if isAuthed}
         <!-- Boost balance button (desktop) -->
         <button
@@ -271,13 +271,66 @@
           </div>
         {/if}
       {:else}
-        <a 
-          href="/login" 
-          class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-alt border border-border"
-          data-sveltekit-prefetch
+        <!-- Mobile menu button for non-authenticated users -->
+        <button 
+          type="button" 
+          class="inline-flex items-center rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground md:hidden" 
+          aria-label="Open menu"
+          on:click={toggleMobileMenu}
         >
-          Login / Sign Up
-        </a>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        {#if mobileMenuOpen}
+          <div class="absolute top-16 left-0 right-0 border-b border-border bg-surface-elevated shadow-lg z-[100] md:hidden" bind:this={mobileMenuElement}>
+            <div class="py-1 nav-li-font">
+              <a 
+                href="/s" 
+                class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                data-sveltekit-prefetch
+                on:click={closeMenus}
+              >
+                Browse Boards
+              </a>
+              <a 
+                href="/help" 
+                class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                data-sveltekit-prefetch
+                on:click={closeMenus}
+              >
+                Help
+              </a>
+              <a 
+                href="/about" 
+                class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                data-sveltekit-prefetch
+                on:click={closeMenus}
+              >
+                About
+              </a>
+              {#if $page.url.pathname !== '/login'}
+                <a 
+                  href="/login" 
+                  class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  data-sveltekit-prefetch
+                  on:click={closeMenus}
+                >
+                  Login / Sign Up
+                </a>
+              {/if}
+            </div>
+          </div>
+        {/if}
+        {#if $page.url.pathname !== '/login'}
+          <a 
+            href="/login" 
+            class="hidden md:inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-alt border border-border"
+            data-sveltekit-prefetch
+          >
+            Login / Sign Up
+          </a>
+        {/if}
       {/if}
     </div>
   </div>

@@ -23,13 +23,25 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   event.locals.supabase = supabase;
 
-  const {
-    data: { session },
-    error: sessionErr
-  } = await supabase.auth.getSession();
+  // Set session to null initially - it will only be populated if locals.getSession() is called
+  event.locals.session = null;
 
-  event.locals.session = session ?? null;
-  event.locals.user = session?.user ?? null;
+  // Get authenticated user using getUser() as the single source of truth
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    // Only log unexpected errors, not "auth session missing" errors
+    if (userError.message && !userError.message.includes('session missing')) {
+      console.error('Error fetching user:', userError);
+    }
+    event.locals.user = null;
+  } else {
+    event.locals.user = user ?? null;
+  }
+
   event.locals.getSession = async () => {
     const {
       data: { session: refreshedSession }
@@ -46,14 +58,12 @@ export const handle: Handle = async ({ event, resolve }) => {
       '[hooks]',
       'path=', path,
       'isProtected=', isProtected,
-      'session=', session ? 'yes' : 'no',
-      'user=', session?.user?.id ?? null,
-      sessionErr ? `(getSession error: ${sessionErr.message})` : ''
+      'session=', event.locals.user ? 'yes' : 'no'
     );
   }
 
-  // Gate protected routes on "has a session?"
-  if (isProtected && !session && !isAllowlisted) {
+  // Gate protected routes on "has a user?"
+  if (isProtected && !event.locals.user && !isAllowlisted) {
     const redirectTo = encodeURIComponent(event.url.pathname + event.url.search);
     throw redirect(303, `/login?redirectTo=${redirectTo}`);
   }

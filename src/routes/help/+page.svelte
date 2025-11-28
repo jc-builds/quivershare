@@ -130,7 +130,7 @@
       </a>
     </div>
     <p class="mt-4 text-sm text-muted-foreground">
-      Still stuck? Email <a class="text-primary hover:text-primary-alt underline underline-offset-2" href="mailto:cooneyjack@microsoft.com">cooneyjack@microsoft.com</a>.
+      Still stuck? Email <a class="text-primary hover:text-primary-alt underline underline-offset-2" href="mailto:info@quivershare.com">info@quivershare.com</a>.
     </p>
   </footer>
 </section>

@@ -10,13 +10,13 @@ const RESERVED = new Set([
 ]);
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const { data: { session } } = await locals.supabase.auth.getSession();
-  if (!session) throw redirect(303, '/login');
+  // Must be logged in - use locals.user as the source of truth
+  if (!locals.user) throw redirect(303, '/login');
 
   const { data: profile, error } = await locals.supabase
     .from('profiles')
     .select('username, is_deleted')
-    .eq('id', session.user.id)
+    .eq('id', locals.user.id)
     .maybeSingle();
 
   if (error) {
@@ -40,8 +40,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
   default: async ({ request, locals, url }) => {
-    const { data: { session } } = await locals.supabase.auth.getSession();
-    if (!session) throw redirect(303, '/login');
+    // Must be logged in - use locals.user as the source of truth
+    if (!locals.user) throw redirect(303, '/login');
 
     const form = await request.formData();
 
@@ -80,7 +80,7 @@ export const actions: Actions = {
       .from('profiles')
       .select('id')
       .ilike('username', username)
-      .neq('id', session.user.id)
+      .neq('id', locals.user.id)
       .limit(1);
     if (existing && existing.length > 0) {
       return fail(409, { 
@@ -135,7 +135,7 @@ export const actions: Actions = {
     const profilePictureFile = form.get('profile_picture') as File | null;
     
     if (profilePictureFile && profilePictureFile.size > 0) {
-      const userId = session.user.id;
+      const userId = locals.user.id;
       const timestamp = Date.now();
       const fileExtension = profilePictureFile.name.split('.').pop() || 'jpg';
       const filePath = `${userId}/profile-picture-${timestamp}.${fileExtension}`;
@@ -169,7 +169,7 @@ export const actions: Actions = {
 
     // Build update payload
     const update: Record<string, any> = { 
-      id: session.user.id, 
+      id: locals.user.id, 
       username,
       profile_picture_url,
       is_deleted: false,

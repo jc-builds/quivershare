@@ -106,6 +106,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       { count: 'exact' }
     )
     .eq('is_deleted', false)
+    .or('state.is.null,state.eq.active')
     .order(sortConfig.column, { ascending: sortConfig.ascending })
     .range(from, to);
 

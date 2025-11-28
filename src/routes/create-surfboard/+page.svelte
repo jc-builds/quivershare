@@ -361,6 +361,7 @@
         >
           <option value="">Select fin setup (optional)</option>
           <option>2+1</option>
+          <option>Twin</option>
           <option>4+1</option>
           <option>Quad</option>
           <option>Single</option>
@@ -505,7 +506,7 @@
         />
 
         <p class="text-sm text-muted-foreground">
-          📷 Drag & drop images here, or click to select
+          📷 Add images here, recommend 3-6 images for best results.
         </p>
 
         {#if files.length > 0}

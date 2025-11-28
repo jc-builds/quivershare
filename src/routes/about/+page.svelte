@@ -10,7 +10,7 @@
 <section class="min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-10 sm:py-12 max-w-3xl mx-auto">
   <header class="mb-8 sm:mb-10">
     <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">About QuiverShare</h1>
-    <p class="mt-3 text-sm sm:text-base text-muted-foreground">A simple, surfer-first marketplace for used boards.</p>
+    <p class="mt-3 text-sm sm:text-base text-muted-foreground">A simple marketplace for used boards, with some great ad-tech features built in.</p>
   </header>
 
   <article class="space-y-10">

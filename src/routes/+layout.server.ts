@@ -8,8 +8,8 @@ const ALLOW = new Set<string>(['/', '/login', '/logout', '/onboarding/username']
 const isAutoUsername = (u: string | null | undefined) => !!u && u.startsWith('user_');
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-  const session = (await locals.getSession?.()) ?? locals.session ?? null;
-  const user = session?.user ?? null;
+  const session = (await locals.getSession?.()) ?? null;
+  const user = locals.user;
 
   let profile: { username: string | null; profile_picture_url: string | null } | null = null;
   let boostCredits: { total_credits: number | null } | null = null;

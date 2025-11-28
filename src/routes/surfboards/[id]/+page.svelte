@@ -38,23 +38,6 @@
 
   export let form;
 
-  // Local state for the toggle
-  let boardState: 'active' | 'inactive' = data.board.state ?? 'active';
-  let updatingState = false;
-
-  // Update state when form succeeds (only for updateState action)
-  $: if (form?.context === 'updateState' && form?.success && form?.state) {
-    boardState = form.state as 'active' | 'inactive';
-    updatingState = false;
-  }
-
-  // Reset updating state if form fails (only for updateState action)
-  $: if (form?.context === 'updateState' && form && 'message' in form && !form.success) {
-    updatingState = false;
-    // Revert to original state on error
-    boardState = data.board.state ?? 'active';
-  }
-
   // Contact form state
   let firstName = '';
   let lastName = '';
@@ -225,34 +208,6 @@
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{boardTitle}</h1>
       {#if data.canEdit}
         <div class="flex items-center gap-3">
-          <!-- State Toggle -->
-          <form method="POST" action="?/updateState" use:enhance>
-            <input type="hidden" name="state" value={boardState === 'active' ? 'inactive' : 'active'} />
-            <label class="flex items-center gap-2 cursor-pointer">
-              <span class="text-xs text-muted-foreground">State:</span>
-              <div class="relative inline-flex items-center">
-                <input
-                  type="checkbox"
-                  class="sr-only peer"
-                  checked={boardState === 'active'}
-                  disabled={updatingState}
-                  on:change={(e) => {
-                    const targetState = e.currentTarget.checked ? 'active' : 'inactive';
-                    updatingState = true;
-                    boardState = targetState;
-                    e.currentTarget.form?.requestSubmit();
-                  }}
-                />
-                <div class="relative w-9 h-5 rounded-full bg-surface border border-border transition-colors peer-checked:bg-primary peer-disabled:opacity-50 peer-disabled:cursor-not-allowed">
-                  <div class="absolute h-4 w-4 bg-background rounded-full shadow-sm transition-transform left-0.5 top-0.5 peer-checked:translate-x-4"></div>
-                </div>
-              </div>
-              <span class="text-xs font-medium text-foreground">
-                {boardState === 'active' ? 'Active' : 'Inactive'}
-              </span>
-            </label>
-          </form>
-          
           <a
             href={`/surfboards/${data.board.id}/boost`}
             class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -270,12 +225,39 @@
       {/if}
     </div>
 
-    <!-- Hero Images Grid: 3 equal tiles -->
+    <!-- Hero Images: Single portrait on mobile, 3-tile grid on desktop -->
     <div class="w-full mb-8 max-w-6xl">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <!-- Mobile: Single portrait hero image -->
+      <div class="block md:hidden">
+        {#if heroImages[0]}
+          <div class="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-elevated border border-border">
+            <button
+              type="button"
+              class="w-full h-full hover:opacity-90 transition-opacity"
+              on:click={() => openLightbox(0)}
+              aria-label="View {data.board.name || 'Surfboard'} image gallery"
+            >
+              <img
+                src={heroImages[0].image_url}
+                alt="{data.board.name || 'Surfboard'} image 1"
+                class="w-full h-full object-cover object-top"
+                on:error={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
+                }}
+              />
+            </button>
+          </div>
+        {:else}
+          <!-- Placeholder -->
+          <div class="aspect-[3/4] rounded-xl bg-surface border border-border"></div>
+        {/if}
+      </div>
+
+      <!-- Desktop: 3-tile grid -->
+      <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-2">
         {#each Array(3) as _, i}
           {#if heroImages[i]}
-            <div class="relative aspect-square rounded-xl overflow-hidden bg-surface-elevated border border-border">
+            <div class="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-elevated border border-border">
               <button
                 type="button"
                 class="w-full h-full hover:opacity-90 transition-opacity"
@@ -285,9 +267,9 @@
                 <img
                   src={heroImages[i].image_url}
                   alt="{data.board.name || 'Surfboard'} image {i + 1}"
-                  class="w-full h-full object-cover"
+                  class="w-full h-full object-cover object-top"
                   on:error={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=No+Image';
+                    (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
                   }}
                 />
               </button>
@@ -304,7 +286,7 @@
                       openGallery();
                     }
                   }}
-                aria-label="See gallery with {allImages.length} images"
+                  aria-label="See gallery with {allImages.length} images"
                 >
                   See Gallery
                 </button>
@@ -312,7 +294,7 @@
             </div>
           {:else}
             <!-- Placeholder slot -->
-            <div class="aspect-square rounded-xl bg-surface border border-border"></div>
+            <div class="aspect-[3/4] rounded-xl bg-surface border border-border"></div>
           {/if}
         {/each}
       </div>

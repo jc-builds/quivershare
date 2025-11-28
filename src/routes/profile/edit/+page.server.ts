@@ -3,8 +3,8 @@ import { redirect, fail, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-  // Must be logged in
-  if (!locals.session || !locals.user) {
+  // Must be logged in - use locals.user as the source of truth
+  if (!locals.user) {
     throw redirect(303, '/login');
   }
 
@@ -15,9 +15,14 @@ export const load: PageServerLoad = async ({ locals }) => {
     .from('profiles')
     .select('id, username, full_name, profile_picture_url, location_label, city, region, country, latitude, longitude, home_break_label, home_break_lat, home_break_lon, bio, is_deleted')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
-  if (profileError || !profile) {
+  if (profileError) {
+    console.error('Error loading profile for edit:', profileError);
+    throw error(500, 'Failed to load profile');
+  }
+
+  if (!profile) {
     throw error(404, 'Profile not found');
   }
 

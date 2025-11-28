@@ -47,4 +47,51 @@ export const load: PageServerLoad = async ({ locals }) => {
   };
 };
 
-export const actions: Actions = {};
+export const actions: Actions = {
+  updateState: async ({ request, locals }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { context: 'updateState', success: false, message: 'Unauthorized' });
+    }
+
+    const form = await request.formData();
+    const boardId = form.get('boardId')?.toString();
+    const newState = form.get('state')?.toString();
+
+    if (!boardId) {
+      return fail(400, { context: 'updateState', success: false, message: 'Missing board ID' });
+    }
+
+    if (newState !== 'active' && newState !== 'inactive') {
+      return fail(400, { context: 'updateState', success: false, message: 'Invalid state value' });
+    }
+
+    // Verify the board belongs to the user and is not deleted
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('user_id')
+      .eq('id', boardId)
+      .eq('is_deleted', false)
+      .single();
+
+    if (boardError || !board) {
+      return fail(404, { context: 'updateState', success: false, message: 'Surfboard not found' });
+    }
+
+    if (board.user_id !== user.id) {
+      return fail(403, { context: 'updateState', success: false, message: 'Access denied' });
+    }
+
+    const { error: updateError } = await locals.supabase
+      .from('surfboards')
+      .update({ state: newState })
+      .eq('id', boardId);
+
+    if (updateError) {
+      console.error('State update error:', updateError.message);
+      return fail(500, { context: 'updateState', success: false, message: 'Failed to update state' });
+    }
+
+    return { context: 'updateState', success: true, state: newState, boardId };
+  }
+};

@@ -4,9 +4,8 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in
-  if (!locals.session) throw redirect(303, '/login');
-  const uid = locals.user?.id;
-  if (!uid) throw redirect(303, '/login');
+  if (!locals.user) throw redirect(303, '/login');
+  const uid = locals.user.id;
 
   const id = params.id;
 

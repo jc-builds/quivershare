@@ -207,8 +207,6 @@ export const actions: Actions = {
       .eq('is_deleted', false)
       .single();
 
-    console.log('contactSeller ownerProfile:', sellerProfile, 'ownerError:', sellerError);
-
     if (sellerError || !sellerProfile || !sellerProfile.email) {
       console.error('Error fetching seller profile:', sellerError);
       return fail(500, { 
