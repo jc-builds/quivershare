@@ -3,11 +3,13 @@
   import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
+  import { enhance } from "$app/forms";
 
   export let data: {
     surfboard: any;
     existingImages: { id: string; image_url: string }[] | null;
   };
+  export let form;
 
   // ---------------------------------------------------------
   // Constants / Types
@@ -85,6 +87,11 @@
 
   let loading = false;
   let message = "";
+
+  // Delete board confirmation state
+  let showDeleteBoardConfirm = false;
+  let deleteBoardConfirmText = '';
+  const requiredDeleteConfirmText = 'DELETE';
 
   // ---------------------------------------------------------
   // 2. Location search functions
@@ -1025,7 +1032,99 @@
         </div>
       {/if}
     </form>
+
+    <!-- Danger Zone Section -->
+    <div class="mt-12 pt-8 border-t border-border">
+      <h2 class="text-lg font-semibold text-foreground mb-2">Danger Zone</h2>
+      <p class="text-sm text-muted-foreground mb-4">
+        Once you delete this listing, there is no going back. This will remove the surfboard from search and your My Boards page.
+      </p>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        on:click={() => {
+          showDeleteBoardConfirm = true;
+          deleteBoardConfirmText = '';
+        }}
+      >
+        Delete listing
+      </button>
+    </div>
   </div>
+
+  <!-- Delete Board Confirmation Modal -->
+  {#if showDeleteBoardConfirm}
+    <div 
+      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-board-title"
+      on:click={() => showDeleteBoardConfirm = false} 
+      on:keydown={(e) => e.key === 'Escape' && (showDeleteBoardConfirm = false)}
+      tabindex="-1"
+    >
+      <div 
+        class="bg-surface-elevated border border-border rounded-xl p-6 max-w-md w-full shadow-xl text-foreground" 
+        role="presentation"
+        on:click|stopPropagation={(e) => e.stopPropagation()}
+        on:keydown={(e) => e.stopPropagation()}
+      >
+        <h2 id="delete-board-title" class="text-xl font-semibold mb-4 text-foreground">Delete Listing</h2>
+        
+        <div class="space-y-4 mb-6">
+          <p class="text-sm text-foreground">
+            Are you sure you want to delete this listing? This action cannot be undone.
+          </p>
+          
+          <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+            <p class="font-medium text-foreground mb-2">What will happen:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>This listing will be permanently deleted</li>
+              <li>The surfboard will be removed from search</li>
+              <li>The surfboard will be removed from your My Boards page</li>
+              <li>All associated images will be removed</li>
+            </ul>
+          </div>
+
+          <div class="space-y-2">
+            <label for="delete-board-confirm" class="block text-sm font-medium text-foreground">
+              Type <span class="font-mono font-semibold text-red-400">{requiredDeleteConfirmText}</span> to confirm:
+            </label>
+            <input
+              id="delete-board-confirm"
+              type="text"
+              bind:value={deleteBoardConfirmText}
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              placeholder={requiredDeleteConfirmText}
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <form method="POST" action="?/deleteBoard" use:enhance>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              on:click={() => {
+                showDeleteBoardConfirm = false;
+                deleteBoardConfirmText = '';
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
 
   <!-- In-app confirmation modal -->
   {#if showConfirm}

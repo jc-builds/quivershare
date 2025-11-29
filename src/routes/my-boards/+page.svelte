@@ -1,7 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { enhance } from '$app/forms';
 
   export let data;
+  export let form;
 
   type Board = {
     id: string;
@@ -19,6 +21,11 @@
 
   let boards: Board[] = data.boards ?? [];
   let errorMessage = data.errorMessage ?? "";
+
+  // Handle form errors from deleteBoard action
+  $: if (form?.context === 'deleteBoard' && form?.success === false) {
+    errorMessage = form.message || 'Failed to delete board';
+  }
 
   // Convert inches to feet and inches format (e.g., 96 -> "8'0\"")
   function formatLength(inches: number | null | undefined): string {
@@ -145,6 +152,21 @@
                   {board.state === 'active' ? 'Inactivate' : 'Activate'}
                 </button>
               </form>
+              <!-- Delete Button -->
+              <form method="POST" action="?/deleteBoard" class="flex-1 min-w-[100px]">
+                <input type="hidden" name="boardId" value={board.id} />
+                <button
+                  type="submit"
+                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
+                  on:click={(e) => {
+                    if (!confirm('Delete this listing? This cannot be undone.')) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -251,6 +273,21 @@
                   >
                     Edit
                   </button>
+                  <!-- Delete Button -->
+                  <form method="POST" action="?/deleteBoard">
+                    <input type="hidden" name="boardId" value={board.id} />
+                    <button
+                      type="submit"
+                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
+                      on:click={(e) => {
+                        if (!confirm('Delete this listing? This cannot be undone.')) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>

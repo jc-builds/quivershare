@@ -93,5 +93,48 @@ export const actions: Actions = {
     }
 
     return { context: 'updateState', success: true, state: newState, boardId };
+  },
+
+  deleteBoard: async ({ request, locals }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { context: 'deleteBoard', success: false, message: 'Unauthorized' });
+    }
+
+    const form = await request.formData();
+    const boardId = form.get('boardId')?.toString();
+
+    if (!boardId) {
+      return fail(400, { context: 'deleteBoard', success: false, message: 'Missing board ID' });
+    }
+
+    // Verify the board belongs to the user and is not deleted
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('user_id')
+      .eq('id', boardId)
+      .eq('is_deleted', false)
+      .single();
+
+    if (boardError || !board) {
+      return fail(404, { context: 'deleteBoard', success: false, message: 'Surfboard not found' });
+    }
+
+    if (board.user_id !== user.id) {
+      return fail(403, { context: 'deleteBoard', success: false, message: 'Access denied' });
+    }
+
+    // Delete the board (set is_deleted to true)
+    const { error: deleteError } = await locals.supabase
+      .from('surfboards')
+      .update({ is_deleted: true })
+      .eq('id', boardId);
+
+    if (deleteError) {
+      console.error('Board delete error:', deleteError.message);
+      return fail(500, { context: 'deleteBoard', success: false, message: 'Failed to delete board' });
+    }
+
+    throw redirect(303, '/my-boards');
   }
 };

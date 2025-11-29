@@ -82,41 +82,42 @@
     </div>
   </section>
 
-  <!-- Social Proof / Logo Strip -->
-  <section class="w-full py-16 md:py-20 bg-surface/30 border-y border-border">
-    <div class="mx-auto max-w-5xl px-4 md:px-6 lg:px-8 w-full">
-      <div class="logo-marquee-wrapper relative w-full overflow-hidden">
-        <!-- Gradient masks -->
-        <div class="logo-marquee-gradient logo-marquee-gradient-left absolute top-0 bottom-0 w-32 z-10 pointer-events-none left-0 bg-gradient-to-r from-surface/30 to-transparent"></div>
-        <div class="logo-marquee-gradient logo-marquee-gradient-right absolute top-0 bottom-0 w-32 z-10 pointer-events-none right-0 bg-gradient-to-l from-surface/30 to-transparent"></div>
-        
-        <!-- Marquee container -->
-        <div class="logo-marquee-inner flex flex-nowrap w-fit will-change-transform">
-          <!-- First strip -->
-          <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0">
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span>
-          </div>
-          <!-- Duplicate strip for seamless loop -->
-          <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0" aria-hidden="true">
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span>
-            <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span>
-          </div>
-        </div>
-      </div>
-      <p class="text-center text-xs md:text-sm text-muted-foreground/80 mt-10 mb-0 font-medium tracking-wide uppercase">Trusted by local surfers & shops</p>
-    </div>
-  </section>
+  <!-- <!-- Social Proof / Logo Strip -->
+<!-- <section class="w-full py-16 md:py-20 bg-surface/30 border-y border-border"> -->
+<!--   <div class="mx-auto max-w-5xl px-4 md:px-6 lg:px-8 w-full"> -->
+<!--     <div class="logo-marquee-wrapper relative w-full overflow-hidden"> -->
+<!--       <!-- Gradient masks --> 
+<!--       <div class="logo-marquee-gradient logo-marquee-gradient-left absolute top-0 bottom-0 w-32 z-10 pointer-events-none left-0 bg-gradient-to-r from-surface/30 to-transparent"></div> -->
+<!--       <div class="logo-marquee-gradient logo-marquee-gradient-right absolute top-0 bottom-0 w-32 z-10 pointer-events-none right-0 bg-gradient-to-l from-surface/30 to-transparent"></div> -->
+<!--        -->
+<!--       <!-- Marquee container --> 
+<!--       <div class="logo-marquee-inner flex flex-nowrap w-fit will-change-transform"> -->
+<!--         <!-- First strip --> 
+<!--         <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0"> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span> -->
+<!--         </div> -->
+<!--         <!-- Duplicate strip for seamless loop --> 
+<!--         <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0" aria-hidden="true"> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span> -->
+<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span> -->
+<!--         </div> -->
+<!--       </div> -->
+<!--     </div> -->
+<!--     <p class="text-center text-xs md:text-sm text-muted-foreground/80 mt-10 mb-0 font-medium tracking-wide uppercase">Trusted by local surfers & shops</p> -->
+<!--   </div> -->
+<!-- </section> -->
+
 
   <!-- Search Section -->
   <section class="border-t border-border bg-background py-16 md:py-20" aria-labelledby="search-title">

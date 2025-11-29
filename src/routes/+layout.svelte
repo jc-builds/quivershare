@@ -3,7 +3,6 @@
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
-  import favicon from "$lib/assets/favicon.svg";
   import "../app.css";
 
   export let data: {
@@ -91,7 +90,6 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" href={favicon} />
 </svelte:head>
 
 <!-- Header -->

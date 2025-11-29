@@ -242,5 +242,46 @@ export const actions: Actions = {
     }
 
     return { success: true, state: newState };
+  },
+
+  deleteBoard: async ({ locals, params }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { message: 'Unauthorized' });
+    }
+
+    const surfboardId = params.id;
+    if (!surfboardId) {
+      return fail(400, { message: 'Missing surfboard ID' });
+    }
+
+    // Verify the surfboard belongs to the user
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('id, user_id')
+      .eq('id', surfboardId)
+      .eq('is_deleted', false)
+      .single();
+
+    if (boardError || !board) {
+      return fail(404, { message: 'Surfboard not found' });
+    }
+
+    if (board.user_id !== user.id) {
+      return fail(403, { message: 'Access denied' });
+    }
+
+    // Delete the board (set is_deleted to true)
+    const { error: deleteError } = await locals.supabase
+      .from('surfboards')
+      .update({ is_deleted: true })
+      .eq('id', surfboardId);
+
+    if (deleteError) {
+      console.error('Board delete error:', deleteError.message);
+      return fail(500, { message: 'Failed to delete board' });
+    }
+
+    throw redirect(303, '/my-boards');
   }
 };
