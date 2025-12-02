@@ -23,6 +23,9 @@
       thumbnail_url: string | null;
       user_id: string;
       state?: 'active' | 'inactive';
+      is_curated?: boolean;
+      source_type?: string | null;
+      source_url?: string | null;
     };
     images: Array<{ id: string; image_url: string }>;
     owner: {
@@ -181,6 +184,17 @@
     phone = '';
     message = getInitialMessage();
   }
+
+  // Curated listing handling
+  const sourceTypeLabels: Record<string, string> = {
+    facebook: 'Facebook Marketplace',
+    craigslist: 'Craigslist'
+  };
+
+  $: isCurated = data.board.is_curated === true;
+  $: curatedSourceLabel = isCurated && data.board.source_type
+    ? sourceTypeLabels[data.board.source_type] ?? 'Original source'
+    : null;
 </script>
 
 <svelte:head>
@@ -224,6 +238,14 @@
         </div>
       {/if}
     </div>
+
+    <!-- Curated Banner -->
+    {#if isCurated && curatedSourceLabel}
+      <div class="mb-6 rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm text-muted-foreground">
+        This is a curated listing from <span class="font-semibold text-foreground">{curatedSourceLabel}</span>. 
+        Use the original listing to contact the seller and confirm availability.
+      </div>
+    {/if}
 
     <!-- Hero Images: Single portrait on mobile, 3-tile grid on desktop -->
     <div class="w-full mb-8 max-w-6xl">
@@ -373,10 +395,33 @@
         </div>
       </div>
 
-      <!-- Right: Contact Seller Card -->
+      <!-- Right: Contact Seller / How to Buy Card -->
       <div class="bg-surface-elevated border border-border rounded-xl shadow-sm p-6">
-        <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">Contact Seller</h2>
-        {#if data.owner}
+        <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">
+          {isCurated ? 'How to Buy' : 'Contact Seller'}
+        </h2>
+        {#if isCurated}
+          <div class="space-y-4">
+            <p class="text-sm text-muted-foreground">
+              This board was sourced from {curatedSourceLabel || 'an external marketplace'}. 
+              To contact the seller or check if it's still available, open the original listing below.
+            </p>
+
+            {#if data.board.source_url}
+              <button
+                type="button"
+                class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                on:click={() => window.open(data.board.source_url!, '_blank', 'noopener,noreferrer')}
+              >
+                View listing on {curatedSourceLabel || 'original site'}
+              </button>
+            {:else}
+              <p class="text-sm text-red-400">
+                Original listing URL is unavailable. This curated board cannot be contacted via QuiverShare.
+              </p>
+            {/if}
+          </div>
+        {:else if data.owner}
           <div class="space-y-4">
             <div>
               <p class="text-sm text-muted-foreground mb-1">Seller</p>

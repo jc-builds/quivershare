@@ -183,7 +183,7 @@ export const actions: Actions = {
     // Verify the board exists and is not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, name, price, user_id')
+      .select('id, name, price, user_id, is_curated')
       .eq('id', id)
       .eq('is_deleted', false)
       .single();
@@ -193,6 +193,15 @@ export const actions: Actions = {
         context: 'contactSeller', 
         success: false, 
         message: 'Surfboard not found.' 
+      });
+    }
+
+    // Block contactSeller action for curated boards
+    if (board.is_curated) {
+      return fail(400, {
+        context: 'contactSeller',
+        success: false,
+        message: 'This is a curated listing. Please use the original listing to contact the seller.'
       });
     }
 
