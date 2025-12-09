@@ -334,6 +334,18 @@
   </div>
 </nav>
 
+<!-- Early Beta Banner -->
+<div class="w-full bg-surface-elevated/100 text-foreground py-2 text-center text-xs sm:text-sm border-b border-border">
+  QuiverShare is in early beta. Onboarding will begin mid-January 2026. For inquiries, email
+  <a
+    href="mailto:info@quivershare.com"
+    class="underline hover:text-primary-foreground"
+  >
+    info@quivershare.com
+  </a>.
+</div>
+
+
 <slot />
 
 <!-- Global Footer -->
