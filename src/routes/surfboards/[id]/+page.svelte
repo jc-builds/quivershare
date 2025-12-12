@@ -37,6 +37,8 @@
       region: string | null;
     } | null;
     canEdit: boolean;
+    isAdmin: boolean;
+    isCurated: boolean;
   };
 
   export let form;
@@ -220,21 +222,32 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{boardTitle}</h1>
-      {#if data.canEdit}
+      {#if data.canEdit || (data.isAdmin && data.isCurated)}
         <div class="flex items-center gap-3">
-          <a
-            href={`/surfboards/${data.board.id}/boost`}
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Manage Boost
-          </a>
-          
-          <a
-            href={`/edit-surfboard/${data.board.id}`}
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Edit
-          </a>
+          {#if data.isAdmin && data.isCurated}
+            <!-- Admin edit for curated boards (prioritized) -->
+            <a
+              href={`/admin/curated-boards/${data.board.id}`}
+              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Edit
+            </a>
+          {:else if data.canEdit}
+            <!-- Owner edit for non-curated boards -->
+            <a
+              href={`/surfboards/${data.board.id}/boost`}
+              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Manage Boost
+            </a>
+            
+            <a
+              href={`/edit-surfboard/${data.board.id}`}
+              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Edit
+            </a>
+          {/if}
         </div>
       {/if}
     </div>

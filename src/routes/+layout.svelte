@@ -345,7 +345,6 @@
   </a>.
 </div>
 
-
 <slot />
 
 <!-- Global Footer -->

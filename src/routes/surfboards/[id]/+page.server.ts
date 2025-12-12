@@ -54,6 +54,23 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const currentUserId = authData?.user?.id ?? null;
   const canEdit = Boolean(currentUserId && surfboard.user_id === currentUserId);
 
+  // Check if current user is admin and board is curated
+  let isAdmin = false;
+  const isCurated = surfboard.is_curated === true && surfboard.is_deleted === false;
+  
+  if (currentUserId && isCurated) {
+    // Fetch the current user's profile to check is_admin
+    const { data: currentUserProfile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('id, is_admin')
+      .eq('id', currentUserId)
+      .maybeSingle();
+    
+    if (!profileError && currentUserProfile && currentUserProfile.is_admin === true) {
+      isAdmin = true;
+    }
+  }
+
   // Get up to 5 images (thumbnail + up to 4 additional)
   const allImages = [
     ...(surfboard.thumbnail_url ? [{ id: 'thumb', image_url: surfboard.thumbnail_url }] : []),
@@ -66,7 +83,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     board: surfboard,
     images: allImages,
     owner: ownerProfile ?? null,
-    canEdit
+    canEdit,
+    isAdmin,
+    isCurated
   };
 };
 
