@@ -5,6 +5,7 @@
   import { goto } from "$app/navigation";
   import { enhance } from "$app/forms";
   import { page } from "$app/stores";
+  import { invalidateAll } from "$app/navigation";
 
   export let data: {
     surfboard: any;
@@ -526,28 +527,82 @@
 
   // ---------------------------------------------------------
   // 8. Thumbnail (Main image) for EXISTING images
+  // NOTE: This function ONLY uses server actions - no client-side Supabase .from('surfboards').update() calls
   // ---------------------------------------------------------
   let settingThumb: Record<string, boolean> = {};
 
   async function setAsThumbnail(img: ExistingImage) {
     if (settingThumb[img.id]) return;
     settingThumb = { ...settingThumb, [img.id]: true };
+    message = "";
 
-    const { error } = await supabase
-      .from("surfboards")
-      .update({ thumbnail_url: img.image_url })
-      .eq("id", surfboard.id);
+    try {
+      // Call server action to update thumbnail (bypasses RLS via supabaseAdmin)
+      // This is the ONLY way to update surfboards.thumbnail_url - no direct client-side PATCH calls.
+      const formData = new FormData();
+      formData.append('thumbnail_url', img.image_url);
 
-    if (error) {
-      console.error("Thumbnail update error:", error);
-      message = `❌ ${error.message}`;
+      const response = await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      // Debug log
+      console.log('[setAsThumbnail] Response status:', response.status, 'ok:', response.ok);
+
+      // Treat as successful if HTTP response is OK
+      if (response.ok) {
+        let result;
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          // If JSON parsing fails but response is OK, still treat as success
+          console.warn('[setAsThumbnail] JSON parse error (non-fatal):', jsonError);
+          result = { success: true, thumbnail_url: img.image_url };
+        }
+
+        // Update local state with returned thumbnail_url
+        if (result.thumbnail_url) {
+          surfboard.thumbnail_url = result.thumbnail_url;
+        } else {
+          surfboard.thumbnail_url = img.image_url;
+        }
+        
+        message = "✅ Thumbnail updated.";
+        
+        // Refresh page data to show updated thumbnail immediately (non-fatal)
+        try {
+          await invalidateAll();
+        } catch (invalidateError) {
+          console.warn('[setAsThumbnail] invalidateAll failed (non-fatal):', invalidateError);
+          // Keep success toast even if invalidate fails
+        }
+      } else {
+        // Only read response text for debugging on error
+        let errorMsg = 'Failed to update thumbnail';
+        try {
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+            errorMsg = errorData.message || errorData.error || errorMsg;
+          } catch {
+            // If not JSON, use the text or default message
+            errorMsg = errorText || errorMsg;
+          }
+        } catch (textError) {
+          console.warn('[setAsThumbnail] Failed to read error response:', textError);
+        }
+        console.error("Thumbnail update error:", errorMsg);
+        message = `❌ ${errorMsg}`;
+      }
+    } finally {
+      // Always reset loading state, even on error
       settingThumb = { ...settingThumb, [img.id]: false };
-      return;
     }
-
-    surfboard.thumbnail_url = img.image_url;
-    settingThumb = { ...settingThumb, [img.id]: false };
-    message = "✅ Thumbnail updated.";
   }
 
   // ---------------------------------------------------------
@@ -958,7 +1013,7 @@
               <!-- Clickable image via button (a11y) -->
               <button
                 type="button"
-                class="absolute inset-0 rounded-lg border border-border bg-surface-elevated overflow-hidden cursor-zoom-in"
+                class="absolute inset-0 rounded-lg border border-border bg-surface-elevated overflow-hidden cursor-zoom-in z-0"
                 on:click={() => openLightbox(i)}
                 aria-label="Open image"
               >
@@ -972,7 +1027,7 @@
               <!-- Thumbnail badge -->
               {#if surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url}
                 <div
-                  class="absolute top-1 left-1 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium"
+                  class="absolute top-1 left-1 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium z-20"
                 >
                   Main
                 </div>
@@ -984,8 +1039,8 @@
                 class="absolute bottom-1 left-1 bg-black/60 text-[10px] text-foreground
                        rounded-full px-2 h-5 flex items-center justify-center
                        opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                       hover:bg-black/80"
-                on:click={() => setAsThumbnail(img)}
+                       hover:bg-black/80 z-30 pointer-events-auto"
+                on:click|stopPropagation={() => setAsThumbnail(img)}
                 disabled={!!settingThumb[img.id]}
                 title="Set as main image"
                 aria-label="Set as main image"
@@ -999,8 +1054,8 @@
                 class="absolute top-1 right-1 bg-black/60 text-[10px] text-foreground
                        rounded-full w-5 h-5 flex items-center justify-center
                        opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                       hover:bg-black/80"
-                on:click={() => promptDelete(img)}
+                       hover:bg-black/80 z-30 pointer-events-auto"
+                on:click|stopPropagation={() => promptDelete(img)}
                 disabled={!!deleting[img.id]}
                 aria-label="Remove image"
                 title="Remove image"

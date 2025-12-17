@@ -88,43 +88,68 @@ export const actions: Actions = {
   },
   updateThumbnail: async ({ request, locals, params }) => {
     const user = locals.user;
-    if (!user) return fail(401, { message: 'Unauthorized' });
+    if (!user) return fail(401, { success: false, message: 'Unauthorized' });
+
+    // Re-verify admin status for action
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { success: false, message: 'Access denied: Not an admin' });
+    }
 
     const surfboardId = params.id;
     if (!surfboardId) {
-      return fail(400, { message: 'Missing surfboard ID' });
+      return fail(400, { success: false, message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated
+    // Verify the surfboard is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
       .eq('is_curated', true)
+      .eq('is_deleted', false)
       .single();
 
     if (boardError || !board) {
-      return fail(403, { message: 'Curated surfboard not found or access denied' });
+      return fail(403, { success: false, message: 'Curated surfboard not found or access denied' });
     }
 
     const form = await request.formData();
     const thumbnail_url = form.get('thumbnail_url')?.toString();
 
     if (!thumbnail_url) {
-      return fail(400, { message: 'Missing thumbnail URL' });
+      return fail(400, { success: false, message: 'Missing thumbnail URL' });
     }
 
-    const { error: updateError } = await locals.supabase
+    // Use service role client to bypass RLS
+    const { data: updatedBoards, error: updateError } = await supabaseAdmin
       .from('surfboards')
       .update({ thumbnail_url })
-      .eq('id', surfboardId);
+      .eq('id', surfboardId)
+      .eq('is_curated', true)
+      .eq('is_deleted', false)
+      .select('thumbnail_url');
 
     if (updateError) {
       console.error('Thumbnail update error:', updateError.message);
-      return fail(500, { message: 'Failed to update thumbnail' });
+      return fail(500, { success: false, message: 'Failed to update thumbnail' });
     }
 
-    return { success: true };
+    if (!updatedBoards || updatedBoards.length === 0) {
+      return fail(404, { success: false, message: 'Update failed (no rows affected). Check board ID or permissions.' });
+    }
+
+    const finalThumbnailUrl = updatedBoards[0]?.thumbnail_url ?? thumbnail_url;
+    
+    // Debug log
+    console.log('[updateThumbnail] Board ID:', surfboardId, 'New thumbnail_url:', finalThumbnailUrl);
+    
+    return { success: true, thumbnail_url: finalThumbnailUrl };
   },
   deleteImage: async ({ request, locals, params }) => {
     const user = locals.user;

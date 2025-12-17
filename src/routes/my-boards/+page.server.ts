@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) throw redirect(303, '/login');
   const userId = locals.user.id;
 
-  // 2) Fetch only this user's boards (exclude deleted)
+  // 2) Fetch only this user's personal boards (exclude deleted and curated)
   const { data, error } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -25,6 +25,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     `)
     .eq('user_id', userId)
     .eq('is_deleted', false)
+    .or('is_curated.is.null,is_curated.eq.false')
     .order('last_modified', { ascending: false });
 
   // 3) Handle errors
@@ -66,12 +67,13 @@ export const actions: Actions = {
       return fail(400, { context: 'updateState', success: false, message: 'Invalid state value' });
     }
 
-    // Verify the board belongs to the user and is not deleted
+    // Verify the board belongs to the user, is not deleted, and is not curated
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('user_id')
+      .select('user_id, is_curated')
       .eq('id', boardId)
       .eq('is_deleted', false)
+      .or('is_curated.is.null,is_curated.eq.false')
       .single();
 
     if (boardError || !board) {
@@ -108,12 +110,13 @@ export const actions: Actions = {
       return fail(400, { context: 'deleteBoard', success: false, message: 'Missing board ID' });
     }
 
-    // Verify the board belongs to the user and is not deleted
+    // Verify the board belongs to the user, is not deleted, and is not curated
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('user_id')
+      .select('user_id, is_curated')
       .eq('id', boardId)
       .eq('is_deleted', false)
+      .or('is_curated.is.null,is_curated.eq.false')
       .single();
 
     if (boardError || !board) {

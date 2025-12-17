@@ -35,6 +35,7 @@
     lat: number | null;
     lon: number | null;
     thumbnail_url: string | null;
+    is_curated?: boolean | null;
     images?: string[] | null;
     user_id: string;
     created_at: string;
@@ -93,10 +94,14 @@
     updateQueryParams({ page: String(newPage) });
   }
 
-  function handleEditClick(event: MouseEvent, boardId: string) {
+  function handleEditClick(event: MouseEvent, boardId: string, isCurated?: boolean | null) {
     event.preventDefault();
     event.stopPropagation();
-    goto(`/edit-surfboard/${boardId}`);
+    if (isCurated === true) {
+      goto(`/admin/curated-boards/${boardId}`);
+    } else {
+      goto(`/edit-surfboard/${boardId}`);
+    }
   }
 
   // Location search state
@@ -821,7 +826,7 @@
                           <button
                             type="button"
                             class="inline-flex items-center rounded-lg border border-border bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-alt shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
-                            on:click={(event) => handleEditClick(event, board.id)}
+                            on:click={(event) => handleEditClick(event, board.id, board.is_curated)}
                             aria-label="Edit {board.name}"
                           >
                             Edit

@@ -99,6 +99,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         lat,
         lon,
         thumbnail_url,
+        is_curated,
         user_id,
         created_at,
         last_modified
