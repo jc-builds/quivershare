@@ -4,10 +4,16 @@ export const GET: RequestHandler = async ({ locals, url }) => {
   // where to return after the server callback completes
   const next = url.searchParams.get('redirect_to') ?? '/my-boards';
 
+  const redirectTo = `${url.origin}/auth/callback?redirect_to=${encodeURIComponent(next)}`;
+  
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`OAuth redirectTo: ${redirectTo}`);
+  }
+
   const { data, error } = await locals.supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${url.origin}/auth/callback?redirect_to=${encodeURIComponent(next)}`
+      redirectTo
     }
   });
 

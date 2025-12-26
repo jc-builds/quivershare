@@ -1,20 +1,5 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabaseClient";
-  import { goto } from "$app/navigation";
   export let data: { user: import('@supabase/supabase-js').User | null };
-
-  async function login() {
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (error) console.error("OAuth error:", error);
-  }
-
-  function goBoards() {
-    goto("/my-boards");
-  }
 </script>
 
 <section class="min-h-screen bg-background text-foreground flex flex-col items-center justify-center text-center px-4 py-24 space-y-6">
