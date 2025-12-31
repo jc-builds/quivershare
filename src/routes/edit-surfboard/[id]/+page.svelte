@@ -349,33 +349,39 @@
     loading = true;
     message = "";
 
-    const cleanedSurfboard = {
-      ...surfboard,
-      length: surfboard.length === "" ? null : Number(surfboard.length),
-      width: surfboard.width === "" ? null : Number(surfboard.width),
-      thickness: surfboard.thickness === "" ? null : Number(surfboard.thickness),
-      volume: surfboard.volume === "" ? null : Number(surfboard.volume),
-      price: surfboard.price === "" ? null : Number(surfboard.price),
-      fin_system: surfboard.fin_system === "" ? null : surfboard.fin_system,
-      fin_setup: surfboard.fin_setup === "" ? null : surfboard.fin_setup,
-      style: surfboard.style === "" ? null : surfboard.style,
-      city: surfboard.city === "" ? null : surfboard.city,
-      region: surfboard.region === "" ? null : surfboard.region,
-      lat: surfboard.lat === "" ? null : Number(surfboard.lat),
-      lon: surfboard.lon === "" ? null : Number(surfboard.lon),
-      // Remove id from update payload (it's used in the .eq() clause)
-      id: undefined,
-    };
-    delete cleanedSurfboard.id;
+    // Prepare form data for server action
+    const formData = new FormData();
+    formData.append('name', surfboard.name);
+    formData.append('make', surfboard.make || '');
+    formData.append('length', surfboard.length || '');
+    formData.append('width', surfboard.width || '');
+    formData.append('thickness', surfboard.thickness || '');
+    formData.append('volume', surfboard.volume || '');
+    formData.append('fin_system', surfboard.fin_system || '');
+    formData.append('fin_setup', surfboard.fin_setup || '');
+    formData.append('style', surfboard.style || '');
+    formData.append('price', surfboard.price || '');
+    formData.append('condition', surfboard.condition || '');
+    formData.append('notes', surfboard.notes || '');
+    formData.append('city', surfboard.city || '');
+    formData.append('region', surfboard.region || '');
+    formData.append('lat', surfboard.lat || '');
+    formData.append('lon', surfboard.lon || '');
+    formData.append('state', surfboard.state || 'active');
 
-    const { error } = await supabase
-      .from("surfboards")
-      .update(cleanedSurfboard)
-      .eq("id", surfboard.id);
+    // Call server action to update surfboard
+    const updateResponse = await fetch(`/edit-surfboard/${surfboard.id}?/updateBoard`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'accept': 'application/json'
+      }
+    });
 
-    if (error) {
-      console.error("Surfboard update error:", error);
-      message = `❌ ${error.message}`;
+    if (!updateResponse.ok) {
+      const result = await updateResponse.json();
+      console.error("Surfboard update error:", result);
+      message = `❌ ${result.message || 'Failed to update surfboard'}`;
       loading = false;
       return;
     }

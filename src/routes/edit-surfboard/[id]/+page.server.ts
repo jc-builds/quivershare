@@ -40,6 +40,85 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 };
 
 export const actions: Actions = {
+  updateBoard: async ({ request, locals, params }) => {
+    const user = locals.user;
+    if (!user) return fail(401, { message: 'Unauthorized' });
+
+    const surfboardId = params.id;
+    if (!surfboardId) {
+      return fail(400, { message: 'Missing surfboard ID' });
+    }
+
+    // Verify the surfboard belongs to the user
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('id')
+      .eq('id', surfboardId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (boardError || !board) {
+      return fail(403, { message: 'Surfboard not found or access denied' });
+    }
+
+    const form = await request.formData();
+    
+    // Extract and validate fields (same pattern as create-surfboard)
+    const name = form.get('name')?.toString() ?? '';
+    const make = form.get('make')?.toString() || null;
+    const length = form.get('length')?.toString();
+    const width = form.get('width')?.toString();
+    const thickness = form.get('thickness')?.toString();
+    const volume = form.get('volume')?.toString();
+    const fin_system = form.get('fin_system')?.toString() || null;
+    const fin_setup = form.get('fin_setup')?.toString() || null;
+    const style = form.get('style')?.toString() || null;
+    const price = form.get('price')?.toString();
+    const condition = form.get('condition')?.toString() ?? '';
+    const notes = form.get('notes')?.toString() ?? '';
+    const city = form.get('city')?.toString() || null;
+    const region = form.get('region')?.toString() || null;
+    const lat_raw = form.get('lat')?.toString();
+    const lon_raw = form.get('lon')?.toString();
+    const state = form.get('state')?.toString();
+
+    // Convert numeric fields
+    const updateData: any = {
+      name,
+      make: make === '' ? null : make,
+      length: length === '' || !length ? null : Number(length),
+      width: width === '' || !width ? null : Number(width),
+      thickness: thickness === '' || !thickness ? null : Number(thickness),
+      volume: volume === '' || !volume ? null : Number(volume),
+      fin_system: fin_system === '' ? null : fin_system,
+      fin_setup: fin_setup === '' ? null : fin_setup,
+      style: style === '' ? null : style,
+      price: price === '' || !price ? null : Number(price),
+      condition,
+      notes,
+      city: city === '' ? null : city,
+      region: region === '' ? null : region,
+      lat: lat_raw === '' || !lat_raw ? null : Number(lat_raw),
+      lon: lon_raw === '' || !lon_raw ? null : Number(lon_raw),
+    };
+
+    // Include state if provided (for consistency with existing data structure)
+    if (state === 'active' || state === 'inactive') {
+      updateData.state = state;
+    }
+
+    const { error: updateError } = await locals.supabase
+      .from('surfboards')
+      .update(updateData)
+      .eq('id', surfboardId);
+
+    if (updateError) {
+      console.error('Board update error:', updateError.message);
+      return fail(500, { message: `Failed to update surfboard: ${updateError.message}` });
+    }
+
+    return { success: true };
+  },
   uploadImages: async ({ request, locals, params }) => {
     const user = locals.user;
     if (!user) return fail(401, { message: 'Unauthorized' });
