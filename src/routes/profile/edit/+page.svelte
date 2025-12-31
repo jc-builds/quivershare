@@ -38,6 +38,7 @@
   let fileInput: HTMLInputElement;
   let profilePictureFile: File | null = null;
   let profilePicturePreview: string | null = null;
+  let profilePictureRemoved = false; // Explicit flag for removal intent
   let uploadingPicture = false;
 
   // Cropper.js for profile picture
@@ -173,6 +174,7 @@
 
     profilePictureFile = compressed;
     profilePicturePreview = URL.createObjectURL(compressed);
+    profilePictureRemoved = false; // Clear removal flag when uploading new picture
     
     await closeCropModal();
   }
@@ -193,6 +195,7 @@
 
     profilePictureFile = compressed;
     profilePicturePreview = URL.createObjectURL(compressed);
+    profilePictureRemoved = false; // Clear removal flag when uploading new picture
     
     await closeCropModal();
   }
@@ -207,6 +210,7 @@
     if (confirm('Remove your profile picture? It will revert to your Google avatar.')) {
       profilePictureFile = null;
       profilePicturePreview = '/default_profile_picture.jpg';
+      profilePictureRemoved = true; // Explicit removal flag
     }
   }
 
@@ -221,19 +225,21 @@
     // Build FormData
     const formData = new FormData(form);
     
-    // Handle profile picture file upload
+    // Handle profile picture changes explicitly
     if (profilePictureFile) {
-      // Add the file to form data (server will handle upload)
+      // User uploaded a new picture
       formData.set('profile_picture', profilePictureFile);
       uploadingPicture = true;
-    } else if (profilePicturePreview === null || profilePicturePreview === data.profile.profile_picture_url) {
-      // User wants to remove the picture
+      // Explicitly don't include remove_picture when uploading
+      formData.delete('remove_picture');
+    } else if (profilePictureRemoved) {
+      // User explicitly clicked "Remove"
       formData.set('remove_picture', 'true');
-      formData.delete('profile_picture_url'); // Remove any existing URL
-    } else {
-      // Keep existing picture - don't send anything about it
+      // Explicitly don't include profile_picture when removing
       formData.delete('profile_picture');
-      formData.delete('profile_picture_url');
+    } else {
+      // No change to profile picture - don't include either field
+      formData.delete('profile_picture');
       formData.delete('remove_picture');
     }
     
