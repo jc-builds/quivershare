@@ -49,6 +49,18 @@ export const handle: Handle = async ({ event, resolve }) => {
     return refreshedSession ?? null;
   };
 
+  // Check if user is active (has profile and not deleted)
+  let isActiveUser = false;
+  if (event.locals.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_deleted')
+      .eq('id', event.locals.user.id)
+      .maybeSingle();
+    
+    isActiveUser = !!(profile && profile.is_deleted !== true);
+  }
+
   const path = event.url.pathname;
   const isAllowlisted = ALLOWLIST.some((p) => path === p || path.startsWith(`${p}/`));
   const isProtected   = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
@@ -58,12 +70,13 @@ export const handle: Handle = async ({ event, resolve }) => {
       '[hooks]',
       'path=', path,
       'isProtected=', isProtected,
-      'session=', event.locals.user ? 'yes' : 'no'
+      'session=', event.locals.user ? 'yes' : 'no',
+      'isActiveUser=', isActiveUser
     );
   }
 
-  // Gate protected routes on "has a user?"
-  if (isProtected && !event.locals.user && !isAllowlisted) {
+  // Gate protected routes on "has an active user?"
+  if (isProtected && !isActiveUser && !isAllowlisted) {
     const redirectTo = encodeURIComponent(event.url.pathname + event.url.search);
     throw redirect(303, `/login?redirectTo=${redirectTo}`);
   }

@@ -8,11 +8,15 @@
   export let data: {
     session: import('@supabase/supabase-js').Session | null;
     user: import('@supabase/supabase-js').User | null;
-    profile: { username: string | null; profile_picture_url: string | null } | null;
+    profile: { username: string | null; profile_picture_url: string | null; is_deleted?: boolean | null } | null;
     boostCredits: { total_credits: number | null } | null;
   };
 
-  const isAuthed = !!data.user;
+  const isActiveUser = !!(
+    data.user &&
+    data.profile &&
+    data.profile.is_deleted !== true
+  );
 
   // Compute boost balance (default to 0 if null or missing)
   const boostBalance = data.boostCredits?.total_credits ?? 0;
@@ -108,7 +112,7 @@
     <div class="ml-auto flex items-center gap-4 md:gap-6">
       <!-- Desktop nav links -->
       <div class="hidden md:flex items-center gap-6 text-sm text-muted-foreground nav-li-font">
-        {#if isAuthed}
+        {#if isActiveUser}
           <a href="/s" class="hover:text-foreground" data-sveltekit-prefetch>Browse Boards</a>
           <a href="/my-boards" class="hover:text-foreground" data-sveltekit-prefetch>My Boards</a>
         {:else}
@@ -117,7 +121,7 @@
           <a href="/about" class="hover:text-foreground" data-sveltekit-prefetch>About</a>
         {/if}
       </div>
-      {#if isAuthed}
+      {#if isActiveUser}
         <!-- Boost balance button (desktop) -->
         <button
           type="button"

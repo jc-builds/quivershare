@@ -2,7 +2,7 @@ import { redirect, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
   // where to return after the server callback completes
-  const next = url.searchParams.get('redirect_to') ?? '/my-boards';
+  const next = url.searchParams.get('redirect_to') ?? '/';
 
   const redirectTo = `${url.origin}/auth/callback?redirect_to=${encodeURIComponent(next)}`;
   

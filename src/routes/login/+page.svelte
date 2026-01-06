@@ -1,9 +1,18 @@
 <script lang="ts">
-  export let data: { user: import('@supabase/supabase-js').User | null };
+  export let data: { 
+    user: import('@supabase/supabase-js').User | null;
+    profile: { username: string | null; profile_picture_url: string | null; is_deleted?: boolean | null } | null;
+  };
+
+  const isActiveUser = !!(
+    data.user &&
+    data.profile &&
+    data.profile.is_deleted !== true
+  );
 </script>
 
 <section class="min-h-screen bg-background text-foreground flex flex-col items-center justify-center text-center px-4 py-24 space-y-6">
-  {#if data.user}
+  {#if isActiveUser}
     <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">You're already signed in</h1>
     <a 
       class="inline-flex items-center justify-center px-6 py-3 rounded-lg text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background" 
