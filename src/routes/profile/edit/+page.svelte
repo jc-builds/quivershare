@@ -504,7 +504,7 @@
         </div>
       </div>
 
-      <form method="POST" use:enhance>
+      <form method="POST">
         <input type="hidden" name="intent" value="deleteAccount" />
         <input type="hidden" name="confirm_text" value={deleteConfirmText} />
         <div class="flex gap-2 justify-end">

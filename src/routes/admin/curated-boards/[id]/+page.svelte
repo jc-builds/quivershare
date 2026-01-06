@@ -1214,6 +1214,8 @@
           </div>
         </div>
 
+        <!-- Note: use:enhance removed for account deletion (auth-affecting), but kept here for board deletion.
+             Consider removing if stale state issues occur after board deletion. -->
         <form method="POST" action="?/deleteBoard" use:enhance>
           <div class="flex gap-2 justify-end">
             <button
