@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import { pageTitle } from '$lib/title';
 
   export let form:
     | {
@@ -154,6 +155,10 @@
     profilePicturePreview = '/default_profile_picture.jpg';
   }
 </script>
+
+<svelte:head>
+  <title>{pageTitle('Create Username')}</title>
+</svelte:head>
 
 <section class="max-w-md mx-auto px-4 py-8 sm:px-6 bg-background text-foreground">
   <h1 class="text-2xl font-semibold tracking-tight mb-2 text-foreground">Finish setup</h1>

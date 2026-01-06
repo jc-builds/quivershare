@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { pageTitle } from '$lib/title';
+
   export let data: { 
     user: import('@supabase/supabase-js').User | null;
     profile: { username: string | null; profile_picture_url: string | null; is_deleted?: boolean | null } | null;
@@ -10,6 +12,10 @@
     data.profile.is_deleted !== true
   );
 </script>
+
+<svelte:head>
+  <title>{pageTitle('Sign In')}</title>
+</svelte:head>
 
 <section class="min-h-screen bg-background text-foreground flex flex-col items-center justify-center text-center px-4 py-24 space-y-6">
   {#if isActiveUser}

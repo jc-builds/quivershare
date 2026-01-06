@@ -3,6 +3,7 @@
   import imageCompression from 'browser-image-compression';
   import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
+  import { pageTitle } from '$lib/title';
 
   export let data: {
     profile: {
@@ -289,6 +290,10 @@
     }
   }
 </script>
+
+<svelte:head>
+  <title>{pageTitle('Edit Profile')}</title>
+</svelte:head>
 
 <section class="min-h-screen bg-background text-foreground px-4 py-6 sm:py-8 max-w-2xl mx-auto">
   <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight mb-6 text-foreground">Edit Profile</h1>

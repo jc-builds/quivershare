@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { browser } from '$app/environment';
+  import { pageTitle } from '$lib/title';
 
   export let data: { 
     userId: string | null;
@@ -367,6 +368,10 @@
     return `${feet}'${remainingInches}"`;
   }
 </script>
+
+<svelte:head>
+  <title>{pageTitle('Browse Boards')}</title>
+</svelte:head>
 
 <div class="min-h-screen bg-background">
   <!-- Mobile Filter Bar (mobile only) -->

@@ -94,6 +94,7 @@
 </script>
 
 <svelte:head>
+  <title>QuiverShare</title>
 </svelte:head>
 
 <!-- Header -->
