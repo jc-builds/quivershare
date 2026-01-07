@@ -54,6 +54,7 @@
 
   // State
   const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
+  const eagerImageCount = browser && window.innerWidth < 768 ? 1 : 2;
   let allBoards: Board[] = data.boards ?? [];
   let filteredBoards: Board[] = [...allBoards];
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
@@ -746,74 +747,74 @@
               <p class="text-muted-foreground">No boards match your filters.</p>
             </div>
           {:else}
-            {#each filteredBoards as board (board.id)}
+            {#each filteredBoards as board, index (board.id)}
               <a
                 href="/surfboards/{board.id}"
                 data-sveltekit-prefetch
                 class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-md transition-all duration-200 no-underline"
               >
                 <div class="flex flex-col md:flex-row">
-                  <!-- Left: Photo Carousel -->
+                  <!-- Left: Photo -->
                   <div class="md:w-56 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden aspect-[3/4] min-h-[160px]">
                     {#if board.images && board.images.length > 0}
-                      {#each board.images as img, index}
+                      {#if index < eagerImageCount}
                         <img
-                          src={img}
+                          src={board.images[0]}
                           alt={board.name}
-                          class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 {index === 0 ? 'opacity-100' : 'opacity-0'}"
-                          loading="lazy"
+                          class="absolute inset-0 w-full h-full object-cover"
+                          loading="eager"
+                          fetchpriority="high"
+                          decoding="async"
                         />
-                      {/each}
-                      
-                      {#if board.images.length > 1}
-                        <!-- Navigation arrows -->
-                        <button
-                          type="button"
-                          class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
-                          on:click|stopPropagation={(e) => {
-                            e.preventDefault();
-                            // prevImage(board.id, board.images.length); // This function is removed
-                          }}
-                        >
-                          <span class="text-sm">‹</span>
-                        </button>
-                        <button
-                          type="button"
-                          class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
-                          on:click|stopPropagation={(e) => {
-                            e.preventDefault();
-                            // nextImage(board.id, board.images.length); // This function is removed
-                          }}
-                        >
-                          <span class="text-sm">›</span>
-                        </button>
-                        
-                        <!-- Dot indicators -->
-                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                          {#each board.images as _, index}
-                            <div
-                              class="w-2 h-2 rounded-full {index === 0 ? 'bg-white' : 'bg-white/50'}"
-                            ></div>
-                          {/each}
-                        </div>
+                      {:else}
+                        <img
+                          src={board.images[0]}
+                          alt={board.name}
+                          class="absolute inset-0 w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
                       {/if}
                     {:else if board.thumbnail_url}
-                      <img
-                        src={board.thumbnail_url}
-                        alt={board.name}
-                        class="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      {#if index < eagerImageCount}
+                        <img
+                          src={board.thumbnail_url}
+                          alt={board.name}
+                          class="absolute inset-0 w-full h-full object-cover"
+                          loading="eager"
+                          fetchpriority="high"
+                          decoding="async"
+                        />
+                      {:else}
+                        <img
+                          src={board.thumbnail_url}
+                          alt={board.name}
+                          class="absolute inset-0 w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      {/if}
                     {:else}
-                      <img
-                        src={placeholderThumbnail}
-                        alt=""
-                        class="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                        aria-hidden="true"
-                      />
+                      {#if index < eagerImageCount}
+                        <img
+                          src={placeholderThumbnail}
+                          alt=""
+                          class="absolute inset-0 w-full h-full object-cover"
+                          aria-hidden="true"
+                          loading="eager"
+                          fetchpriority="high"
+                          decoding="async"
+                        />
+                      {:else}
+                        <img
+                          src={placeholderThumbnail}
+                          alt=""
+                          class="absolute inset-0 w-full h-full object-cover"
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      {/if}
                     {/if}
                   </div>
 
