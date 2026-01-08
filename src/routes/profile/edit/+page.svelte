@@ -63,6 +63,18 @@
     }
   });
 
+  // Location autocomplete state
+  let locationQuery = data.profile.location_label || '';
+  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
+  let loc_id = '';
+  let loc_label = '';
+  let loc_lat: number | '' = '';
+  let loc_lon: number | '' = '';
+  let loc_city = '';
+  let loc_region = '';
+  let loc_country = '';
+  let locationDebounceHandle: any;
+
   // Home break location autocomplete
   let homeBreakQuery = data.profile.home_break_label || '';
   let suggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
@@ -72,6 +84,44 @@
   let homeBreakRegion = '';
   let homeBreakCountry = '';
   let debounceHandle: any;
+
+  async function searchLocationPlaces(q: string) {
+    if (!q || q.length < 2) {
+      locationSuggestions = [];
+      return;
+    }
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    locationSuggestions = data.features ?? [];
+  }
+
+  function onLocationInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    locationQuery = v;
+    // Clear selection if user edits text again
+    loc_id = '';
+    loc_label = '';
+    loc_lat = '';
+    loc_lon = '';
+    loc_city = '';
+    loc_region = '';
+    loc_country = '';
+
+    clearTimeout(locationDebounceHandle);
+    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
+    locationQuery = s.label;
+    loc_id = s.id;
+    loc_label = s.label;
+    loc_lat = s.lat;
+    loc_lon = s.lon;
+    loc_city = s.city;
+    loc_region = s.region;
+    loc_country = s.country;
+    locationSuggestions = [];
+  }
 
   async function searchPlaces(q: string) {
     if (!q || q.length < 2) {
@@ -401,20 +451,48 @@
       </p>
     </div>
 
-    <!-- Current Location (read-only) -->
+    <!-- Location -->
     <div class="space-y-1">
-      <label class="block text-sm font-medium text-muted-foreground" for="location-input">
+      <label for="location" class="block text-sm font-medium text-muted-foreground">
         Location
       </label>
-      <input
-        id="location-input"
-        type="text"
-        value={data.profile.location_label || [data.profile.city, data.profile.region, data.profile.country].filter(Boolean).join(', ') || 'Not set'}
-        class="w-full rounded-lg border border-border bg-surface text-sm text-muted-foreground px-3 py-2 cursor-not-allowed opacity-70"
-        disabled
-      />
+      <div class="relative">
+        <input
+          id="location"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          name="locationQuery"
+          placeholder="Start typing... e.g. Brooklyn"
+          value={locationQuery}
+          on:input={onLocationInput}
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-expanded={locationSuggestions.length > 0}
+          aria-controls="location-suggestions"
+        />
+
+        {#if locationSuggestions.length > 0}
+          <ul id="location-suggestions" class="absolute z-10 mt-2 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
+            {#each locationSuggestions as s}
+              <li>
+                <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseLocationSuggestion(s)}>
+                  {s.label}
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
+
+      <!-- Hidden fields sent to server on submit -->
+      <input type="hidden" name="place_id" value={loc_id} />
+      <input type="hidden" name="place_label" value={loc_label} />
+      <input type="hidden" name="lat" value={loc_lat} />
+      <input type="hidden" name="lon" value={loc_lon} />
+      <input type="hidden" name="city" value={loc_city} />
+      <input type="hidden" name="region" value={loc_region} />
+      <input type="hidden" name="country" value={loc_country} />
       <p class="text-xs text-muted-foreground mt-1">
-        Update your location during onboarding
+        Your current location
       </p>
     </div>
 

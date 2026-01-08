@@ -256,6 +256,19 @@ export const actions: Actions = {
     const home_break_lat = home_break_lat_raw ? Number(home_break_lat_raw) : null;
     const home_break_lon = home_break_lon_raw ? Number(home_break_lon_raw) : null;
 
+    // Location fields
+    const place_id = formData.get('place_id')?.toString() ?? '';
+    const place_label = formData.get('place_label')?.toString() ?? '';
+    const lat_raw = formData.get('lat');
+    const lon_raw = formData.get('lon');
+    const lat = lat_raw ? Number(lat_raw) : NaN;
+    const lon = lon_raw ? Number(lon_raw) : NaN;
+    const city = formData.get('city')?.toString() ?? '';
+    const region = formData.get('region')?.toString() ?? '';
+    const country = formData.get('country')?.toString() ?? '';
+
+    const hasLocation = !!place_id && Number.isFinite(lat) && Number.isFinite(lon);
+
     // Handle profile picture upload
     let profile_picture_url: string | null = null;
     const profilePictureFile = formData.get('profile_picture') as File | null;
@@ -345,6 +358,16 @@ export const actions: Actions = {
     if (home_break_label !== null) update.home_break_label = home_break_label || null;
     if (home_break_lat !== null && Number.isFinite(home_break_lat)) update.home_break_lat = home_break_lat;
     if (home_break_lon !== null && Number.isFinite(home_break_lon)) update.home_break_lon = home_break_lon;
+    
+    // Update location fields if hasLocation is true
+    if (hasLocation) {
+      update.location_label = place_label || null;
+      update.latitude = lat;
+      update.longitude = lon;
+      update.city = city || null;
+      update.region = region || null;
+      update.country = country || null;
+    }
     
     // Only update profile_picture_url if it was changed (uploaded, removed, or explicitly set)
     if (profilePictureFile || removePicture || formData.get('profile_picture_url') === '') {
