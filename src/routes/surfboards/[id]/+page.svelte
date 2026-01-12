@@ -96,14 +96,26 @@
   // Get first 3 images for hero grid
   $: heroImages = data.images.slice(0, 3);
 
+  // Hero rendering gate
+  let heroReady = false;
+
   // Lightbox state
   let lightboxOpen = false;
   let lightboxIndex = 0;
 
-  function openLightbox(index: number = 0) {
-    if (allImages.length > 0) {
-      lightboxIndex = index;
-      lightboxOpen = true;
+  async function openLightbox(index: number = 0) {
+    if (allImages.length > 0 && allImages[index]) {
+      try {
+        const img = new Image();
+        img.src = allImages[index].image_url;
+        await img.decode();
+        lightboxIndex = index;
+        lightboxOpen = true;
+      } catch (err) {
+        // If decode fails, still open lightbox (fallback)
+        lightboxIndex = index;
+        lightboxOpen = true;
+      }
     }
   }
   
@@ -115,15 +127,37 @@
     lightboxOpen = false;
   }
 
-  function nextLightboxImage() {
+  async function nextLightboxImage() {
     if (allImages.length > 0) {
-      lightboxIndex = (lightboxIndex + 1) % allImages.length;
+      const nextIndex = (lightboxIndex + 1) % allImages.length;
+      if (allImages[nextIndex]) {
+        try {
+          const img = new Image();
+          img.src = allImages[nextIndex].image_url;
+          await img.decode();
+          lightboxIndex = nextIndex;
+        } catch (err) {
+          // If decode fails, still switch (fallback)
+          lightboxIndex = nextIndex;
+        }
+      }
     }
   }
 
-  function prevLightboxImage() {
+  async function prevLightboxImage() {
     if (allImages.length > 0) {
-      lightboxIndex = (lightboxIndex - 1 + allImages.length) % allImages.length;
+      const prevIndex = (lightboxIndex - 1 + allImages.length) % allImages.length;
+      if (allImages[prevIndex]) {
+        try {
+          const img = new Image();
+          img.src = allImages[prevIndex].image_url;
+          await img.decode();
+          lightboxIndex = prevIndex;
+        } catch (err) {
+          // If decode fails, still switch (fallback)
+          lightboxIndex = prevIndex;
+        }
+      }
     }
   }
   
@@ -177,6 +211,25 @@
       }
     }
   }
+
+  // Preload and decode first hero image on mount
+  onMount(async () => {
+    if (heroImages.length > 0) {
+      const firstImage = heroImages[0];
+      try {
+        const img = new Image();
+        img.src = firstImage.image_url;
+        await img.decode();
+        heroReady = true;
+      } catch (err) {
+        // If decode fails, still show images (fallback)
+        heroReady = true;
+      }
+    } else {
+      // No images, show placeholder immediately
+      heroReady = true;
+    }
+  });
 
   // Reset contact form on successful submission
   $: if (form?.context === 'contactSeller' && form?.success) {
@@ -264,7 +317,7 @@
     <div class="w-full mb-8 max-w-6xl">
       <!-- Mobile: Single portrait hero image -->
       <div class="block md:hidden">
-        {#if heroImages[0]}
+        {#if heroReady && heroImages[0]}
           <div class="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-elevated border border-border">
             <button
               type="button"
@@ -276,6 +329,9 @@
                 src={heroImages[0].image_url}
                 alt="{data.board.name || 'Surfboard'} image 1"
                 class="w-full h-full object-cover object-top"
+                loading="eager"
+                decoding="sync"
+                fetchpriority="high"
                 on:error={(e) => {
                   (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
                 }}
@@ -290,8 +346,8 @@
 
       <!-- Desktop: 3-tile grid -->
       <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {#each Array(3) as _, i}
-          {#if heroImages[i]}
+        {#if heroReady}
+          {#each heroImages as img, i (img.id)}
             <div class="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-elevated border border-border">
               <button
                 type="button"
@@ -300,9 +356,12 @@
                 aria-label="View {data.board.name || 'Surfboard'} image {i + 1}"
               >
                 <img
-                  src={heroImages[i].image_url}
+                  src={img.image_url}
                   alt="{data.board.name || 'Surfboard'} image {i + 1}"
                   class="w-full h-full object-cover object-top"
+                  loading="eager"
+                  decoding="sync"
+                  fetchpriority="high"
                   on:error={(e) => {
                     (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
                   }}
@@ -327,11 +386,11 @@
                 </button>
               {/if}
             </div>
-          {:else}
-            <!-- Placeholder slot -->
-            <div class="aspect-[3/4] rounded-xl bg-surface border border-border"></div>
-          {/if}
-        {/each}
+          {/each}
+        {:else}
+          <!-- Stable placeholder while hero images decode -->
+          <div class="aspect-[3/4] rounded-xl bg-surface border border-border"></div>
+        {/if}
       </div>
     </div>
 
@@ -613,6 +672,8 @@
           src={allImages[lightboxIndex].image_url}
           alt="{data.board.name || 'Surfboard'} image {lightboxIndex + 1} of {allImages.length}"
           class="max-w-full max-h-[90vh] object-contain rounded-lg"
+          loading="lazy"
+          decoding="async"
           on:error={(e) => {
             (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/1200x1200?text=No+Image';
           }}
