@@ -1,11 +1,11 @@
 import { redirect, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
-  // where to return after the server callback completes
-  const next = url.searchParams.get('redirect_to') ?? '/';
+  const next =
+    url.searchParams.get('redirect_to') ?? '/onboarding/username';
 
   const redirectTo = `${url.origin}/auth/callback?redirect_to=${encodeURIComponent(next)}`;
-  
+
   if (process.env.NODE_ENV !== 'production') {
     console.log(`OAuth redirectTo: ${redirectTo}`);
   }
@@ -22,6 +22,5 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     throw redirect(303, '/login');
   }
 
-  // This redirect sends the user to Google. PKCE verifier is now stored in a cookie.
   throw redirect(303, data.url);
 };
