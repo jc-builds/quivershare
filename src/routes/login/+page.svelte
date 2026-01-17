@@ -2,7 +2,7 @@
   import { pageTitle } from '$lib/title';
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
-  import { createClient } from '@supabase/supabase-js';
+  import { createBrowserClient } from '@supabase/ssr';
   import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
   export let data: { 
@@ -16,7 +16,11 @@
     data.profile.is_deleted !== true
   );
 
-  const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
+
+  const supabase = createBrowserClient(
+    PUBLIC_SUPABASE_URL,
+    PUBLIC_SUPABASE_ANON_KEY
+  );
 
   let email = '';
   let password = '';
@@ -38,7 +42,7 @@
 
     // IMPORTANT: email confirmation goes to a CLIENT callback route
     // so the browser can exchange the code using its stored flow state.
-    const emailRedirectTo = `${origin}/auth/email-callback?redirect_to=${encodeURIComponent('/onboarding/username')}`;
+    const emailRedirectTo = `${origin}/auth/email-callback`;
 
     const { error: signUpError } = await supabase.auth.signUp({
       email,

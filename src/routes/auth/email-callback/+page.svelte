@@ -16,8 +16,9 @@
     onMount(async () => {
       const url = get(page).url;
       const code = url.searchParams.get('code');
-      const next = url.searchParams.get('redirect_to') ?? '/onboarding/username';
-  
+      const next =
+        url.searchParams.get('redirect_to') ?? '/onboarding/username';
+
       if (!code) {
         await goto('/login');
         return;
