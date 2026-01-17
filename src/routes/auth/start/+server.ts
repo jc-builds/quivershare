@@ -1,3 +1,7 @@
+// src/routes/auth/start/+server.ts
+// Default OAuth landing must enforce onboarding.
+// Never default to '/' here.
+
 import { redirect, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
