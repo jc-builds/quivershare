@@ -2,7 +2,7 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 
-const ALLOW_PREFIXES = ['/', '/login', '/logout', '/onboarding', '/auth'];
+const ALLOW_PREFIXES = ['/login', '/logout', '/onboarding', '/auth'];
 
 const isAutoUsername = (u: string | null | undefined) =>
   !!u && u.startsWith('user_');
