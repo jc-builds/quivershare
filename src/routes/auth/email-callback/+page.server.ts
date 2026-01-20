@@ -1,18 +1,15 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ url, locals }) => {
-  const code = url.searchParams.get('code');
+export const load: PageServerLoad = async ({ url }) => {
+  const type = url.searchParams.get('type');
 
-  if (!code) {
+  // Optional: sanity check, but not strictly required
+  if (type !== 'signup' && type !== 'email') {
     throw redirect(303, '/login');
   }
 
-  const { error } = await locals.supabase.auth.exchangeCodeForSession(code);
-
-  if (error) {
-    throw redirect(303, '/login');
-  }
-
-  throw redirect(303, '/');
+  // Email is now verified by Supabase at this point
+  // We intentionally do NOT create a session here
+  throw redirect(303, '/login?verified=1');
 };
