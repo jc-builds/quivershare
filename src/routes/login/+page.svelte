@@ -24,6 +24,7 @@
   let email = '';
   let password = '';
   let loading = false;
+  let submitting: 'login' | 'signup' | null = null;
   let message: string | null = null;
   let error: string | null = null;
 
@@ -34,14 +35,13 @@
     if (checkEmail || loading) return;
 
     loading = true;
+    submitting = 'signup';
     error = null;
     message = null;
 
     const origin = get(page).url.origin;
 
-    // IMPORTANT: email confirmation goes to a CLIENT callback route
-    // so the browser can exchange the code using its stored flow state.
-    const emailRedirectTo = `${origin}/auth/email-callback?redirect_to=${encodeURIComponent('/onboarding/username')}`;
+    const emailRedirectTo = `${origin}/auth/email-callback`;
 
     const { error: signUpError } = await supabase.auth.signUp({
       email,
@@ -50,6 +50,7 @@
     });
 
     loading = false;
+    submitting = null;
 
     if (signUpError) {
       error = signUpError.message;
@@ -58,6 +59,30 @@
 
     // neutral confirmation state
     window.location.href = '/login?checkEmail=1';
+  }
+
+  async function handleLogin() {
+    if (checkEmail || loading) return;
+
+    loading = true;
+    submitting = 'login';
+    error = null;
+    message = null;
+
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    loading = false;
+    submitting = null;
+
+    if (loginError) {
+      error = loginError.message;
+      return;
+    }
+
+    window.location.href = '/';
   }
 </script>
 
@@ -101,7 +126,7 @@
     <!-- Email sign-up -->
     <form
       class="w-full max-w-sm space-y-4 text-left"
-      on:submit|preventDefault={handleSignup}
+      on:submit|preventDefault={handleLogin}
     >
       <div class="space-y-1">
         <label for="email" class="text-sm font-medium text-foreground">
@@ -129,20 +154,30 @@
           type="password"
           required
           minlength="8"
-          autocomplete="new-password"
+          autocomplete="current-password"
           bind:value={password}
           disabled={checkEmail || loading}
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={checkEmail || loading}
-        class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:hover:bg-primary"
-      >
-        {loading ? 'Creating account…' : 'Create account'}
-      </button>
+      <div class="space-y-2">
+        <button
+          type="submit"
+          disabled={checkEmail || loading}
+          class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:hover:bg-primary"
+        >
+          {submitting === 'login' ? 'Signing in…' : 'Sign in'}
+        </button>
+        <button
+          type="button"
+          disabled={checkEmail || loading}
+          on:click={handleSignup}
+          class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold border border-input bg-background text-foreground hover:bg-muted transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60"
+        >
+          {submitting === 'signup' ? 'Creating account…' : 'Create account'}
+        </button>
+      </div>
 
       {#if error}
         <p class="text-sm text-red-500">{error}</p>
