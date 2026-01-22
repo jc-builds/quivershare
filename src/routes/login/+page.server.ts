@@ -1,4 +1,3 @@
-// src/routes/login/+page.server.ts
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
@@ -10,42 +9,25 @@ export const load: PageServerLoad = async () => {
 const GOOGLE_ONLY_ERROR =
   'This account was created with Google. Please sign in with Google.';
 
-const hasGoogleOnlyProvider = (user: unknown) => {
-  const providers = (user as { raw_app_meta_data?: { providers?: unknown } } | null)
-    ?.raw_app_meta_data?.providers;
-  return Array.isArray(providers) && providers.includes('google') && !providers.includes('email');
-};
-
 const guardGoogleOnly = async (email: string) => {
-  try {
-    const { data } =
-      await supabaseAdmin.auth.admin.getUserByEmail(email);
+  const normalizedEmail = email.toLowerCase();
 
-    const providers = data?.user?.raw_app_meta_data?.providers;
+  const { data: profile, error } = await supabaseAdmin
+    .from('profiles')
+    .select('auth_provider')
+    .eq('email', normalizedEmail)
+    .maybeSingle();
 
-    if (
-      Array.isArray(providers) &&
-      providers.includes('google') &&
-      !providers.includes('email')
-    ) {
-      return { error: GOOGLE_ONLY_ERROR };
-    }
-
-    return { error: null };
-  } catch (err) {
-    // User not found is NOT an error for our purposes
-    if (
-      typeof err === 'object' &&
-      err !== null &&
-      'message' in err &&
-      String((err as any).message).toLowerCase().includes('not found')
-    ) {
-      return { error: null };
-    }
-
-    console.error('guardGoogleOnly error:', err);
+  if (error) {
+    console.error('guardGoogleOnly error:', error);
     return { error: 'Unable to verify account provider. Please try again.' };
   }
+
+  if (profile?.auth_provider === 'google') {
+    return { error: GOOGLE_ONLY_ERROR };
+  }
+
+  return { error: null };
 };
 
 export const actions: Actions = {
@@ -74,6 +56,7 @@ export const actions: Actions = {
 
     return { success: true, next: '/' };
   },
+
   signup: async ({ request, locals, url }) => {
     const form = await request.formData();
     const email = String(form.get('email') ?? '').trim();
@@ -88,15 +71,35 @@ export const actions: Actions = {
       return fail(400, { error: providerError });
     }
 
+    const normalizedEmail = email.toLowerCase();
     const emailRedirectTo = `${url.origin}/auth/email-callback`;
-    const { error } = await locals.supabase.auth.signUp({
-      email,
+
+    const { data, error } = await locals.supabase.auth.signUp({
+      email: normalizedEmail,
       password,
       options: { emailRedirectTo }
     });
 
     if (error) {
       return fail(400, { error: error.message });
+    }
+
+    if (data.user) {
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert(
+          {
+            id: data.user.id,
+            email: normalizedEmail,
+            auth_provider: 'email'
+          },
+          { onConflict: 'id' }
+        );
+
+      if (profileError) {
+        console.error('profile upsert error:', profileError);
+        return fail(500, { error: 'Unable to create profile. Please try again.' });
+      }
     }
 
     return { success: true, next: '/login?checkEmail=1' };
