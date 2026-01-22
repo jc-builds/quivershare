@@ -31,7 +31,12 @@
   $: checkEmail = get(page).url.searchParams.get('checkEmail') === '1';
   $: showCheckEmail = checkEmail || form?.next === '/login?checkEmail=1';
   $: isDisabled = showCheckEmail || submitting !== null;
-  $: error = actionError ?? form?.error ?? null;
+  $: oauthError =
+    get(page).url.searchParams.get('error') === 'oauth_not_allowed'
+      ? 'This account was created with email and password. Please sign in using email.'
+      : null;
+
+  $: error = actionError ?? form?.error ?? oauthError ?? null;
 
   const formEnhance = ({ action }: { action: URL }) => {
     const actionUrl = action?.toString() ?? '';
