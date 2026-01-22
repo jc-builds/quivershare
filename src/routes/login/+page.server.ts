@@ -20,14 +20,23 @@ const guardGoogleOnly = async (email: string) => {
 
   if (error) {
     console.error('guardGoogleOnly error:', error);
-    return { error: 'Unable to verify account provider. Please try again.' };
+    return {
+      block: false,
+      error: 'Unable to verify account provider. Please try again.'
+    };
   }
 
   if (profile?.auth_provider === 'google') {
-    return { error: GOOGLE_ONLY_ERROR };
+    return {
+      block: true,
+      error: GOOGLE_ONLY_ERROR
+    };
   }
 
-  return { error: null };
+  return {
+    block: false,
+    error: null
+  };
 };
 
 export const actions: Actions = {
@@ -40,11 +49,15 @@ export const actions: Actions = {
       return fail(400, { error: 'Email and password are required.' });
     }
 
-    const { error: providerError } = await guardGoogleOnly(email);
+    const { block, error: providerError } = await guardGoogleOnly(email);
+    if (block) {
+      return fail(400, { error: providerError });
+    }
     if (providerError) {
       return fail(400, { error: providerError });
     }
 
+    // Only now do we touch Supabase Auth
     const { error } = await locals.supabase.auth.signInWithPassword({
       email,
       password
@@ -66,7 +79,10 @@ export const actions: Actions = {
       return fail(400, { error: 'Email and password are required.' });
     }
 
-    const { error: providerError } = await guardGoogleOnly(email);
+    const { block, error: providerError } = await guardGoogleOnly(email);
+    if (block) {
+      return fail(400, { error: providerError });
+    }
     if (providerError) {
       return fail(400, { error: providerError });
     }
@@ -74,6 +90,7 @@ export const actions: Actions = {
     const normalizedEmail = email.toLowerCase();
     const emailRedirectTo = `${url.origin}/auth/email-callback`;
 
+    // Only now do we touch Supabase Auth
     const { data, error } = await locals.supabase.auth.signUp({
       email: normalizedEmail,
       password,
@@ -98,7 +115,9 @@ export const actions: Actions = {
 
       if (profileError) {
         console.error('profile upsert error:', profileError);
-        return fail(500, { error: 'Unable to create profile. Please try again.' });
+        return fail(500, {
+          error: 'Unable to create profile. Please try again.'
+        });
       }
     }
 
