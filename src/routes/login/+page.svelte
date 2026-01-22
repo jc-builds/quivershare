@@ -1,9 +1,9 @@
+<!-- src/routes/login/+page.svelte -->
 <script lang="ts">
   import { pageTitle } from '$lib/title';
+  import { enhance } from '$app/forms';
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
-  import { createBrowserClient } from '@supabase/ssr';
-  import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
   export let data: {
     user: import('@supabase/supabase-js').User | null;
@@ -14,73 +14,54 @@
     } | null;
   };
 
+  export let form: { error?: string; next?: string } | undefined;
+
   const isActiveUser = !!(
     data.user &&
     data.profile &&
     data.profile.is_deleted !== true
   );
 
-  const supabase = createBrowserClient(
-    PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY
-  );
-
   let email = '';
   let password = '';
   let submitting: 'login' | 'signup' | null = null;
-  let error: string | null = null;
+  let actionError: string | null = null;
 
   // checkEmail=1 state (disable everything)
   $: checkEmail = get(page).url.searchParams.get('checkEmail') === '1';
-  $: isDisabled = checkEmail || submitting !== null;
+  $: showCheckEmail = checkEmail || form?.next === '/login?checkEmail=1';
+  $: isDisabled = showCheckEmail || submitting !== null;
+  $: error = actionError ?? form?.error ?? null;
 
-  async function handleSignup() {
-    if (isDisabled) return;
+  const formEnhance = ({ action }: { action: URL }) => {
+    const actionUrl = action?.toString() ?? '';
+    submitting = actionUrl.includes('/signup') ? 'signup' : 'login';
+    actionError = null;
 
-    submitting = 'signup';
-    error = null;
+    return async ({
+      result,
+      update
+    }: {
+      result: { type: string; data?: { next?: string; error?: string } };
+      update: () => Promise<void>;
+    }) => {
+      submitting = null;
 
-    const origin = get(page).url.origin;
+      if (result.type === 'success') {
+        const next = result.data?.next;
+        if (next) {
+          window.location.href = next;
+          return;
+        }
+      }
 
-    const emailRedirectTo = `${origin}/auth/email-callback`;
+      if (result.type === 'failure') {
+        actionError = result.data?.error ?? null;
+      }
 
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo }
-    });
-
-    submitting = null;
-
-    if (signUpError) {
-      error = signUpError.message;
-      return;
-    }
-
-    // Neutral confirmation state
-    window.location.href = '/login?checkEmail=1';
-  }
-
-  async function handleLogin() {
-    if (isDisabled) return;
-
-    submitting = 'login';
-    error = null;
-
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    submitting = null;
-
-    if (loginError) {
-      error = loginError.message;
-      return;
-    }
-
-    window.location.href = '/';
-  }
+      await update();
+    };
+  };
 </script>
 
 <svelte:head>
@@ -99,7 +80,7 @@
       Go to My Boards
     </a>
   {:else}
-    {#if checkEmail}
+    {#if showCheckEmail}
       <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">
         Check your email
       </h1>
@@ -127,12 +108,15 @@
     <!-- Email login/signup -->
     <form
       class="w-full max-w-sm space-y-4 text-left"
-      on:submit|preventDefault={handleLogin}
+      method="POST"
+      action="?/login"
+      use:enhance={formEnhance}
     >
       <div class="space-y-1">
         <label for="email" class="text-sm font-medium">Email</label>
         <input
           id="email"
+          name="email"
           type="email"
           bind:value={email}
           required
@@ -146,6 +130,7 @@
         <label for="password" class="text-sm font-medium">Password</label>
         <input
           id="password"
+          name="password"
           type="password"
           bind:value={password}
           required
@@ -166,8 +151,8 @@
         </button>
 
         <button
-          type="button"
-          on:click={handleSignup}
+          type="submit"
+          formaction="?/signup"
           disabled={isDisabled}
           class="w-full px-4 py-2 rounded-lg text-sm font-semibold border disabled:opacity-60"
         >
