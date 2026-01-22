@@ -17,25 +17,35 @@ const hasGoogleOnlyProvider = (user: unknown) => {
 };
 
 const guardGoogleOnly = async (email: string) => {
-  const { data, error } =
-    await supabaseAdmin.auth.admin.getUserByEmail(email);
+  try {
+    const { data } =
+      await supabaseAdmin.auth.admin.getUserByEmail(email);
 
-  if (error && error.message !== 'User not found') {
+    const providers = data?.user?.raw_app_meta_data?.providers;
+
+    if (
+      Array.isArray(providers) &&
+      providers.includes('google') &&
+      !providers.includes('email')
+    ) {
+      return { error: GOOGLE_ONLY_ERROR };
+    }
+
+    return { error: null };
+  } catch (err) {
+    // User not found is NOT an error for our purposes
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'message' in err &&
+      String((err as any).message).toLowerCase().includes('not found')
+    ) {
+      return { error: null };
+    }
+
+    console.error('guardGoogleOnly error:', err);
     return { error: 'Unable to verify account provider. Please try again.' };
   }
-
-  const user = data?.user;
-  const providers = user?.raw_app_meta_data?.providers;
-
-  if (
-    Array.isArray(providers) &&
-    providers.includes('google') &&
-    !providers.includes('email')
-  ) {
-    return { error: GOOGLE_ONLY_ERROR };
-  }
-
-  return { error: null };
 };
 
 export const actions: Actions = {
