@@ -140,9 +140,6 @@
   let files: File[] = [];
   const MAX_IMAGES = 6;
 
-  // Allow picking a thumbnail from NEW files before upload
-  let pendingThumbIndex: number | null = null;
-
   // ---------------------------------------------------------
   // 3. Drag + Drop handlers
   // ---------------------------------------------------------
@@ -256,12 +253,11 @@
       return;
     }
 
-    // Upload any new images (track which one becomes the thumbnail)
+    // Upload any new images
     let uploadedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
     const imageUrls: string[] = [];
-    let thumbnailUrl: string | null = null;
 
     for (let idx = 0; idx < files.length; idx++) {
       const file = files[idx];
@@ -287,9 +283,6 @@
       imageUrls.push(imageUrl);
       uploadedCount++;
 
-      if (pendingThumbIndex !== null && idx === pendingThumbIndex) {
-        thumbnailUrl = imageUrl;
-      }
     }
 
     // Insert images via server action
@@ -313,27 +306,6 @@
         errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
         uploadedCount = 0;
         imageUrls.length = 0; // Clear since insert failed
-      }
-    }
-
-    // Update thumbnail if needed
-    if (thumbnailUrl) {
-      const formData = new FormData();
-      formData.append('thumbnail_url', thumbnailUrl);
-
-      const response = await fetch(`/edit-surfboard/${surfboard.id}?/updateThumbnail`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'accept': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        surfboard.thumbnail_url = thumbnailUrl;
-      } else {
-        const result = await response.json();
-        errors.push(`Thumbnail update failed: ${result.message || 'Unknown error'}`);
       }
     }
 
@@ -435,22 +407,30 @@
   async function setAsThumbnail(img: ExistingImage) {
     if (settingThumb[img.id]) return;
     settingThumb = { ...settingThumb, [img.id]: true };
+    message = "";
 
-    const { error } = await supabase
-      .from("surfboards")
-      .update({ thumbnail_url: img.image_url })
-      .eq("id", surfboard.id);
+    const formData = new FormData();
+    formData.append('thumbnail_url', img.image_url);
 
-    if (error) {
-      console.error("Thumbnail update error:", error);
-      message = `❌ ${error.message}`;
+    const response = await fetch(`/edit-surfboard/${surfboard.id}?/updateThumbnail`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      console.error("Thumbnail update error:", result);
+      message = `❌ ${result.message || 'Failed to update thumbnail'}`;
       settingThumb = { ...settingThumb, [img.id]: false };
       return;
     }
 
     surfboard.thumbnail_url = img.image_url;
     settingThumb = { ...settingThumb, [img.id]: false };
-    message = "✅ Thumbnail updated.";
+    message = "✅ Main image updated.";
   }
 
   // ---------------------------------------------------------
@@ -787,29 +767,27 @@
                 />
               </button>
 
-              <!-- Thumbnail badge -->
+              <!-- Main image badge -->
               {#if surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url}
                 <div
-                  class="absolute top-1 left-1 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium"
+                  class="absolute top-1 left-1 text-[11px] px-2.5 py-1 rounded-full bg-primary text-primary-foreground font-semibold"
                 >
-                  Main
+                  Main image
                 </div>
               {/if}
 
-              <!-- Set-as-thumbnail star -->
-              <button
-                type="button"
-                class="absolute bottom-1 left-1 bg-black/60 text-[10px] text-foreground
-                       rounded-full px-2 h-5 flex items-center justify-center
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                       hover:bg-black/80"
-                on:click={() => setAsThumbnail(img)}
-                disabled={!!settingThumb[img.id]}
-                title="Set as main image"
-                aria-label="Set as main image"
-              >
-                {settingThumb[img.id] ? "…" : "★"}
-              </button>
+              <!-- Set as main (explicit) -->
+              {#if !surfboard.thumbnail_url || img.image_url !== surfboard.thumbnail_url}
+                <button
+                  type="button"
+                  class="absolute bottom-1 left-1 right-1 px-3 py-2 text-xs font-semibold rounded-lg bg-surface-elevated text-foreground border border-border shadow-sm hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                  on:click={() => setAsThumbnail(img)}
+                  disabled={!!settingThumb[img.id]}
+                  aria-label="Set as main image"
+                >
+                  {settingThumb[img.id] ? "Setting..." : "Set as main"}
+                </button>
+              {/if}
 
               <!-- Remove "×" -->
               <button
@@ -858,7 +836,7 @@
 
         {#if files.length > 0}
           <div class="mt-4 grid grid-cols-3 gap-2">
-            {#each files as file, i}
+            {#each files as file}
               <div class="relative group aspect-square w-full">
                 <img
                   src={URL.createObjectURL(file)}
@@ -866,19 +844,6 @@
                   class="absolute inset-0 h-full w-full object-cover rounded-lg border border-border"
                 />
 
-                <!-- Pick this NEW file as the thumbnail -->
-                <button
-                  type="button"
-                  class="absolute bottom-1 left-1 bg-black/60 text-[10px] text-foreground
-                         rounded-full px-2 h-5 flex items-center justify-center
-                         opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                         hover:bg-black/80"
-                  on:click={() => (pendingThumbIndex = i)}
-                  title="Set this new image as main after upload"
-                  aria-label="Set new image as main"
-                >
-                  {pendingThumbIndex === i ? "Main" : "★"}
-                </button>
               </div>
             {/each}
           </div>
@@ -888,8 +853,6 @@
       {#if files.length > 0}
         <p class="text-xs text-muted-foreground mt-2">
           {files.length}/{MAX_IMAGES} images selected
-          {#if pendingThumbIndex !== null}
-            • main will be image #{pendingThumbIndex + 1}{/if}
         </p>
       {/if}
 
