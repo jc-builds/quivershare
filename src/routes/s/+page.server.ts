@@ -22,24 +22,7 @@ const SORT_COLUMNS: Record<
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const { data: authData, error: userError } = await locals.supabase.auth.getUser();
-  
-  let userId: string | null = null;
-  if (userError) {
-    // Check if this is the expected "no session" case (logged-out user)
-    const isSessionMissing = 
-      userError.message?.toLowerCase().includes('session missing') ||
-      userError.message?.toLowerCase().includes('auth session missing') ||
-      userError.name === 'AuthSessionMissingError';
-    
-    if (!isSessionMissing) {
-      // Only log unexpected auth errors
-      console.error('Unexpected auth error for /s route:', userError);
-    }
-    // In both cases (session missing or other error), userId remains null
-  } else {
-    userId = authData?.user?.id ?? null;
-  }
+  const userId = locals.user?.id ?? null;
 
   // Get user's location from profile if available
   let userLocation: string | null = null;

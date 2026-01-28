@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .select('*')
     .eq('id', id)
     .eq('is_deleted', false)
-    .single();
+    .maybeSingle();
 
   if (boardErr || !surfboard) {
     throw error(404, 'Surfboard not found');
@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .select('id, username, full_name, profile_picture_url, city, region, is_deleted')
     .eq('id', surfboard.user_id)
     .eq('is_deleted', false)
-    .single();
+    .maybeSingle();
 
   if (ownerError) {
     console.warn('Error loading owner profile:', ownerError);
@@ -47,11 +47,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   }
 
   // Determine if the current user can edit this board
-  const { data: authData, error: userError } = await locals.supabase.auth.getUser();
-  if (userError) {
-    console.warn('Error fetching current user for board detail:', userError);
-  }
-  const currentUserId = authData?.user?.id ?? null;
+  const currentUserId = locals.user?.id ?? null;
   const canEdit = Boolean(currentUserId && surfboard.user_id === currentUserId);
 
   // Check if current user is admin and board is curated
@@ -107,7 +103,7 @@ export const actions: Actions = {
       .select('user_id')
       .eq('id', id)
       .eq('is_deleted', false)
-      .single();
+      .maybeSingle();
 
     if (boardError || !board) {
       return fail(404, { context: 'updateState', success: false, message: 'Surfboard not found' });
@@ -205,7 +201,7 @@ export const actions: Actions = {
       .select('id, name, price, user_id, is_curated')
       .eq('id', id)
       .eq('is_deleted', false)
-      .single();
+      .maybeSingle();
 
     if (boardError || !board) {
       return fail(404, { 
@@ -230,7 +226,7 @@ export const actions: Actions = {
       .select('id, email, username, full_name, is_deleted')
       .eq('id', board.user_id)
       .eq('is_deleted', false)
-      .single();
+      .maybeSingle();
 
     if (sellerError || !sellerProfile || !sellerProfile.email) {
       console.error('Error fetching seller profile:', sellerError);
