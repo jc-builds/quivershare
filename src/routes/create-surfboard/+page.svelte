@@ -1,5 +1,4 @@
 <script lang="ts">
-  import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
 
   // ---------------------------------------------------------
@@ -58,7 +57,7 @@
       return;
     }
 
-    await compressAndAddFiles(droppedFiles);
+    await addSelectedImages(droppedFiles);
   }
 
   // ---------------------------------------------------------
@@ -67,13 +66,13 @@
   async function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
-    await compressAndAddFiles(Array.from(target.files));
+    await addSelectedImages(Array.from(target.files));
   }
 
   // ---------------------------------------------------------
-  // 5. Compression logic
+  // 5. File validation and queueing
   // ---------------------------------------------------------
-  async function compressAndAddFiles(selected: File[]) {
+  async function addSelectedImages(selected: File[]) {
     const total = files.length + selected.length;
     if (total > MAX_IMAGES) {
       const allowed = MAX_IMAGES - files.length;
@@ -85,7 +84,7 @@
       return;
     }
 
-    const compressedFiles: File[] = [];
+    const validFiles: File[] = [];
     const invalidFiles: string[] = [];
 
     for (const file of selected) {
@@ -94,24 +93,17 @@
         invalidFiles.push(file.name);
         continue;
       }
-
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 2,
-        maxWidthOrHeight: 1600,
-        useWebWorker: true,
-      });
-
-      compressedFiles.push(compressed);
+      validFiles.push(file);
     }
 
     if (invalidFiles.length > 0) {
       message = `⚠️ Skipped ${invalidFiles.length} file(s): Only JPEG, PNG, and WebP are supported.`;
     }
 
-    files = [...files, ...compressedFiles];
-    if (compressedFiles.length > 0) {
-      message = `✅ Added ${compressedFiles.length} image${
-        compressedFiles.length > 1 ? "s" : ""
+    files = [...files, ...validFiles];
+    if (validFiles.length > 0) {
+      message = `✅ Added ${validFiles.length} image${
+        validFiles.length > 1 ? "s" : ""
       } ready to upload.`;
     }
   }

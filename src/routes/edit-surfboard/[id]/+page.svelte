@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import imageCompression from "browser-image-compression";
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
   import { enhance } from "$app/forms";
@@ -16,20 +14,6 @@
   // ---------------------------------------------------------
   const BUCKET = "surfboard-images";
   type ExistingImage = { id: string; image_url: string };
-
-  // Cropper.js (lazy loaded)
-  let CropperCtor: any = null;
-  onMount(async () => {
-    try {
-      const mod = await import("cropperjs");
-      CropperCtor = mod.default;
-    } catch (e) {
-      console.error("Failed to load cropperjs:", e);
-    }
-  });
-
-  // Choose your default crop aspect ratio: 1 (square), 4/3, 16/9, etc.
-  let cropAspect = 1;
 
   // ---------------------------------------------------------
   // 1. Surfboard data (defensive init)
@@ -194,16 +178,6 @@
     await addSelectedImages(Array.from(target.files));
   }
 
-  // ---------------------------------------------------------
-  // 5. Crop-before-upload flow (lazy Cropper)
-  // ---------------------------------------------------------
-  let cropper: any = null;
-  let cropImgEl: HTMLImageElement;
-  let showCropModal = false;
-  let cropImageSrc = "";
-  let pendingQueue: File[] = [];
-  let currentOriginalFile: File | null = null;
-
   async function addSelectedImages(selected: File[]) {
     // Filter out unsupported image formats
     const validFiles = selected.filter((f) => {
@@ -232,113 +206,9 @@
       }`;
       return;
     }
-    pendingQueue.push(...validFiles);
-    if (!showCropModal) {
-      await startNextCrop();
-    }
-  }
-
-  async function startNextCrop() {
-    destroyCropper();
-    currentOriginalFile = null;
-    cropImageSrc = "";
-
-    const next = pendingQueue.shift();
-    if (!next) return;
-
-    currentOriginalFile = next;
-    const dataUrl = await fileToDataURL(next);
-    cropImageSrc = dataUrl;
-    showCropModal = true; // Cropper will init on <img> load
-  }
-
-  function onCropImgLoad() {
-    if (!CropperCtor || !cropImgEl || !cropImageSrc) return;
-    destroyCropper();
-    cropper = new CropperCtor(cropImgEl, {
-      aspectRatio: cropAspect,
-      viewMode: 1,
-      background: false,
-      autoCropArea: 1,
-      dragMode: "move",
-      responsive: true,
-      checkOrientation: true, // helps with EXIF-rotated photos from phones
-    });
-  }
-
-  function destroyCropper() {
-    if (cropper && typeof cropper.destroy === "function") cropper.destroy();
-    cropper = null;
-  }
-
-  async function confirmCrop() {
-    if (!cropper || !currentOriginalFile) return;
-    const canvas = cropper.getCroppedCanvas({
-      maxWidth: 1600,
-      maxHeight: 1600,
-    });
-    const blob: Blob | null = await new Promise((res) =>
-      canvas.toBlob(res, "image/jpeg", 0.92),
-    );
-    if (!blob) return;
-
-    const croppedFile = new File(
-      [blob],
-      currentOriginalFile.name.replace(/\.(png|jpg|jpeg|webp|gif)$/i, "") +
-        ".jpg",
-      { type: "image/jpeg" },
-    );
-
-    const compressed = await imageCompression(croppedFile, {
-      maxSizeMB: 2,
-      maxWidthOrHeight: 1600,
-      useWebWorker: true,
-    });
-
-    files = [...files, compressed];
-    message = `✅ Added 1 cropped image.`;
-    await closeCropModal();
-    await startNextCrop();
-  }
-
-  async function useOriginalNoCrop() {
-    if (!currentOriginalFile) return;
-    const compressed = await imageCompression(currentOriginalFile, {
-      maxSizeMB: 2,
-      maxWidthOrHeight: 1600,
-      useWebWorker: true,
-    });
-    files = [...files, compressed];
-    message = `✅ Added 1 image (no crop).`;
-    await closeCropModal();
-    await startNextCrop();
-  }
-
-  async function cancelCropFlow() {
-    pendingQueue = [];
-    await closeCropModal();
-  }
-
-  async function closeCropModal() {
-    destroyCropper();
-    showCropModal = false;
-    cropImageSrc = "";
-    currentOriginalFile = null;
-  }
-
-  function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error);
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function setAspect(ratio: number) {
-    cropAspect = ratio;
-    if (cropper && typeof cropper.setAspectRatio === "function") {
-      cropper.setAspectRatio(ratio);
+    files = [...files, ...validFiles];
+    if (validFiles.length > 0) {
+      message = `✅ Added ${validFiles.length} image${validFiles.length > 1 ? "s" : ""}.`;
     }
   }
 
@@ -1185,43 +1055,4 @@
     </div>
   {/if}
 
-  <!-- Cropper Modal -->
-  {#if showCropModal}
-    <div
-      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-surface-elevated border border-border rounded-xl shadow-xl w-full max-w-2xl overflow-hidden text-foreground"
-      >
-        <div
-          class="p-3 border-b border-border flex items-center justify-between"
-        >
-          <span class="font-semibold text-sm">Crop image</span>
-        </div>
-        <div class="p-3">
-          <div
-            class="relative w-full h-[50vh] bg-surface rounded-lg overflow-hidden"
-          >
-            <img
-              bind:this={cropImgEl}
-              src={cropImageSrc}
-              alt="Crop source"
-              class="max-h-full max-w-full block m-auto select-none"
-              on:load={onCropImgLoad}
-              draggable="false"
-            />
-          </div>
-        </div>
-        <div class="p-3 border-t border-border flex justify-end gap-2">
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition" on:click={useOriginalNoCrop}
-            >Use Original</button
-          >
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition" on:click={cancelCropFlow}>Cancel</button>
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" on:click={confirmCrop}
-            >Done</button
-          >
-        </div>
-      </div>
-    </div>
-  {/if}
 </main>

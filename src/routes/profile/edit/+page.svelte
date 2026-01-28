@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import imageCompression from 'browser-image-compression';
   import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
   import { pageTitle } from '$lib/title';
@@ -42,21 +41,7 @@
   let profilePictureRemoved = false; // Explicit flag for removal intent
   let uploadingPicture = false;
 
-  // Cropper.js for profile picture
-  let CropperCtor: any = null;
-  let cropper: any = null;
-  let cropImgEl: HTMLImageElement;
-  let showCropModal = false;
-  let cropImageSrc = '';
-
   onMount(async () => {
-    try {
-      const mod = await import('cropperjs');
-      CropperCtor = mod.default;
-    } catch (e) {
-      console.error('Failed to load cropperjs:', e);
-    }
-
     // Load existing profile picture
     if (data.profile.profile_picture_url) {
       profilePicturePreview = data.profile.profile_picture_url;
@@ -169,92 +154,9 @@
       return;
     }
 
-    // Show crop modal
-    const dataUrl = await fileToDataURL(file);
-    cropImageSrc = dataUrl;
-    showCropModal = true;
-  }
-
-  function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error);
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function onCropImgLoad() {
-    if (!CropperCtor || !cropImgEl || !cropImageSrc) return;
-    destroyCropper();
-    cropper = new CropperCtor(cropImgEl, {
-      aspectRatio: 1, // Square for profile pictures
-      viewMode: 1,
-      background: false,
-      autoCropArea: 0.8,
-      dragMode: 'move',
-      responsive: true,
-      checkOrientation: true,
-    });
-  }
-
-  function destroyCropper() {
-    if (cropper && typeof cropper.destroy === 'function') cropper.destroy();
-    cropper = null;
-  }
-
-  async function confirmCrop() {
-    if (!cropper) return;
-    const canvas = cropper.getCroppedCanvas({
-      maxWidth: 800,
-      maxHeight: 800,
-    });
-    const blob: Blob | null = await new Promise((res) =>
-      canvas.toBlob(res, 'image/jpeg', 0.92)
-    );
-    if (!blob) return;
-
-    const croppedFile = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
-
-    // Compress the image
-    const compressed = await imageCompression(croppedFile, {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 800,
-      useWebWorker: true,
-    });
-
-    profilePictureFile = compressed;
-    profilePicturePreview = URL.createObjectURL(compressed);
+    profilePictureFile = file;
+    profilePicturePreview = URL.createObjectURL(file);
     profilePictureRemoved = false; // Clear removal flag when uploading new picture
-    
-    await closeCropModal();
-  }
-
-  async function useOriginalNoCrop() {
-    if (!cropImageSrc) return;
-    
-    // Convert data URL back to file
-    const response = await fetch(cropImageSrc);
-    const blob = await response.blob();
-    const file = new File([blob], 'profile-picture.jpg', { type: blob.type });
-
-    const compressed = await imageCompression(file, {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 800,
-      useWebWorker: true,
-    });
-
-    profilePictureFile = compressed;
-    profilePicturePreview = URL.createObjectURL(compressed);
-    profilePictureRemoved = false; // Clear removal flag when uploading new picture
-    
-    await closeCropModal();
-  }
-
-  async function closeCropModal() {
-    destroyCropper();
-    showCropModal = false;
-    cropImageSrc = '';
   }
 
   async function removeProfilePicture() {
@@ -614,33 +516,3 @@
   </div>
 {/if}
 
-<!-- Crop Modal -->
-{#if showCropModal}
-  <div class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-    <div class="bg-surface-elevated border border-border rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-auto shadow-xl text-foreground">
-      <h2 class="text-lg sm:text-xl font-semibold mb-4">Crop Profile Picture</h2>
-      
-      <div class="mb-4" style="max-width: 100%; max-height: 60vh;">
-        <img
-          bind:this={cropImgEl}
-          src={cropImageSrc}
-          alt="Crop"
-          class="max-w-full"
-          on:load={onCropImgLoad}
-        />
-      </div>
-
-      <div class="flex gap-2 justify-end">
-        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={closeCropModal}>
-          Cancel
-        </button>
-        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={useOriginalNoCrop}>
-          Use Original
-        </button>
-        <button type="button" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={confirmCrop}>
-          Crop & Use
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
