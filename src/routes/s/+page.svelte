@@ -55,21 +55,25 @@
   // State
   const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
   const eagerImageCount = browser && window.innerWidth < 768 ? 1 : 2;
-  let allBoards: Board[] = data.boards ?? [];
-  let filteredBoards: Board[] = [...allBoards];
+  let boards: Board[] = data.boards ?? [];
+  let visibleBoards: Board[] = boards;
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
   let currentPage = data.page ?? 1;
   let totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
   const currentUserId = data.userId;
 
-  $: if (data.boards) {
-    allBoards = data.boards ?? [];
-  }
+  $: boards = data.boards ?? [];
+
+  $: visibleBoards = activeLocationFilter
+    ? boards.filter((board) => passesLocationFilter(board))
+    : boards;
+
+  $: sortBy = (data.sort ?? 'created_desc') as SortOption;
 
   $: currentPage = data.page ?? 1;
   $: totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
 
-  function updateQueryParams(params: Record<string, string | null>) {
+  function navigateWithParams(params: Record<string, string | null>) {
     const current = get(page);
     const search = new URLSearchParams(current.url.search);
 
@@ -83,17 +87,23 @@
 
     const queryString = search.toString();
     const target = queryString ? `${current.url.pathname}?${queryString}` : current.url.pathname;
-    goto(target, { replaceState: true, keepFocus: true, noScroll: true });
+    goto(target);
   }
 
   function handleSortChange(event: Event) {
     const value = (event.target as HTMLSelectElement).value as SortOption;
-    updateQueryParams({ sort: value, page: '1' });
+    navigateWithParams({ sort: value, page: '1' });
   }
 
   function goToPage(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    updateQueryParams({ page: String(newPage) });
+    if (activeLocationFilter) return;
+    const current = get(page);
+    const search = new URLSearchParams(current.url.search);
+    search.set('page', String(newPage));
+    const queryString = search.toString();
+    const target = queryString ? `${current.url.pathname}?${queryString}` : current.url.pathname;
+    goto(target);
   }
 
   function handleEditClick(event: MouseEvent, boardId: string, isCurated?: boolean | null) {
@@ -141,6 +151,24 @@
     "9'0\"-10'0\"",
     "More"
   ];
+  const LENGTH_PARAM_MAP: Record<string, string> = {
+    "5'6\"-6'0\"": '66-72',
+    "6'0\"-6'6\"": '72-78',
+    "6'6\"-7'0\"": '78-84',
+    "7'0\"-8'0\"": '84-96',
+    "8'0\"-9'0\"": '96-108',
+    "9'0\"-10'0\"": '108-120',
+    "More": '120+'
+  };
+  const LENGTH_LABEL_MAP: Record<string, string> = {
+    '66-72': "5'6\"-6'0\"",
+    '72-78': "6'0\"-6'6\"",
+    '78-84': "6'6\"-7'0\"",
+    '84-96': "7'0\"-8'0\"",
+    '96-108': "8'0\"-9'0\"",
+    '108-120': "9'0\"-10'0\"",
+    '120+': "More"
+  };
 
   const volumeOptions = [
     "<25L",
@@ -151,10 +179,62 @@
     "45L-50L",
     "More"
   ];
+  const VOLUME_PARAM_MAP: Record<string, string> = {
+    "<25L": '<25',
+    "25L-30L": '25-30',
+    "30L-35L": '30-35',
+    "35L-40L": '35-40',
+    "40L-45L": '40-45',
+    "45L-50L": '45-50',
+    "More": '50+'
+  };
+  const VOLUME_LABEL_MAP: Record<string, string> = {
+    '<25': "<25L",
+    '25-30': "25L-30L",
+    '30-35': "30L-35L",
+    '35-40': "35L-40L",
+    '40-45': "40L-45L",
+    '45-50': "45L-50L",
+    '50+': "More"
+  };
 
   const finSystemOptions = ["FCS II", "Futures", "Glass On", "FCS"];
   const finSetupOptions = ["2+1", "Twin", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
+  const FIN_SETUP_SLUG_MAP: Record<string, string> = {
+    '2+1': '2-plus-1',
+    '4+1': '4-plus-1',
+    'Twin': 'twin',
+    'Quad': 'quad',
+    'Tri': 'tri',
+    'Single': 'single',
+    'Tri/Quad': 'tri-quad'
+  };
+  const FIN_SETUP_LABEL_MAP: Record<string, string> = {
+    '2-plus-1': '2+1',
+    '4-plus-1': '4+1',
+    'twin': 'Twin',
+    'quad': 'Quad',
+    'tri': 'Tri',
+    'single': 'Single',
+    'tri-quad': 'Tri/Quad'
+  };
   const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler", "Gun"];
+
+  // Hydrate filter UI state from URL query parameters
+  $: {
+    const searchParams = get(page).url.searchParams;
+    const lengthParam = searchParams.get('length') ?? '';
+    const volumeParam = searchParams.get('volume') ?? '';
+    const finSystemParam = searchParams.get('fin_system') ?? '';
+    const finSetupParam = searchParams.get('fin_setup') ?? '';
+    const styleParam = searchParams.get('style') ?? '';
+
+    selectedLength = LENGTH_LABEL_MAP[lengthParam] ?? null;
+    selectedVolume = VOLUME_LABEL_MAP[volumeParam] ?? null;
+    selectedFinSystem = finSystemOptions.includes(finSystemParam) ? finSystemParam : null;
+    selectedFinSetup = FIN_SETUP_LABEL_MAP[finSetupParam] ?? null;
+    selectedStyle = styleOptions.includes(styleParam) ? styleParam : null;
+  }
 
   // Location search functions
   async function searchLocationPlaces(q: string) {
@@ -174,6 +254,40 @@
 
     clearTimeout(locationDebounceHandle);
     locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function handleLengthChange() {
+    const paramValue =
+      selectedLength && selectedLength !== 'More'
+        ? LENGTH_PARAM_MAP[selectedLength] ?? null
+        : null;
+    navigateWithParams({ length: paramValue, page: '1' });
+  }
+
+  function handleVolumeChange() {
+    const paramValue =
+      selectedVolume && selectedVolume !== 'More'
+        ? VOLUME_PARAM_MAP[selectedVolume] ?? null
+        : null;
+    navigateWithParams({ volume: paramValue, page: '1' });
+  }
+
+  function handleFinSystemChange() {
+    const paramValue = selectedFinSystem || null;
+    navigateWithParams({ fin_system: paramValue, page: '1' });
+  }
+
+  function handleFinSetupChange() {
+    const slug =
+      selectedFinSetup && selectedFinSetup !== 'More'
+        ? FIN_SETUP_SLUG_MAP[selectedFinSetup] ?? null
+        : null;
+    navigateWithParams({ fin_setup: slug, page: '1' });
+  }
+
+  function handleStyleChange() {
+    const paramValue = selectedStyle || null;
+    navigateWithParams({ style: paramValue, page: '1' });
   }
 
   function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
@@ -201,8 +315,6 @@
     initializedFromQuery = true;
 
     try {
-      console.log('🌐 Hydrating location filter from query params:', { q, distanceParam });
-
       // Set the visible input value
       locationQuery = q;
 
@@ -235,11 +347,6 @@
         radius: searchRadius
       };
 
-      console.log('✅ Active location filter hydrated from query:', activeLocationFilter);
-
-      // Apply filters with this new activeLocationFilter
-      applyFilters();
-      console.log('filteredBoards after hydration:', filteredBoards.length);
     } catch (err) {
       console.error('❌ Error hydrating location from query params:', err);
     }
@@ -257,108 +364,18 @@
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
+  function passesLocationFilter(board: Board): boolean {
+    if (!activeLocationFilter) return true;
+    if (board.lat == null || board.lon == null) return false;
 
-  // Filter functions
-  function matchesLength(board: Board, filter: string | null): boolean {
-    if (!filter || filter === 'More') return true;
-    if (!board.length) return false;
-    
-    const inches = board.length;
-    
-    if (filter === "5'6\"-6'0\"") return inches >= 66 && inches < 72;
-    if (filter === "6'0\"-6'6\"") return inches >= 72 && inches < 78;
-    if (filter === "6'6\"-7'0\"") return inches >= 78 && inches < 84;
-    if (filter === "7'0\"-8'0\"") return inches >= 84 && inches < 96;
-    if (filter === "8'0\"-9'0\"") return inches >= 96 && inches < 108;
-    if (filter === "9'0\"-10'0\"") return inches >= 108 && inches < 120;
-    if (filter === 'More') return inches >= 120;
-    
-    return true;
-  }
+    const distance = calculateDistance(
+      activeLocationFilter.location.lat,
+      activeLocationFilter.location.lon,
+      board.lat,
+      board.lon
+    );
 
-  function matchesVolume(board: Board, filter: string | null): boolean {
-    if (!filter || filter === 'More') return true;
-    if (!board.volume) return false;
-    
-    if (filter === "<25L") return board.volume < 25;
-    if (filter === "25L-30L") return board.volume >= 25 && board.volume < 30;
-    if (filter === "30L-35L") return board.volume >= 30 && board.volume < 35;
-    if (filter === "35L-40L") return board.volume >= 35 && board.volume < 40;
-    if (filter === "40L-45L") return board.volume >= 40 && board.volume < 45;
-    if (filter === "45L-50L") return board.volume >= 45 && board.volume < 50;
-    if (filter === "More") return board.volume >= 50;
-    
-    return true;
-  }
-
-  function applyFilters() {
-    filteredBoards = allBoards.filter((board) => {
-      if (activeLocationFilter) {
-        if (board.lat == null || board.lon == null) {
-          return false;
-        }
-
-        const distance = calculateDistance(
-          activeLocationFilter.location.lat,
-          activeLocationFilter.location.lon,
-          board.lat,
-          board.lon
-        );
-
-        if (distance > activeLocationFilter.radius) {
-          return false;
-        }
-      }
-
-      if (selectedLength && !matchesLength(board, selectedLength)) return false;
-      if (selectedVolume && !matchesVolume(board, selectedVolume)) return false;
-      if (selectedFinSystem && board.fin_system !== selectedFinSystem) return false;
-      if (selectedFinSetup && board.fin_setup !== selectedFinSetup) return false;
-      if (selectedStyle && board.style !== selectedStyle) return false;
-
-      return true;
-    });
-
-    applySort();
-  }
-
-  function applySort() {
-    const sorted = [...filteredBoards];
-    
-    switch (sortBy) {
-      case 'price_asc':
-        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
-        break;
-      case 'price_desc':
-        sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
-        break;
-      case 'name_asc':
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'name_desc':
-        sorted.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'created_asc':
-        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case 'created_desc':
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-    }
-    
-    filteredBoards = sorted;
-  }
-
-  // Watch for filter changes
-  $: if (selectedLength !== null || selectedVolume !== null || selectedFinSystem !== null || 
-         selectedFinSetup !== null || selectedStyle !== null || activeLocationFilter !== null) {
-    console.log('🔄 Reactive filter update triggered');
-    applyFilters();
-  }
-
-  // Watch for sort changes
-  $: if (sortBy) {
-    applySort();
+    return distance <= activeLocationFilter.radius;
   }
 
   // Format length
@@ -429,7 +446,6 @@
                   location: selectedLocation,
                   radius: searchRadius
                 };
-                applyFilters();
               }
             }}
           >
@@ -443,6 +459,7 @@
         <select
           bind:value={selectedLength}
           class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          on:change={handleLengthChange}
         >
           <option value={null}>Length</option>
           {#each lengthOptions as opt}
@@ -452,6 +469,7 @@
         <select
           bind:value={selectedVolume}
           class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          on:change={handleVolumeChange}
         >
           <option value={null}>Volume</option>
           {#each volumeOptions as opt}
@@ -461,6 +479,7 @@
         <select
           bind:value={selectedStyle}
           class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          on:change={handleStyleChange}
         >
           <option value={null}>Style</option>
           {#each styleOptions as opt}
@@ -551,50 +570,13 @@
             class="inline-flex w-full items-center justify-center rounded-lg border border-border bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             disabled={!selectedLocation}
             on:click={() => {
-              try {
-                console.log('=== Apply Location Search Clicked ===');
-                console.log('selectedLocation:', selectedLocation);
-                console.log('searchRadius:', searchRadius);
-                console.log('allBoards count:', allBoards.length);
-                console.log('filteredBoards count (before):', filteredBoards.length);
-                
-                if (!selectedLocation) {
-                  console.error('❌ No location selected!');
-                  return;
-                }
+              if (!selectedLocation) return;
+              if (!selectedLocation.lat || !selectedLocation.lon) return;
 
-                if (!selectedLocation.lat || !selectedLocation.lon) {
-                  console.error('❌ Location missing coordinates:', selectedLocation);
-                  return;
-                }
-
-                // Calculate distance for each board (if boards had lat/lon)
-                // For now, just log what we would filter
-                console.log('📍 Filter center:', {
-                  label: selectedLocation.label,
-                  lat: selectedLocation.lat,
-                  lon: selectedLocation.lon,
-                  radius: searchRadius
-                });
-
-                // Set active filter
-                activeLocationFilter = {
-                  location: selectedLocation,
-                  radius: searchRadius
-                };
-
-                console.log('✅ Active location filter set:', activeLocationFilter);
-                
-                // Trigger filter update
-                console.log('🔄 Triggering filter update...');
-                applyFilters();
-                
-                console.log('filteredBoards count (after):', filteredBoards.length);
-                console.log('=== End Location Search ===');
-              } catch (error) {
-                console.error('❌ Error applying location search:', error);
-                console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-              }
+              activeLocationFilter = {
+                location: selectedLocation,
+                radius: searchRadius
+              };
             }}
           >
             Apply Location Search
@@ -632,6 +614,7 @@
               id="filter-length"
               bind:value={selectedLength}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleLengthChange}
             >
               <option value={null}>All</option>
               {#each lengthOptions as opt}
@@ -649,6 +632,7 @@
               id="filter-volume"
               bind:value={selectedVolume}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleVolumeChange}
             >
               <option value={null}>All</option>
               {#each volumeOptions as opt}
@@ -666,6 +650,7 @@
               id="filter-fin-system"
               bind:value={selectedFinSystem}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleFinSystemChange}
             >
               <option value={null}>All</option>
               {#each finSystemOptions as opt}
@@ -683,6 +668,7 @@
               id="filter-fin-setup"
               bind:value={selectedFinSetup}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleFinSetupChange}
             >
               <option value={null}>All</option>
               {#each finSetupOptions as opt}
@@ -700,6 +686,7 @@
               id="filter-style"
               bind:value={selectedStyle}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleStyleChange}
             >
               <option value={null}>All</option>
               {#each styleOptions as opt}
@@ -742,12 +729,12 @@
       <!-- Right: Board Cards -->
       <main class="flex-1">
         <div class="space-y-4">
-          {#if filteredBoards.length === 0}
+          {#if visibleBoards.length === 0}
             <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
               <p class="text-muted-foreground">No boards match your filters.</p>
             </div>
           {:else}
-            {#each filteredBoards as board, index (board.id)}
+            {#each visibleBoards as board, index (board.id)}
               <a
                 href="/surfboards/{board.id}"
                 data-sveltekit-prefetch
@@ -889,7 +876,7 @@
           <div class="flex justify-center items-center gap-3 mt-8">
             <button
               class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || activeLocationFilter !== null}
               on:click={() => goToPage(currentPage - 1)}
             >
               Previous
@@ -899,7 +886,7 @@
             </span>
             <button
               class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || activeLocationFilter !== null}
               on:click={() => goToPage(currentPage + 1)}
             >
               Next
