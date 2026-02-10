@@ -93,7 +93,12 @@
 
   function goToPage(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    updateQueryParams({ page: String(newPage) });
+    const current = get(page);
+    const search = new URLSearchParams(current.url.search);
+    search.set('page', String(newPage));
+    const queryString = search.toString();
+    const target = queryString ? `${current.url.pathname}?${queryString}` : current.url.pathname;
+    goto(target);
   }
 
   function handleEditClick(event: MouseEvent, boardId: string, isCurated?: boolean | null) {
