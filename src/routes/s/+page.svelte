@@ -159,6 +159,15 @@
 
   const finSystemOptions = ["FCS II", "Futures", "Glass On", "FCS"];
   const finSetupOptions = ["2+1", "Twin", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
+  const FIN_SETUP_SLUG_MAP: Record<string, string> = {
+    '2+1': '2-plus-1',
+    '4+1': '4-plus-1',
+    'Twin': 'twin',
+    'Quad': 'quad',
+    'Tri': 'tri',
+    'Single': 'single',
+    'Tri/Quad': 'tri-quad'
+  };
   const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler", "Gun"];
 
   // Location search functions
@@ -179,6 +188,11 @@
 
     clearTimeout(locationDebounceHandle);
     locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
+  }
+
+  function handleFinSetupChange() {
+    const slug = selectedFinSetup ? FIN_SETUP_SLUG_MAP[selectedFinSetup] : null;
+    updateQueryParams({ fin_setup: slug ?? null, page: '1' });
   }
 
   function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
@@ -688,6 +702,7 @@
               id="filter-fin-setup"
               bind:value={selectedFinSetup}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+              on:change={handleFinSetupChange}
             >
               <option value={null}>All</option>
               {#each finSetupOptions as opt}

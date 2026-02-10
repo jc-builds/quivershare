@@ -22,24 +22,7 @@ const SORT_COLUMNS: Record<
 };
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-  const { data: authData, error: userError } = await locals.supabase.auth.getUser();
-  
-  let userId: string | null = null;
-  if (userError) {
-    // Check if this is the expected "no session" case (logged-out user)
-    const isSessionMissing = 
-      userError.message?.toLowerCase().includes('session missing') ||
-      userError.message?.toLowerCase().includes('auth session missing') ||
-      userError.name === 'AuthSessionMissingError';
-    
-    if (!isSessionMissing) {
-      // Only log unexpected auth errors
-      console.error('Unexpected auth error for /s route:', userError);
-    }
-    // In both cases (session missing or other error), userId remains null
-  } else {
-    userId = authData?.user?.id ?? null;
-  }
+  const userId = locals.user?.id ?? null;
 
   // Get user's location from profile if available
   let userLocation: string | null = null;
@@ -74,11 +57,43 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const {
-    data: boards,
-    error: boardsError,
-    count
-  } = await locals.supabase
+  const lengthFilter = url.searchParams.get('length')?.trim() || '';
+  const volumeFilter = url.searchParams.get('volume')?.trim() || '';
+  const finSystemFilter = url.searchParams.get('fin_system')?.trim() || '';
+  const finSetupSlug = url.searchParams.get('fin_setup')?.trim() || '';
+  const styleFilter = url.searchParams.get('style')?.trim() || '';
+
+  const lengthRanges: Record<string, { min: number; max: number | null }> = {
+    '66-72': { min: 66, max: 72 },
+    '72-78': { min: 72, max: 78 },
+    '78-84': { min: 78, max: 84 },
+    '84-96': { min: 84, max: 96 },
+    '96-108': { min: 96, max: 108 },
+    '108-120': { min: 108, max: 120 },
+    '120+': { min: 120, max: null }
+  };
+
+  const volumeRanges: Record<string, { min: number | null; max: number | null }> = {
+    '<25': { min: null, max: 25 },
+    '25-30': { min: 25, max: 30 },
+    '30-35': { min: 30, max: 35 },
+    '35-40': { min: 35, max: 40 },
+    '40-45': { min: 40, max: 45 },
+    '45-50': { min: 45, max: 50 },
+    '50+': { min: 50, max: null }
+  };
+
+  const FIN_SETUP_MAP: Record<string, string> = {
+    '2-plus-1': '2+1',
+    '4-plus-1': '4+1',
+    'twin': 'Twin',
+    'quad': 'Quad',
+    'tri': 'Tri',
+    'single': 'Single',
+    'tri-quad': 'Tri/Quad'
+  };
+
+  let boardsQuery = locals.supabase
     .from('surfboards')
     .select(
       `
@@ -107,7 +122,44 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       { count: 'exact' }
     )
     .eq('is_deleted', false)
-    .or('state.is.null,state.eq.active')
+    .or('state.is.null,state.eq.active');
+
+  const lengthRange = lengthRanges[lengthFilter];
+  if (lengthRange) {
+    boardsQuery = boardsQuery.gte('length', lengthRange.min);
+    if (lengthRange.max !== null) {
+      boardsQuery = boardsQuery.lt('length', lengthRange.max);
+    }
+  }
+
+  const volumeRange = volumeRanges[volumeFilter];
+  if (volumeRange) {
+    if (volumeRange.min !== null) {
+      boardsQuery = boardsQuery.gte('volume', volumeRange.min);
+    }
+    if (volumeRange.max !== null) {
+      boardsQuery = boardsQuery.lt('volume', volumeRange.max);
+    }
+  }
+
+  if (finSystemFilter) {
+    boardsQuery = boardsQuery.eq('fin_system', finSystemFilter);
+  }
+
+  const finSetupValue = FIN_SETUP_MAP[finSetupSlug];
+  if (finSetupValue) {
+    boardsQuery = boardsQuery.eq('fin_setup', finSetupValue);
+  }
+
+  if (styleFilter) {
+    boardsQuery = boardsQuery.eq('style', styleFilter);
+  }
+
+  const {
+    data: boards,
+    error: boardsError,
+    count
+  } = await boardsQuery
     .order(sortConfig.column, { ascending: sortConfig.ascending })
     .range(from, to);
 
