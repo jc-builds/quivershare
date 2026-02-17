@@ -2,6 +2,7 @@
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
   import { enhance } from "$app/forms";
+  import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from "$lib/imageValidation";
 
   export let data: {
     surfboard: any;
@@ -138,7 +139,8 @@
   let fileInput: HTMLInputElement;
   let dragActive = false;
   let files: File[] = [];
-  const MAX_IMAGES = 6;
+  let rejectionReasons: { file: string; reason: string }[] = [];
+  const MAX_IMAGES = MAX_IMAGES_PER_LISTING;
 
   // ---------------------------------------------------------
   // 3. Drag + Drop handlers
@@ -152,18 +154,7 @@
     event.preventDefault();
     dragActive = false;
     if (!event.dataTransfer?.files?.length) return;
-
-    const dropped = Array.from(event.dataTransfer.files).filter((f) => {
-      const type = f.type.toLowerCase();
-      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
-    });
-
-    if (dropped.length === 0) {
-      message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
-      return;
-    }
-
-    await addSelectedImages(dropped);
+    await addSelectedImages(Array.from(event.dataTransfer.files));
   }
 
   // ---------------------------------------------------------
@@ -173,39 +164,23 @@
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
     await addSelectedImages(Array.from(target.files));
+    target.value = "";
   }
 
   async function addSelectedImages(selected: File[]) {
-    // Filter out unsupported image formats
-    const validFiles = selected.filter((f) => {
-      const type = f.type.toLowerCase();
-      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
-    });
+    const existingCount = existingImages.length + files.length;
+    const { accepted, rejections } = validateAndFilterImageFiles(selected, existingCount);
 
-    if (validFiles.length < selected.length) {
-      message = `⚠️ Skipped ${selected.length - validFiles.length} file(s): Only JPEG, PNG, and WebP are supported.`;
-    }
+    rejectionReasons = rejections;
 
-    if (validFiles.length === 0) {
-      if (selected.length > 0) {
-        message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
-      }
-      return;
+    if (accepted.length > 0) {
+      files = [...files, ...accepted];
+      message = `✅ Added ${accepted.length} image${accepted.length > 1 ? "s" : ""}.`;
     }
-
-    const total = files.length + validFiles.length;
-    if (total > MAX_IMAGES) {
-      const allowed = MAX_IMAGES - files.length;
-      message = `⚠️ You can only upload ${MAX_IMAGES} images total. ${
-        allowed > 0
-          ? `You can add ${allowed} more.`
-          : "You've reached the limit."
-      }`;
-      return;
-    }
-    files = [...files, ...validFiles];
-    if (validFiles.length > 0) {
-      message = `✅ Added ${validFiles.length} image${validFiles.length > 1 ? "s" : ""}.`;
+    if (rejections.length > 0) {
+      message = accepted.length > 0
+        ? `✅ Added ${accepted.length}. ${rejections.length} file(s) rejected.`
+        : `⚠️ ${rejections.length} file(s) could not be added. See details below.`;
     }
   }
 
@@ -852,8 +827,19 @@
 
       {#if files.length > 0}
         <p class="text-xs text-muted-foreground mt-2">
-          {files.length}/{MAX_IMAGES} images selected
+          {existingImages.length + files.length}/{MAX_IMAGES} images selected
         </p>
+      {/if}
+
+      {#if rejectionReasons.length > 0}
+        <div class="mt-2 rounded-lg border border-border bg-surface p-3 text-sm">
+          <p class="font-medium text-foreground mb-2">Rejected files:</p>
+          <ul class="list-disc list-inside space-y-1 text-muted-foreground">
+            {#each rejectionReasons as { file, reason }}
+              <li><span class="font-mono text-foreground">{file}</span>: {reason}</li>
+            {/each}
+          </ul>
+        </div>
       {/if}
 
       <!-- Save Button -->

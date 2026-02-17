@@ -1,5 +1,6 @@
 <script lang="ts">
   import { supabase } from "$lib/supabaseClient";
+  import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from "$lib/imageValidation";
 
   // ---------------------------------------------------------
   // 1. Surfboard data (for form binding)
@@ -32,7 +33,8 @@
   let dragActive = false;
   let files: File[] = [];
   let message = "";
-  const MAX_IMAGES = 6;
+  let rejectionReasons: { file: string; reason: string }[] = [];
+  const MAX_IMAGES = MAX_IMAGES_PER_LISTING;
 
   // ---------------------------------------------------------
   // 3. Drag + Drop handlers
@@ -46,18 +48,7 @@
     event.preventDefault();
     dragActive = false;
     if (!event.dataTransfer?.files?.length) return;
-
-    const droppedFiles = Array.from(event.dataTransfer.files).filter((file) => {
-      const type = file.type.toLowerCase();
-      return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
-    });
-
-    if (droppedFiles.length === 0) {
-      message = "⚠️ Only JPEG, PNG, and WebP images are supported.";
-      return;
-    }
-
-    await addSelectedImages(droppedFiles);
+    await addSelectedImages(Array.from(event.dataTransfer.files));
   }
 
   // ---------------------------------------------------------
@@ -67,44 +58,26 @@
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
     await addSelectedImages(Array.from(target.files));
+    target.value = "";
   }
 
   // ---------------------------------------------------------
   // 5. File validation and queueing
   // ---------------------------------------------------------
   async function addSelectedImages(selected: File[]) {
-    const total = files.length + selected.length;
-    if (total > MAX_IMAGES) {
-      const allowed = MAX_IMAGES - files.length;
-      message = `⚠️ You can only upload ${MAX_IMAGES} images total. ${
-        allowed > 0
-          ? `You can add ${allowed} more.`
-          : "You've reached the limit."
-      }`;
-      return;
+    const existingCount = files.length;
+    const { accepted, rejections } = validateAndFilterImageFiles(selected, existingCount);
+
+    rejectionReasons = rejections;
+
+    if (accepted.length > 0) {
+      files = [...files, ...accepted];
+      message = `✅ Added ${accepted.length} image${accepted.length > 1 ? "s" : ""} ready to upload.`;
     }
-
-    const validFiles: File[] = [];
-    const invalidFiles: string[] = [];
-
-    for (const file of selected) {
-      const type = file.type.toLowerCase();
-      if (type !== "image/jpeg" && type !== "image/jpg" && type !== "image/png" && type !== "image/webp") {
-        invalidFiles.push(file.name);
-        continue;
-      }
-      validFiles.push(file);
-    }
-
-    if (invalidFiles.length > 0) {
-      message = `⚠️ Skipped ${invalidFiles.length} file(s): Only JPEG, PNG, and WebP are supported.`;
-    }
-
-    files = [...files, ...validFiles];
-    if (validFiles.length > 0) {
-      message = `✅ Added ${validFiles.length} image${
-        validFiles.length > 1 ? "s" : ""
-      } ready to upload.`;
+    if (rejections.length > 0) {
+      message = accepted.length > 0
+        ? `✅ Added ${accepted.length}. ${rejections.length} file(s) rejected.`
+        : `⚠️ ${rejections.length} file(s) could not be added. See details below.`;
     }
   }
 
@@ -518,6 +491,17 @@
         <p class="text-xs text-muted-foreground mt-2">
           {files.length}/{MAX_IMAGES} images selected
         </p>
+      {/if}
+
+      {#if rejectionReasons.length > 0}
+        <div class="mt-2 rounded-lg border border-border bg-surface p-3 text-sm">
+          <p class="font-medium text-foreground mb-2">Rejected files:</p>
+          <ul class="list-disc list-inside space-y-1 text-muted-foreground">
+            {#each rejectionReasons as { file, reason }}
+              <li><span class="font-mono text-foreground">{file}</span>: {reason}</li>
+            {/each}
+          </ul>
+        </div>
       {/if}
 
       <button type="submit" class="w-full mt-4 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed" disabled={submitting}>
