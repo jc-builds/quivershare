@@ -1,5 +1,6 @@
 // src/routes/create-surfboard/+page.server.ts
 import { fail, redirect, type Actions } from '@sveltejs/kit';
+import { validateImageUrls } from '$lib/server/imageValidation';
 
 export const actions: Actions = {
   default: async ({ request, locals }) => {
@@ -62,16 +63,15 @@ export const actions: Actions = {
     }
 
     // Handle image URLs if provided
-    const imageUrls = form.getAll('image_urls') as string[];
-    if (imageUrls.length > 0 && data?.id) {
-      const imageInserts = imageUrls
-        .filter(url => url && url.trim() !== '')
-        .map(image_url => ({
+    const rawImageUrls = form.getAll('image_urls');
+    if (rawImageUrls.length > 0 && data?.id) {
+      const cleanedUrls = validateImageUrls(rawImageUrls, thumbnail_url);
+      if (cleanedUrls.length > 0) {
+        const imageInserts = cleanedUrls.map(image_url => ({
           surfboard_id: data.id,
           image_url
         }));
 
-      if (imageInserts.length > 0) {
         const { error: imgError } = await locals.supabase
           .from('surfboard_images')
           .insert(imageInserts);
@@ -83,18 +83,15 @@ export const actions: Actions = {
 
         // Set default thumbnail if none was provided
         if (!thumbnail_url && data?.id) {
-          const nonEmptyUrls = imageUrls.filter(url => url && url.trim() !== '');
-          if (nonEmptyUrls.length > 0) {
-            const defaultThumb = nonEmptyUrls[0];
-            const { error: thumbError } = await locals.supabase
-              .from('surfboards')
-              .update({ thumbnail_url: defaultThumb })
-              .eq('id', data.id);
+          const defaultThumb = cleanedUrls[0];
+          const { error: thumbError } = await locals.supabase
+            .from('surfboards')
+            .update({ thumbnail_url: defaultThumb })
+            .eq('id', data.id);
 
-            if (thumbError) {
-              console.error('Thumbnail defaulting error:', thumbError.message);
-              // Do not fail the request — worst case the board has no thumbnail
-            }
+          if (thumbError) {
+            console.error('Thumbnail defaulting error:', thumbError.message);
+            // Do not fail the request — worst case the board has no thumbnail
           }
         }
       }

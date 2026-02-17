@@ -2,6 +2,10 @@
 import { redirect, error, fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
+import {
+  validateImageUrls,
+  MAX_IMAGES_PER_LISTING
+} from '$lib/server/imageValidation';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in (admin check is in parent layout)
@@ -62,18 +66,27 @@ export const actions: Actions = {
     }
 
     const form = await request.formData();
-    const imageUrls = form.getAll('image_urls') as string[];
+    const rawImageUrls = form.getAll('image_urls');
+    const cleanedUrls = validateImageUrls(rawImageUrls);
 
-    if (imageUrls.length === 0) {
+    if (cleanedUrls.length === 0) {
       return fail(400, { message: 'No image URLs provided' });
     }
 
-    const imageInserts = imageUrls
-      .filter(url => url && url.trim() !== '')
-      .map(image_url => ({
-        surfboard_id: surfboardId,
-        image_url
-      }));
+    // Enforce total images per listing (existing + new)
+    const { count: existingCount } = await locals.supabase
+      .from('surfboard_images')
+      .select('*', { count: 'exact', head: true })
+      .eq('surfboard_id', surfboardId);
+
+    if ((existingCount ?? 0) + cleanedUrls.length > MAX_IMAGES_PER_LISTING) {
+      return fail(400, { message: 'Maximum 6 images allowed.' });
+    }
+
+    const imageInserts = cleanedUrls.map(image_url => ({
+      surfboard_id: surfboardId,
+      image_url
+    }));
 
     const { error: imgError } = await locals.supabase
       .from('surfboard_images')
