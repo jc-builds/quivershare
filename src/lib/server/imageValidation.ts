@@ -2,15 +2,23 @@
 import { error } from '@sveltejs/kit';
 
 export const MAX_IMAGES_PER_LISTING = 6;
-export const SUPABASE_PREFIX =
-  'https://yeloehhzrtvjlehnjdqj.supabase.co/storage/v1/object/public/surfboard-images/';
+
+// Must be set per environment (local / staging / prod)
+const SUPABASE_PREFIX = process.env.PUBLIC_SUPABASE_IMAGE_PREFIX;
+
+if (!SUPABASE_PREFIX) {
+  throw new Error(
+    'PUBLIC_SUPABASE_IMAGE_PREFIX is not defined. ' +
+    'Set it to your Supabase public surfboard-images bucket URL.'
+  );
+}
 
 /**
  * Validates image URLs from form data.
- * - Converts to string[], filters non-strings, trims, removes empty
+ * - Converts to string[], trims, removes empty
  * - Enforces max 6 images
- * - Ensures all URLs are from our Supabase storage
- * - If thumbnailUrl is provided, it must be in the list
+ * - Ensures all URLs belong to the configured Supabase bucket
+ * - If thumbnailUrl is provided, it must be one of the uploaded images
  */
 export function validateImageUrls(
   rawUrls: unknown[],
