@@ -1,15 +1,16 @@
 /** Server-side image URL validation for surfboard listings */
 import { error } from '@sveltejs/kit';
+import { PUBLIC_SUPABASE_IMAGE_PREFIX } from '$env/static/public';
 
 export const MAX_IMAGES_PER_LISTING = 6;
 
 // Must be set per environment (local / staging / prod)
-const SUPABASE_PREFIX = process.env.PUBLIC_SUPABASE_IMAGE_PREFIX;
+const SUPABASE_PREFIX = PUBLIC_SUPABASE_IMAGE_PREFIX;
 
 if (!SUPABASE_PREFIX) {
   throw new Error(
     'PUBLIC_SUPABASE_IMAGE_PREFIX is not defined. ' +
-    'Set it to your Supabase public surfboard-images bucket URL.'
+      'Set it to your Supabase public surfboard-images bucket URL.'
   );
 }
 

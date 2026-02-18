@@ -5,6 +5,8 @@
   import { enhance } from "$app/forms";
   import { page } from "$app/stores";
   import { invalidateAll } from "$app/navigation";
+  import ImageManager from "$lib/components/ImageManager.svelte";
+  import type { ManagedImage } from "$lib/types/image";
 
   export let data: {
     surfboard: any;
@@ -76,6 +78,12 @@
 
   let existingImages: ExistingImage[] = (data?.existingImages ??
     []) as ExistingImage[];
+
+  let managedImages: ManagedImage[] = existingImages.map((img) => ({
+    kind: 'existing' as const,
+    id: img.id,
+    image_url: img.image_url
+  }));
 
   let loading = false;
   let message = "";
@@ -150,11 +158,7 @@
   // ---------------------------------------------------------
   let fileInput: HTMLInputElement;
   let dragActive = false;
-  let files: File[] = [];
   const MAX_IMAGES = 6;
-
-  // Allow picking a thumbnail from NEW files before upload
-  let pendingThumbIndex: number | null = null;
 
   // ---------------------------------------------------------
   // 3. Drag + Drop handlers
@@ -189,13 +193,13 @@
     const target = event.target as HTMLInputElement;
     if (!target.files?.length) return;
     await addSelectedImages(Array.from(target.files));
+    target.value = "";
   }
 
   // ---------------------------------------------------------
   // 5. Image selection and compression
   // ---------------------------------------------------------
   async function addSelectedImages(selected: File[]) {
-    // Filter out unsupported image formats
     const validFiles = selected.filter((f) => {
       const type = f.type.toLowerCase();
       return type === "image/jpeg" || type === "image/jpg" || type === "image/png" || type === "image/webp";
@@ -212,9 +216,9 @@
       return;
     }
 
-    const total = files.length + validFiles.length;
+    const total = managedImages.length + validFiles.length;
     if (total > MAX_IMAGES) {
-      const allowed = MAX_IMAGES - files.length;
+      const allowed = MAX_IMAGES - managedImages.length;
       message = `⚠️ You can only upload ${MAX_IMAGES} images total. ${
         allowed > 0
           ? `You can add ${allowed} more.`
@@ -229,7 +233,7 @@
         maxWidthOrHeight: 1600,
         useWebWorker: true,
       });
-      files = [...files, compressed];
+      managedImages = [...managedImages, { kind: 'new' as const, file: compressed }];
     }
     message = `✅ Added ${validFiles.length} image${validFiles.length > 1 ? "s" : ""}.`;
   }
@@ -238,23 +242,34 @@
   // 6. Handle image uploads (called after board update succeeds)
   // ---------------------------------------------------------
   async function handleImageUploads() {
-    if (files.length === 0) {
-      // No images to upload, just redirect
+    const newItems = managedImages.filter(
+      (m): m is { kind: 'new'; file: File } => m.kind === 'new'
+    );
+    if (newItems.length === 0) {
+      // No new images to upload; still update thumbnail if order changed
+      const firstUrl = managedImages[0]?.kind === 'existing' ? managedImages[0].image_url : null;
+      if (firstUrl) {
+        const formData = new FormData();
+        formData.append('thumbnail_url', firstUrl);
+        await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
+          method: 'POST',
+          body: formData,
+          headers: { accept: 'application/json' }
+        });
+      }
       message = "✅ Surfboard updated successfully!";
       loading = false;
       await goto("/admin/curated-boards");
       return;
     }
 
-    // Upload any new images (track which one becomes the thumbnail)
     let uploadedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
     const imageUrls: string[] = [];
-    let thumbnailUrl: string | null = null;
 
-    for (let idx = 0; idx < files.length; idx++) {
-      const file = files[idx];
+    for (const item of newItems) {
+      const file = item.file;
       const filePath = `${surfboard.id}/${Date.now()}_${file.name}`;
 
       const { error: uploadError } = await supabase.storage
@@ -271,30 +286,18 @@
       const { data: publicUrlData } = supabase.storage
         .from(BUCKET)
         .getPublicUrl(filePath);
-      const imageUrl = publicUrlData.publicUrl;
-
-      // Store URL for batch insert via server action
-      imageUrls.push(imageUrl);
+      imageUrls.push(publicUrlData.publicUrl);
       uploadedCount++;
-
-      if (pendingThumbIndex !== null && idx === pendingThumbIndex) {
-        thumbnailUrl = imageUrl;
-      }
     }
 
-    // Insert images via server action (using admin route)
     if (imageUrls.length > 0) {
       const formData = new FormData();
-      imageUrls.forEach(url => {
-        formData.append('image_urls', url);
-      });
+      imageUrls.forEach((url) => formData.append('image_urls', url));
 
       const response = await fetch(`/admin/curated-boards/${surfboard.id}?/uploadImages`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'accept': 'application/json'
-        }
+        headers: { accept: 'application/json' }
       });
 
       if (!response.ok) {
@@ -302,27 +305,28 @@
         failedCount += imageUrls.length;
         errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
         uploadedCount = 0;
-        imageUrls.length = 0; // Clear since insert failed
       }
     }
 
-    // Update thumbnail if needed (using admin route)
-    if (thumbnailUrl) {
+    // Set thumbnail to first image (order from managedImages)
+    let urlIdx = 0;
+    const orderedUrls = managedImages.map((m) => {
+      if (m.kind === 'existing') return m.image_url;
+      return imageUrls[urlIdx++];
+    });
+    const firstUrl = orderedUrls[0];
+    if (firstUrl) {
       const formData = new FormData();
-      formData.append('thumbnail_url', thumbnailUrl);
-
-      const response = await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
+      formData.append('thumbnail_url', firstUrl);
+      const thumbRes = await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'accept': 'application/json'
-        }
+        headers: { accept: 'application/json' }
       });
-
-      if (response.ok) {
-        surfboard.thumbnail_url = thumbnailUrl;
+      if (thumbRes.ok) {
+        surfboard.thumbnail_url = firstUrl;
       } else {
-        const result = await response.json();
+        const result = await thumbRes.json();
         errors.push(`Thumbnail update failed: ${result.message || 'Unknown error'}`);
       }
     }
@@ -353,9 +357,9 @@
   // ---------------------------------------------------------
   let deleting: Record<string, boolean> = {};
   let showConfirm = false;
-  let imageToDelete: ExistingImage | null = null;
+  let imageToDelete: { id: string; image_url: string } | null = null;
 
-  function promptDelete(img: ExistingImage) {
+  function handleDeleteExisting(img: { id: string; image_url: string }) {
     imageToDelete = img;
     showConfirm = true;
   }
@@ -402,91 +406,12 @@
     const img = imageToDelete;
     showConfirm = false;
     imageToDelete = null;
-    await removeImage(img);
+    await removeImage(img as ExistingImage);
+    managedImages = managedImages.filter((m) => !(m.kind === 'existing' && m.id === img.id));
   }
 
   // ---------------------------------------------------------
-  // 8. Thumbnail (Main image) for EXISTING images
-  // NOTE: This function ONLY uses server actions - no client-side Supabase .from('surfboards').update() calls
-  // ---------------------------------------------------------
-  let settingThumb: Record<string, boolean> = {};
-
-  async function setAsThumbnail(img: ExistingImage) {
-    if (settingThumb[img.id]) return;
-    settingThumb = { ...settingThumb, [img.id]: true };
-    message = "";
-
-    try {
-      // Call server action to update thumbnail (bypasses RLS via supabaseAdmin)
-      // This is the ONLY way to update surfboards.thumbnail_url - no direct client-side PATCH calls.
-      const formData = new FormData();
-      formData.append('thumbnail_url', img.image_url);
-
-      const response = await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'accept': 'application/json'
-        }
-      });
-
-      // Debug log
-      console.log('[setAsThumbnail] Response status:', response.status, 'ok:', response.ok);
-
-      // Treat as successful if HTTP response is OK
-      if (response.ok) {
-        let result;
-        try {
-          result = await response.json();
-        } catch (jsonError) {
-          // If JSON parsing fails but response is OK, still treat as success
-          console.warn('[setAsThumbnail] JSON parse error (non-fatal):', jsonError);
-          result = { success: true, thumbnail_url: img.image_url };
-        }
-
-        // Update local state with returned thumbnail_url
-        if (result.thumbnail_url) {
-          surfboard.thumbnail_url = result.thumbnail_url;
-        } else {
-          surfboard.thumbnail_url = img.image_url;
-        }
-        
-        message = "✅ Thumbnail updated.";
-        
-        // Refresh page data to show updated thumbnail immediately (non-fatal)
-        try {
-          await invalidateAll();
-        } catch (invalidateError) {
-          console.warn('[setAsThumbnail] invalidateAll failed (non-fatal):', invalidateError);
-          // Keep success toast even if invalidate fails
-        }
-      } else {
-        // Only read response text for debugging on error
-        let errorMsg = 'Failed to update thumbnail';
-        try {
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-            errorMsg = errorData.message || errorData.error || errorMsg;
-          } catch {
-            // If not JSON, use the text or default message
-            errorMsg = errorText || errorMsg;
-          }
-        } catch (textError) {
-          console.warn('[setAsThumbnail] Failed to read error response:', textError);
-        }
-        console.error("Thumbnail update error:", errorMsg);
-        message = `❌ ${errorMsg}`;
-      }
-    } finally {
-      // Always reset loading state, even on error
-      settingThumb = { ...settingThumb, [img.id]: false };
-    }
-  }
-
-  // ---------------------------------------------------------
-  // 9. Lightbox (enlarge images) + keyboard controls
+  // 8. Lightbox (enlarge images) + keyboard controls
   // ---------------------------------------------------------
   let lightboxOpen = false;
   let lightboxIndex = 0;
@@ -499,13 +424,17 @@
     lightboxOpen = false;
   }
   function prevImage() {
-    if (!existingImages.length) return;
+    if (!managedImages.length) return;
     lightboxIndex =
-      (lightboxIndex - 1 + existingImages.length) % existingImages.length;
+      (lightboxIndex - 1 + managedImages.length) % managedImages.length;
   }
   function nextImage() {
-    if (!existingImages.length) return;
-    lightboxIndex = (lightboxIndex + 1) % existingImages.length;
+    if (!managedImages.length) return;
+    lightboxIndex = (lightboxIndex + 1) % managedImages.length;
+  }
+
+  function getLightboxSrc(img: ManagedImage): string {
+    return img.kind === 'existing' ? img.image_url : URL.createObjectURL(img.file);
   }
 
   // Keyboard: ← → navigate, Esc to close (only while lightbox open)
@@ -881,72 +810,6 @@
       <!-- Hidden input for state -->
       <input type="hidden" name="state" value={surfboard.state} />
 
-      <!-- Existing Images -->
-      {#if existingImages.length > 0}
-        <p class="text-sm font-semibold text-foreground mb-2">
-          Existing Images
-        </p>
-
-        <div class="mt-2 grid grid-cols-3 gap-2">
-          {#each existingImages as img, i}
-            <div class="relative group aspect-square w-full">
-              <!-- Clickable image via button (a11y) -->
-              <button
-                type="button"
-                class="absolute inset-0 rounded-lg border border-border bg-surface-elevated overflow-hidden cursor-zoom-in z-0"
-                on:click={() => openLightbox(i)}
-                aria-label="Open image"
-              >
-                <img
-                  src={img.image_url}
-                  alt="Surfboard"
-                  class="h-full w-full object-cover"
-                />
-              </button>
-
-              <!-- Thumbnail badge -->
-              {#if surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url}
-                <div
-                  class="absolute top-1 left-1 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground font-medium z-20"
-                >
-                  Main
-                </div>
-              {/if}
-
-              <!-- Set-as-thumbnail star -->
-              <button
-                type="button"
-                class="absolute bottom-1 left-1 bg-black/60 text-[10px] text-foreground
-                       rounded-full px-2 h-5 flex items-center justify-center
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                       hover:bg-black/80 z-30 pointer-events-auto"
-                on:click|stopPropagation={() => setAsThumbnail(img)}
-                disabled={!!settingThumb[img.id]}
-                title="Set as main image"
-                aria-label="Set as main image"
-              >
-                {settingThumb[img.id] ? "…" : "★"}
-              </button>
-
-              <!-- Remove "×" -->
-              <button
-                type="button"
-                class="absolute top-1 right-1 bg-black/60 text-[10px] text-foreground
-                       rounded-full w-5 h-5 flex items-center justify-center
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                       hover:bg-black/80 z-30 pointer-events-auto"
-                on:click|stopPropagation={() => promptDelete(img)}
-                disabled={!!deleting[img.id]}
-                aria-label="Remove image"
-                title="Remove image"
-              >
-                {deleting[img.id] ? "…" : "×"}
-              </button>
-            </div>
-          {/each}
-        </div>
-      {/if}
-
       <!-- Image Upload Zone -->
       <div
         class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -968,45 +831,21 @@
           on:change={handleFileSelect}
           class="hidden"
         />
-
         <p class="text-sm text-muted-foreground">
           📷 Drag & drop images here, or click to select
         </p>
-
-        {#if files.length > 0}
-          <div class="mt-4 grid grid-cols-3 gap-2">
-            {#each files as file, i}
-              <div class="relative group aspect-square w-full">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  class="absolute inset-0 h-full w-full object-cover rounded-lg border border-border"
-                />
-
-                <!-- Pick this NEW file as the thumbnail -->
-                <button
-                  type="button"
-                  class="absolute bottom-1 left-1 bg-black/60 text-[10px] text-foreground
-                         rounded-full px-2 h-5 flex items-center justify-center
-                         opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                         hover:bg-black/80"
-                  on:click={() => (pendingThumbIndex = i)}
-                  title="Set this new image as main after upload"
-                  aria-label="Set new image as main"
-                >
-                  {pendingThumbIndex === i ? "Main" : "★"}
-                </button>
-              </div>
-            {/each}
-          </div>
-        {/if}
       </div>
 
-      {#if files.length > 0}
+      {#if managedImages.length > 0}
+        <div class="mt-4">
+          <ImageManager
+            bind:images={managedImages}
+            onDeleteExisting={handleDeleteExisting}
+            onImageClick={openLightbox}
+          />
+        </div>
         <p class="text-xs text-muted-foreground mt-2">
-          {files.length}/{MAX_IMAGES} images selected
-          {#if pendingThumbIndex !== null}
-            • main will be image #{pendingThumbIndex + 1}{/if}
+          {managedImages.length}/{MAX_IMAGES} images selected
         </p>
       {/if}
 
@@ -1143,7 +982,7 @@
   {/if}
 
   <!-- Lightbox -->
-  {#if lightboxOpen}
+  {#if lightboxOpen && managedImages[lightboxIndex]}
     <div
       class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
     >
@@ -1160,7 +999,7 @@
         aria-label="Previous">‹</button
       >
       <img
-        src={existingImages[lightboxIndex]?.image_url}
+        src={managedImages[lightboxIndex] ? getLightboxSrc(managedImages[lightboxIndex]) : ''}
         alt="Enlarged view of the selected surfboard"
         class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
       />

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { supabase } from "$lib/supabaseClient";
   import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from "$lib/imageValidation";
+  import ImageManager from "$lib/components/ImageManager.svelte";
+  import type { ManagedImage } from "$lib/types/image";
 
   // ---------------------------------------------------------
   // 1. Surfboard data (for form binding)
@@ -31,7 +33,7 @@
   // ---------------------------------------------------------
   let fileInput: HTMLInputElement;
   let dragActive = false;
-  let files: File[] = [];
+  let managedImages: ManagedImage[] = [];
   let message = "";
   let rejectionReasons: { file: string; reason: string }[] = [];
   const MAX_IMAGES = MAX_IMAGES_PER_LISTING;
@@ -65,13 +67,16 @@
   // 5. File validation and queueing
   // ---------------------------------------------------------
   async function addSelectedImages(selected: File[]) {
-    const existingCount = files.length;
+    const existingCount = managedImages.length;
     const { accepted, rejections } = validateAndFilterImageFiles(selected, existingCount);
 
     rejectionReasons = rejections;
 
     if (accepted.length > 0) {
-      files = [...files, ...accepted];
+      managedImages = [
+        ...managedImages,
+        ...accepted.map((file) => ({ kind: 'new' as const, file }))
+      ];
       message = `✅ Added ${accepted.length} image${accepted.length > 1 ? "s" : ""} ready to upload.`;
     }
     if (rejections.length > 0) {
@@ -130,14 +135,15 @@
     const form = event.target as HTMLFormElement;
     const formData = new FormData(form);
 
-    // Upload images to storage first and collect URLs
+    // Upload images to storage first and collect URLs (order preserved; first = thumbnail)
     const imageUrls: string[] = [];
-    if (files.length > 0) {
-      // We'll upload after the surfboard is created, so we need a temporary ID
-      // For now, upload with a temp path and we'll move them after
+    const newFiles = managedImages
+      .filter((m): m is { kind: 'new'; file: File } => m.kind === 'new')
+      .map((m) => m.file);
+    if (newFiles.length > 0) {
       const tempId = `temp_${Date.now()}`;
       
-      for (const file of files) {
+      for (const file of newFiles) {
         const filePath = `${tempId}/${Date.now()}_${file.name}`;
 
         const { error: uploadError } = await supabase.storage
@@ -473,23 +479,14 @@
         <p class="text-sm text-muted-foreground">
           📷 Add images here, recommend 3-6 images for best results.
         </p>
-
-        {#if files.length > 0}
-          <div class="mt-4 grid grid-cols-3 gap-2">
-            {#each files as file}
-              <img
-                src={URL.createObjectURL(file)}
-                alt={file.name}
-                class="rounded-lg object-cover h-24 w-full border border-border"
-              />
-            {/each}
-          </div>
-        {/if}
       </div>
 
-      {#if files.length > 0}
+      {#if managedImages.length > 0}
+        <div class="mt-4">
+          <ImageManager bind:images={managedImages} />
+        </div>
         <p class="text-xs text-muted-foreground mt-2">
-          {files.length}/{MAX_IMAGES} images selected
+          {managedImages.length}/{MAX_IMAGES} images selected
         </p>
       {/if}
 
