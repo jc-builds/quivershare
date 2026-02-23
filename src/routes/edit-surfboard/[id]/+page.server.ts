@@ -268,46 +268,6 @@ export const actions: Actions = {
 
     return { success: true };
   },
-  updateThumbnail: async ({ request, locals, params }) => {
-    const user = locals.user;
-    if (!user) return fail(401, { message: 'Unauthorized' });
-
-    const surfboardId = params.id;
-    if (!surfboardId) {
-      return fail(400, { message: 'Missing surfboard ID' });
-    }
-
-    // Verify the surfboard belongs to the user
-    const { data: board, error: boardError } = await locals.supabase
-      .from('surfboards')
-      .select('id')
-      .eq('id', surfboardId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (boardError || !board) {
-      return fail(403, { message: 'Surfboard not found or access denied' });
-    }
-
-    const form = await request.formData();
-    const thumbnail_url = form.get('thumbnail_url')?.toString();
-
-    if (!thumbnail_url) {
-      return fail(400, { message: 'Missing thumbnail URL' });
-    }
-
-    const { error: updateError } = await locals.supabase
-      .from('surfboards')
-      .update({ thumbnail_url })
-      .eq('id', surfboardId);
-
-    if (updateError) {
-      console.error('Thumbnail update error:', updateError.message);
-      return fail(500, { message: 'Failed to update thumbnail' });
-    }
-
-    return { success: true };
-  },
   deleteImage: async ({ request, locals, params }) => {
     const user = locals.user;
     if (!user) return fail(401, { message: 'Unauthorized' });

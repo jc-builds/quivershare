@@ -67,8 +67,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     }
   }
 
-  // Get up to 3 ordered images based on surfboard_images.position
-  const allImages = (images ?? []).slice(0, 3);
+  // Return all ordered images based on surfboard_images.position
+  const allImages = images ?? [];
 
   return {
     board: surfboard,

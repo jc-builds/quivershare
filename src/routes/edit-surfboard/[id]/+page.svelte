@@ -31,7 +31,6 @@
     price: sb.price ?? "",
     condition: sb.condition ?? "",
     notes: sb.notes ?? "",
-    thumbnail_url: sb.thumbnail_url ?? "",
     city: sb.city ?? "",
     region: sb.region ?? "",
     lat: sb.lat ?? "",
@@ -282,14 +281,6 @@
       }
     }
 
-    if (managedImages.length > 0) {
-      await fetch(`/edit-surfboard/${surfboard.id}?/updateThumbnail`, {
-        method: "POST",
-        body: new FormData(),
-        headers: { accept: "application/json" },
-      });
-    }
-
     if (failedCount > 0 && uploadedCount === 0) {
       message = `❌ Failed to upload all images. ${errors[0]}`;
       loading = false;
@@ -342,9 +333,6 @@
     existingImages = existingImages.filter((i) => i.id !== img.id);
     deleting = { ...deleting, [img.id]: false };
     message = "✅ Image removed.";
-    if (surfboard.thumbnail_url && img.image_url === surfboard.thumbnail_url) {
-      surfboard.thumbnail_url = "";
-    }
   }
 
   async function confirmDelete() {

@@ -56,6 +56,50 @@
   function viewBoard(boardId: string) {
     goto(`/surfboards/${boardId}`);
   }
+
+  let showDeleteBoardConfirm = false;
+  let deleteBoardConfirmText = '';
+  const requiredDeleteConfirmText = 'DELETE';
+  let boardIdToDelete = '';
+
+  let deleteModalContainer: HTMLElement;
+  let deleteFirstFocusable: HTMLElement | null = null;
+  let deleteLastFocusable: HTMLElement | null = null;
+
+  function openDeleteBoardConfirm(boardId: string) {
+    boardIdToDelete = boardId;
+    deleteBoardConfirmText = '';
+    showDeleteBoardConfirm = true;
+  }
+
+  function closeDeleteBoardConfirm() {
+    showDeleteBoardConfirm = false;
+    deleteBoardConfirmText = '';
+    boardIdToDelete = '';
+  }
+
+  $: if (showDeleteBoardConfirm && deleteModalContainer) {
+    const focusable = deleteModalContainer.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length > 0) {
+      deleteFirstFocusable = focusable[0] as HTMLElement;
+      deleteLastFocusable = focusable[focusable.length - 1] as HTMLElement;
+      setTimeout(() => deleteFirstFocusable?.focus(), 0);
+    }
+  }
+
+  function trapDeleteModalFocus(e: KeyboardEvent) {
+    if (!showDeleteBoardConfirm || e.key !== 'Tab' || !deleteFirstFocusable || !deleteLastFocusable) return;
+
+    if (e.shiftKey && document.activeElement === deleteFirstFocusable) {
+      e.preventDefault();
+      deleteLastFocusable.focus();
+    } else if (!e.shiftKey && document.activeElement === deleteLastFocusable) {
+      e.preventDefault();
+      deleteFirstFocusable.focus();
+    }
+  }
 </script>
 
 <section class="bg-background text-foreground min-h-screen p-6">
@@ -153,20 +197,13 @@
                 </button>
               </form>
               <!-- Delete Button -->
-              <form method="POST" action="?/deleteBoard" class="flex-1 min-w-[100px]">
-                <input type="hidden" name="boardId" value={board.id} />
-                <button
-                  type="submit"
-                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
-                  on:click={(e) => {
-                    if (!confirm('Delete this listing? This cannot be undone.')) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </form>
+              <button
+                type="button"
+                class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm flex-1 min-w-[100px]"
+                on:click={() => openDeleteBoardConfirm(board.id)}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
@@ -274,20 +311,13 @@
                     Edit
                   </button>
                   <!-- Delete Button -->
-                  <form method="POST" action="?/deleteBoard">
-                    <input type="hidden" name="boardId" value={board.id} />
-                    <button
-                      type="submit"
-                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
-                      on:click={(e) => {
-                        if (!confirm('Delete this listing? This cannot be undone.')) {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
+                    on:click={() => openDeleteBoardConfirm(board.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </td>
             </tr>
@@ -297,3 +327,76 @@
     </div>
   {/if}
 </section>
+
+{#if showDeleteBoardConfirm}
+  <div
+    class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-board-title"
+    on:click={closeDeleteBoardConfirm}
+    on:keydown={(e) => e.key === 'Escape' && closeDeleteBoardConfirm()}
+    on:keydown={trapDeleteModalFocus}
+    tabindex="-1"
+    bind:this={deleteModalContainer}
+  >
+    <div
+      class="bg-surface-elevated border border-border rounded-xl p-6 max-w-md w-full shadow-xl text-foreground"
+      role="presentation"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+    >
+      <h2 id="delete-board-title" class="text-xl font-semibold mb-4 text-foreground">Delete Listing</h2>
+
+      <div class="space-y-4 mb-6">
+        <p class="text-sm text-foreground">
+          Are you sure you want to delete this listing? This action cannot be undone.
+        </p>
+
+        <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+          <p class="font-medium text-foreground mb-2">What will happen:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>This listing will be permanently deleted</li>
+            <li>The surfboard will be removed from search</li>
+            <li>The surfboard will be removed from your My Boards page</li>
+            <li>All associated images will be removed</li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <label for="delete-board-confirm" class="block text-sm font-medium text-foreground">
+            Type <span class="font-mono font-semibold text-red-400">{requiredDeleteConfirmText}</span> to confirm:
+          </label>
+          <input
+            id="delete-board-confirm"
+            type="text"
+            bind:value={deleteBoardConfirmText}
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+            placeholder={requiredDeleteConfirmText}
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <form method="POST" action="?/deleteBoard">
+        <input type="hidden" name="boardId" value={boardIdToDelete} />
+        <div class="flex gap-2 justify-end">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            on:click={closeDeleteBoardConfirm}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
