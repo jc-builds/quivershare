@@ -19,7 +19,6 @@ export type BoardPageData = {
     city: string | null;
     region: string | null;
     notes: string | null;
-    thumbnail_url: string | null;
     user_id: string;
   };
   images: Array<{ id: string; image_url: string }>;
@@ -55,9 +54,28 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Fetch the board (exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
-    .select('*')
+    .select(`
+      id,
+      name,
+      make,
+      length,
+      width,
+      thickness,
+      volume,
+      fin_system,
+      fin_setup,
+      style,
+      condition,
+      price,
+      city,
+      region,
+      notes,
+      user_id,
+      surfboard_images(id, image_url, position)
+    `)
     .eq('id', id)
     .eq('is_deleted', false)
+    .order('position', { foreignTable: 'surfboard_images', ascending: true })
     .single();
 
   if (boardErr || !surfboard) {
@@ -75,16 +93,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     console.warn('Error loading owner profile:', ownerError);
   }
 
-  // Fetch images
-  const { data: images, error: imgErr } = await locals.supabase
-    .from('surfboard_images')
-    .select('id, image_url')
-    .eq('surfboard_id', id)
-    .order('id', { ascending: true });
-
-  if (imgErr) {
-    console.warn('Image fetch error:', imgErr.message);
-  }
+  const derivedPrimaryImage = surfboard.surfboard_images?.[0]?.image_url || null;
 
   // Determine if the current user can edit this board
   const { data: authData, error: userError } = await locals.supabase.auth.getUser();
@@ -99,13 +108,16 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw redirect(303, `/surfboards/${id}`);
   }
 
-  // Get up to 5 images (thumbnail + up to 4 additional)
-  const allImages = [
-    ...(surfboard.thumbnail_url ? [{ id: 'thumb', image_url: surfboard.thumbnail_url }] : []),
-    ...(images ?? [])
-  ].filter((img, index, self) => 
-    index === self.findIndex((i) => i.image_url === img.image_url)
-  ).slice(0, 5);
+  // Get up to 5 ordered images based on surfboard_images.position
+  const allImages = (surfboard.surfboard_images ?? [])
+    .map((img) => ({ id: img.id, image_url: img.image_url }))
+    .slice(0, 5);
+
+  const boardWithoutImages = {
+    ...surfboard,
+    surfboard_images: undefined,
+    image_url: derivedPrimaryImage
+  };
 
   // Fetch the most recent boost for this board
   const { data: boostData, error: boostError } = await locals.supabase
@@ -124,7 +136,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const hasActiveBoost = currentBoost ? (currentBoost.status === 'pending' || currentBoost.status === 'live') : false;
 
   return {
-    board: surfboard,
+    board: boardWithoutImages,
     images: allImages,
     owner: ownerProfile ?? null,
     canEdit,

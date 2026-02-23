@@ -13,19 +13,19 @@ export const load: PageServerLoad = async ({ locals }) => {
     .select(`
       id,
       name,
-      thumbnail_url,
       length,
       width,
       thickness,
       condition,
       created_at,
       state,
-      surfboard_images(image_url),
+      surfboard_images(image_url, position),
       boosts(status)
     `)
     .eq('user_id', userId)
     .eq('is_deleted', false)
     .or('is_curated.is.null,is_curated.eq.false')
+    .order('position', { foreignTable: 'surfboard_images', ascending: true })
     .order('last_modified', { ascending: false });
 
   // 3) Handle errors
@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   // 4) Attach a single fallback image per board
   const boardsWithImage = (data ?? []).map((board) => ({
     ...board,
+    thumbnail_url: board.surfboard_images?.[0]?.image_url || null,
     image_url: board.surfboard_images?.[0]?.image_url || null,
     boosts: board.boosts ?? []
   }));

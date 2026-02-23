@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .from('surfboard_images')
     .select('id,image_url')
     .eq('surfboard_id', id)
-    .order('id', { ascending: true });
+    .order('position', { ascending: true });
 
   if (imgErr) {
     console.warn('Image fetch error:', imgErr.message);
@@ -99,11 +99,13 @@ export const actions: Actions = {
 
     return { success: true };
   },
-  updateThumbnail: async ({ request, locals, params }) => {
+  reorderImages: async ({ request, locals, params }) => {
     const user = locals.user;
-    if (!user) return fail(401, { success: false, message: 'Unauthorized' });
+    if (!user) {
+      return fail(401, { message: 'Unauthorized' });
+    }
 
-    // Re-verify admin status for action
+    // Verify admin status
     const { data: profile, error: profileError } = await locals.supabase
       .from('profiles')
       .select('is_admin')
@@ -111,12 +113,12 @@ export const actions: Actions = {
       .maybeSingle();
 
     if (profileError || !profile || profile.is_admin !== true) {
-      return fail(403, { success: false, message: 'Access denied: Not an admin' });
+      return fail(403, { message: 'Access denied: Not an admin' });
     }
 
     const surfboardId = params.id;
     if (!surfboardId) {
-      return fail(400, { success: false, message: 'Missing surfboard ID' });
+      return fail(400, { message: 'Missing surfboard ID' });
     }
 
     // Verify the surfboard is curated and not deleted
@@ -129,40 +131,75 @@ export const actions: Actions = {
       .single();
 
     if (boardError || !board) {
-      return fail(403, { success: false, message: 'Curated surfboard not found or access denied' });
+      return fail(403, { message: 'Curated surfboard not found or access denied' });
     }
 
-    const form = await request.formData();
-    const thumbnail_url = form.get('thumbnail_url')?.toString();
+    const formData = await request.formData();
+    const imageIds = formData.getAll('image_ids') as string[];
 
-    if (!thumbnail_url) {
-      return fail(400, { success: false, message: 'Missing thumbnail URL' });
+    if (imageIds.length === 0) {
+      return fail(400, { message: 'No image IDs provided' });
     }
 
-    // Use service role client to bypass RLS
-    const { data: updatedBoards, error: updateError } = await supabaseAdmin
-      .from('surfboards')
-      .update({ thumbnail_url })
-      .eq('id', surfboardId)
-      .eq('is_curated', true)
-      .eq('is_deleted', false)
-      .select('thumbnail_url');
-
-    if (updateError) {
-      console.error('Thumbnail update error:', updateError.message);
-      return fail(500, { success: false, message: 'Failed to update thumbnail' });
+    const uniqueImageIds = new Set(imageIds);
+    if (uniqueImageIds.size !== imageIds.length) {
+      return fail(400, { message: 'Duplicate image IDs are not allowed' });
     }
 
-    if (!updatedBoards || updatedBoards.length === 0) {
-      return fail(404, { success: false, message: 'Update failed (no rows affected). Check board ID or permissions.' });
+    // Fetch all images that belong to this surfboard
+    const { data: surfboardImages, error: imagesError } = await locals.supabase
+      .from('surfboard_images')
+      .select('id')
+      .eq('surfboard_id', surfboardId);
+
+    if (imagesError || !surfboardImages) {
+      return fail(500, { message: 'Failed to load surfboard images' });
     }
 
-    const finalThumbnailUrl = updatedBoards[0]?.thumbnail_url ?? thumbnail_url;
-    
-    // Debug log
-    console.log('[updateThumbnail] Board ID:', surfboardId, 'New thumbnail_url:', finalThumbnailUrl);
-    
-    return { success: true, thumbnail_url: finalThumbnailUrl };
+    const surfboardImageIds = new Set(surfboardImages.map((img) => img.id));
+
+    // Validate every incoming ID belongs to this surfboard
+    for (const imageId of imageIds) {
+      if (!surfboardImageIds.has(imageId)) {
+        return fail(400, { message: 'One or more image IDs are invalid for this surfboard' });
+      }
+    }
+
+    // Validate counts match (client must provide complete ordered set)
+    if (imageIds.length !== surfboardImages.length) {
+      return fail(400, { message: 'Image ID count mismatch' });
+    }
+
+    // Phase 1: move to temporary non-conflicting positions
+    for (let i = 0; i < imageIds.length; i++) {
+      const tempPosition = 1000 + i;
+      const { error: updateError } = await locals.supabase
+        .from('surfboard_images')
+        .update({ position: tempPosition })
+        .eq('id', imageIds[i])
+        .eq('surfboard_id', surfboardId);
+
+      if (updateError) {
+        console.error('Position update failed:', updateError.message);
+        return fail(500, { message: 'Failed to reorder images' });
+      }
+    }
+
+    // Phase 2: assign final positions sequentially so position 0 is thumbnail
+    for (let i = 0; i < imageIds.length; i++) {
+      const { error: updateError } = await locals.supabase
+        .from('surfboard_images')
+        .update({ position: i })
+        .eq('id', imageIds[i])
+        .eq('surfboard_id', surfboardId);
+
+      if (updateError) {
+        console.error('Position update failed:', updateError.message);
+        return fail(500, { message: 'Failed to reorder images' });
+      }
+    }
+
+    return { success: true };
   },
   deleteImage: async ({ request, locals, params }) => {
     const user = locals.user;

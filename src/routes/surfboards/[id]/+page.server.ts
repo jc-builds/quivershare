@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .from('surfboard_images')
     .select('id, image_url')
     .eq('surfboard_id', id)
-    .order('id', { ascending: true });
+    .order('position', { ascending: true });
 
   if (imgErr) {
     console.warn('Image fetch error:', imgErr.message);
@@ -67,13 +67,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     }
   }
 
-  // Get up to 5 images (thumbnail + up to 4 additional)
-  const allImages = [
-    ...(surfboard.thumbnail_url ? [{ id: 'thumb', image_url: surfboard.thumbnail_url }] : []),
-    ...(images ?? [])
-  ].filter((img, index, self) => 
-    index === self.findIndex((i) => i.image_url === img.image_url)
-  ).slice(0, 5);
+  // Get up to 3 ordered images based on surfboard_images.position
+  const allImages = (images ?? []).slice(0, 3);
 
   return {
     board: surfboard,

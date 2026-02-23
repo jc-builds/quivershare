@@ -245,89 +245,78 @@
     const newItems = managedImages.filter(
       (m): m is { kind: 'new'; file: File } => m.kind === 'new'
     );
-    if (newItems.length === 0) {
-      // No new images to upload; still update thumbnail if order changed
-      const firstUrl = managedImages[0]?.kind === 'existing' ? managedImages[0].image_url : null;
-      if (firstUrl) {
-        const formData = new FormData();
-        formData.append('thumbnail_url', firstUrl);
-        await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
-          method: 'POST',
-          body: formData,
-          headers: { accept: 'application/json' }
-        });
-      }
-      message = "✅ Surfboard updated successfully!";
-      loading = false;
-      await goto("/admin/curated-boards");
-      return;
-    }
-
     let uploadedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
     const imageUrls: string[] = [];
 
-    for (const item of newItems) {
-      const file = item.file;
-      const filePath = `${surfboard.id}/${Date.now()}_${file.name}`;
+    if (newItems.length > 0) {
+      for (const item of newItems) {
+        const file = item.file;
+        const filePath = `${surfboard.id}/${Date.now()}_${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(filePath, file);
+        const { error: uploadError } = await supabase.storage
+          .from(BUCKET)
+          .upload(filePath, file);
 
-      if (uploadError) {
-        console.error("Upload failed:", uploadError);
-        failedCount++;
-        errors.push(`Failed to upload ${file.name}: ${uploadError.message}`);
-        continue;
+        if (uploadError) {
+          console.error("Upload failed:", uploadError);
+          failedCount++;
+          errors.push(`Failed to upload ${file.name}: ${uploadError.message}`);
+          continue;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from(BUCKET)
+          .getPublicUrl(filePath);
+        imageUrls.push(publicUrlData.publicUrl);
+        uploadedCount++;
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(filePath);
-      imageUrls.push(publicUrlData.publicUrl);
-      uploadedCount++;
+      if (imageUrls.length > 0) {
+        const formData = new FormData();
+        imageUrls.forEach((url) => formData.append('image_urls', url));
+
+        const response = await fetch(`/admin/curated-boards/${surfboard.id}?/uploadImages`, {
+          method: 'POST',
+          body: formData,
+          headers: { accept: 'application/json' }
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          failedCount += imageUrls.length;
+          errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
+          uploadedCount = 0;
+        }
+      }
     }
 
-    if (imageUrls.length > 0) {
-      const formData = new FormData();
-      imageUrls.forEach((url) => formData.append('image_urls', url));
+    const existingIds = managedImages
+      .filter((m): m is { kind: 'existing'; id: string; image_url: string } => m.kind === 'existing')
+      .map((m) => m.id);
+    const uniqueExistingIds = [...new Set(existingIds)];
 
-      const response = await fetch(`/admin/curated-boards/${surfboard.id}?/uploadImages`, {
+    if (uniqueExistingIds.length > 0) {
+      const reorderForm = new FormData();
+      uniqueExistingIds.forEach((id) => reorderForm.append('image_ids', id));
+      const reorderRes = await fetch(`/admin/curated-boards/${surfboard.id}?/reorderImages`, {
         method: 'POST',
-        body: formData,
+        body: reorderForm,
         headers: { accept: 'application/json' }
       });
 
-      if (!response.ok) {
-        const result = await response.json();
-        failedCount += imageUrls.length;
-        errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
-        uploadedCount = 0;
-      }
-    }
-
-    // Set thumbnail to first image (order from managedImages)
-    let urlIdx = 0;
-    const orderedUrls = managedImages.map((m) => {
-      if (m.kind === 'existing') return m.image_url;
-      return imageUrls[urlIdx++];
-    });
-    const firstUrl = orderedUrls[0];
-    if (firstUrl) {
-      const formData = new FormData();
-      formData.append('thumbnail_url', firstUrl);
-      const thumbRes = await fetch(`/admin/curated-boards/${surfboard.id}?/updateThumbnail`, {
-        method: 'POST',
-        body: formData,
-        headers: { accept: 'application/json' }
-      });
-      if (thumbRes.ok) {
-        surfboard.thumbnail_url = firstUrl;
-      } else {
-        const result = await thumbRes.json();
-        errors.push(`Thumbnail update failed: ${result.message || 'Unknown error'}`);
+      if (!reorderRes.ok) {
+        let errorMessage = 'Failed to save image order';
+        try {
+          const result = await reorderRes.json();
+          errorMessage = result?.message || errorMessage;
+        } catch {
+          // Fallback to generic message when response is not JSON
+        }
+        message = `❌ ${errorMessage}`;
+        loading = false;
+        return;
       }
     }
 
