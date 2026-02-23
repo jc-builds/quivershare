@@ -113,11 +113,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         region,
         lat,
         lon,
-        thumbnail_url,
         is_curated,
         user_id,
         created_at,
-        last_modified
+        last_modified,
+        surfboard_images (
+          image_url,
+          position
+        )
       `,
       { count: 'exact' }
     )
@@ -160,6 +163,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     error: boardsError,
     count
   } = await boardsQuery
+    .order('position', { foreignTable: 'surfboard_images', ascending: true })
     .order(sortConfig.column, { ascending: sortConfig.ascending })
     .range(from, to);
 
@@ -167,12 +171,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     console.error('Error loading surfboards for /s route:', boardsError);
   }
 
+  const boardsWithImage = (boards ?? []).map((board: any) => {
+    const { surfboard_images, ...rest } = board;
+    return {
+      ...rest,
+      image_url: surfboard_images?.[0]?.image_url ?? null
+    };
+  });
+
   return {
     userId,
     userLocation,
     userLocationLat,
     userLocationLon,
-    boards: boards ?? [],
+    boards: boardsWithImage,
     total: count ?? 0,
     page,
     limit,

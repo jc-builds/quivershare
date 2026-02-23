@@ -35,9 +35,8 @@
     region: string | null;
     lat: number | null;
     lon: number | null;
-    thumbnail_url: string | null;
+    image_url: string | null;
     is_curated?: boolean | null;
-    images?: string[] | null;
     user_id: string;
     created_at: string;
     last_modified: string | null;
@@ -743,10 +742,10 @@
                 <div class="flex flex-col md:flex-row">
                   <!-- Left: Photo -->
                   <div class="md:w-56 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden aspect-[3/4] min-h-[160px]">
-                    {#if board.images && board.images.length > 0}
+                    {#if board.image_url}
                       {#if index < eagerImageCount}
                         <img
-                          src={board.images[0]}
+                          src={board.image_url}
                           alt={board.name}
                           class="absolute inset-0 w-full h-full object-cover"
                           loading="eager"
@@ -755,26 +754,7 @@
                         />
                       {:else}
                         <img
-                          src={board.images[0]}
-                          alt={board.name}
-                          class="absolute inset-0 w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      {/if}
-                    {:else if board.thumbnail_url}
-                      {#if index < eagerImageCount}
-                        <img
-                          src={board.thumbnail_url}
-                          alt={board.name}
-                          class="absolute inset-0 w-full h-full object-cover"
-                          loading="eager"
-                          fetchpriority="high"
-                          decoding="async"
-                        />
-                      {:else}
-                        <img
-                          src={board.thumbnail_url}
+                          src={board.image_url}
                           alt={board.name}
                           class="absolute inset-0 w-full h-full object-cover"
                           loading="lazy"

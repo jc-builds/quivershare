@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .from('surfboard_images')
     .select('id,image_url')
     .eq('surfboard_id', id)
-    .order('id', { ascending: true });
+    .order('position', { ascending: true });
 
   if (imgErr) {
     console.warn('Image fetch error:', imgErr.message);
@@ -174,6 +174,96 @@ export const actions: Actions = {
     if (imgError) {
       console.error('Image insert error:', imgError.message);
       return fail(500, { message: 'Failed to save images' });
+    }
+
+    return { success: true };
+  },
+  reorderImages: async ({ request, locals, params }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { message: 'Unauthorized' });
+    }
+
+    const surfboardId = params.id;
+    if (!surfboardId) {
+      return fail(400, { message: 'Missing surfboard ID' });
+    }
+
+    const formData = await request.formData();
+    const imageIds = formData.getAll('image_ids') as string[];
+
+    if (imageIds.length === 0) {
+      return fail(400, { message: 'No image IDs provided' });
+    }
+
+    const uniqueImageIds = new Set(imageIds);
+    if (uniqueImageIds.size !== imageIds.length) {
+      return fail(400, { message: 'Duplicate image IDs are not allowed' });
+    }
+
+    // Verify the surfboard belongs to the user
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('id')
+      .eq('id', surfboardId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (boardError || !board) {
+      return fail(403, { message: 'Surfboard not found or access denied' });
+    }
+
+    // Fetch all images that belong to this surfboard
+    const { data: surfboardImages, error: imagesError } = await locals.supabase
+      .from('surfboard_images')
+      .select('id')
+      .eq('surfboard_id', surfboardId);
+
+    if (imagesError || !surfboardImages) {
+      return fail(500, { message: 'Failed to load surfboard images' });
+    }
+
+    const surfboardImageIds = new Set(surfboardImages.map((img) => img.id));
+
+    // Validate every incoming ID belongs to this surfboard
+    for (const imageId of imageIds) {
+      if (!surfboardImageIds.has(imageId)) {
+        return fail(400, { message: 'One or more image IDs are invalid for this surfboard' });
+      }
+    }
+
+    // Validate counts match (client must provide complete ordered set)
+    if (imageIds.length !== surfboardImages.length) {
+      return fail(400, { message: 'Image ID count mismatch' });
+    }
+
+    // Phase 1: move to temporary non-conflicting positions
+    for (let i = 0; i < imageIds.length; i++) {
+      const tempPosition = 1000 + i;
+      const { error: updateError } = await locals.supabase
+        .from('surfboard_images')
+        .update({ position: tempPosition })
+        .eq('id', imageIds[i])
+        .eq('surfboard_id', surfboardId);
+
+      if (updateError) {
+        console.error('[reorderImages] Position update failed:', updateError.message);
+        return fail(500, { message: 'Failed to reorder images' });
+      }
+    }
+
+    // Phase 2: assign final positions sequentially so position 0 is thumbnail
+    for (let i = 0; i < imageIds.length; i++) {
+      const { error: updateError } = await locals.supabase
+        .from('surfboard_images')
+        .update({ position: i })
+        .eq('id', imageIds[i])
+        .eq('surfboard_id', surfboardId);
+
+      if (updateError) {
+        console.error('[reorderImages] Position update failed:', updateError.message);
+        return fail(500, { message: 'Failed to reorder images' });
+      }
     }
 
     return { success: true };
