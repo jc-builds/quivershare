@@ -20,7 +20,6 @@ export const actions: Actions = {
     const price = form.get('price') ? Number(form.get('price')) : null;
     const condition = form.get('condition')?.toString() ?? '';
     const notes = form.get('notes')?.toString() ?? '';
-    const thumbnail_url = form.get('thumbnail_url')?.toString() ?? null;
     
     // Location fields
     const city = form.get('city')?.toString() || null;
@@ -46,7 +45,6 @@ export const actions: Actions = {
           price,
           condition,
           notes,
-          thumbnail_url,
           city,
           region,
           lat,
@@ -65,11 +63,12 @@ export const actions: Actions = {
     // Handle image URLs if provided
     const rawImageUrls = form.getAll('image_urls');
     if (rawImageUrls.length > 0 && data?.id) {
-      const cleanedUrls = validateImageUrls(rawImageUrls, thumbnail_url);
+      const cleanedUrls = validateImageUrls(rawImageUrls);
       if (cleanedUrls.length > 0) {
-        const imageInserts = cleanedUrls.map(image_url => ({
+        const imageInserts = cleanedUrls.map((image_url, index) => ({
           surfboard_id: data.id,
-          image_url
+          image_url,
+          position: index
         }));
 
         const { error: imgError } = await locals.supabase
@@ -77,22 +76,7 @@ export const actions: Actions = {
           .insert(imageInserts);
 
         if (imgError) {
-          console.error('Image insert error:', imgError.message);
-          // Don't fail the whole request, just log it
-        }
-
-        // Set default thumbnail if none was provided
-        if (!thumbnail_url && data?.id) {
-          const defaultThumb = cleanedUrls[0];
-          const { error: thumbError } = await locals.supabase
-            .from('surfboards')
-            .update({ thumbnail_url: defaultThumb })
-            .eq('id', data.id);
-
-          if (thumbError) {
-            console.error('Thumbnail defaulting error:', thumbError.message);
-            // Do not fail the request — worst case the board has no thumbnail
-          }
+          return fail(500, { message: `Failed to save images: ${imgError.message}` });
         }
       }
     }
