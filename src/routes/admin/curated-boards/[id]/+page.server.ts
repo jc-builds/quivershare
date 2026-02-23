@@ -83,9 +83,10 @@ export const actions: Actions = {
       return fail(400, { message: 'Maximum 6 images allowed.' });
     }
 
-    const imageInserts = cleanedUrls.map(image_url => ({
+    const imageInserts = cleanedUrls.map((image_url, index) => ({
       surfboard_id: surfboardId,
-      image_url
+      image_url,
+      position: index
     }));
 
     const { error: imgError } = await locals.supabase
