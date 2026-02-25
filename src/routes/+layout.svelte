@@ -5,6 +5,7 @@
   import { page } from "$app/stores";
   import { PUBLIC_ENV } from "$env/static/public";
   import "../app.css";
+  import { afterNavigate } from "$app/navigation";
 
   export let data: {
     session: import("@supabase/supabase-js").Session | null;
@@ -104,6 +105,21 @@
     };
   });
 
+  afterNavigate(() => {
+  if (browser && PUBLIC_ENV === "production") {
+    const w = window as unknown as {
+      dataLayer?: Record<string, any>[];
+    };
+
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({
+      event: "virtual_page_view",
+      page_path: window.location.pathname,
+      page_title: document.title,
+    });
+  }
+});
+
   onDestroy(() => {
     if (!browser) return;
     document.removeEventListener("click", handleClickOutside, true);
@@ -116,11 +132,16 @@
   {#if browser && PUBLIC_ENV === "production"}
     <!-- Google Tag Manager -->
     <script>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-PWVWHL3H');
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-PWVWHL3H");
     </script>
     <!-- End Google Tag Manager -->
   {/if}
