@@ -5,7 +5,6 @@
   import { page } from "$app/stores";
   import { PUBLIC_ENV } from "$env/static/public";
   import "../app.css";
-  import { afterNavigate } from "$app/navigation";
 
   export let data: {
     session: import("@supabase/supabase-js").Session | null;
@@ -104,21 +103,6 @@
       document.removeEventListener("click", handleClickOutside, true);
     };
   });
-
-  afterNavigate(() => {
-  if (browser && PUBLIC_ENV === "production") {
-    const w = window as unknown as {
-      dataLayer?: Record<string, any>[];
-    };
-
-    w.dataLayer = w.dataLayer || [];
-    w.dataLayer.push({
-      event: "virtual_page_view",
-      page_path: window.location.pathname,
-      page_title: document.title,
-    });
-  }
-});
 
   onDestroy(() => {
     if (!browser) return;
