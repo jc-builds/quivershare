@@ -44,62 +44,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 };
 
 export const actions: Actions = {
-  uploadImages: async ({ request, locals, params }) => {
-    const user = locals.user;
-    if (!user) return fail(401, { message: 'Unauthorized' });
-
-    const surfboardId = params.id;
-    if (!surfboardId) {
-      return fail(400, { message: 'Missing surfboard ID' });
-    }
-
-    // Verify the surfboard is curated
-    const { data: board, error: boardError } = await locals.supabase
-      .from('surfboards')
-      .select('id')
-      .eq('id', surfboardId)
-      .eq('is_curated', true)
-      .single();
-
-    if (boardError || !board) {
-      return fail(403, { message: 'Curated surfboard not found or access denied' });
-    }
-
-    const form = await request.formData();
-    const rawImageUrls = form.getAll('image_urls');
-    const cleanedUrls = validateImageUrls(rawImageUrls);
-
-    if (cleanedUrls.length === 0) {
-      return fail(400, { message: 'No image URLs provided' });
-    }
-
-    // Enforce total images per listing (existing + new)
-    const { count: existingCount } = await locals.supabase
-      .from('surfboard_images')
-      .select('*', { count: 'exact', head: true })
-      .eq('surfboard_id', surfboardId);
-
-    if ((existingCount ?? 0) + cleanedUrls.length > MAX_IMAGES_PER_LISTING) {
-      return fail(400, { message: 'Maximum 6 images allowed.' });
-    }
-
-    const imageInserts = cleanedUrls.map((image_url, index) => ({
-      surfboard_id: surfboardId,
-      image_url,
-      position: index
-    }));
-
-    const { error: imgError } = await locals.supabase
-      .from('surfboard_images')
-      .insert(imageInserts);
-
-    if (imgError) {
-      console.error('Image insert error:', imgError.message);
-      return fail(500, { message: 'Failed to save images' });
-    }
-
-    return { success: true };
-  },
   reorderImages: async ({ request, locals, params }) => {
     const user = locals.user;
     if (!user) {

@@ -277,7 +277,7 @@
         const formData = new FormData();
         imageUrls.forEach((url) => formData.append('image_urls', url));
 
-        const response = await fetch(`/admin/curated-boards/${surfboard.id}?/uploadImages`, {
+        const response = await fetch(`/api/admin/curated-boards/${surfboard.id}/images`, {
           method: 'POST',
           body: formData,
           headers: { accept: 'application/json' }
@@ -288,18 +288,35 @@
           failedCount += imageUrls.length;
           errors.push(`Failed to save images: ${result.message || 'Unknown error'}`);
           uploadedCount = 0;
+        } else {
+          const result = await response.json();
+          const insertedImages = result?.images ?? [];
+
+          for (let i = 0; i < Math.min(insertedImages.length, newItems.length); i++) {
+            const inserted = insertedImages[i];
+            const targetNewItem = newItems[i];
+            const idx = managedImages.indexOf(targetNewItem);
+            if (idx === -1) continue;
+
+            managedImages[idx] = {
+              kind: 'existing' as const,
+              id: inserted.id,
+              image_url: inserted.image_url
+            };
+          }
+
+          managedImages = [...managedImages];
         }
       }
     }
 
-    const existingIds = managedImages
+    const allIds = managedImages
       .filter((m): m is { kind: 'existing'; id: string; image_url: string } => m.kind === 'existing')
       .map((m) => m.id);
-    const uniqueExistingIds = [...new Set(existingIds)];
 
-    if (uniqueExistingIds.length > 0) {
+    if (allIds.length > 0) {
       const reorderForm = new FormData();
-      uniqueExistingIds.forEach((id) => reorderForm.append('image_ids', id));
+      allIds.forEach((id) => reorderForm.append('image_ids', id));
       const reorderRes = await fetch(`/admin/curated-boards/${surfboard.id}?/reorderImages`, {
         method: 'POST',
         body: reorderForm,
