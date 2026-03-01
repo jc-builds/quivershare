@@ -212,33 +212,6 @@
       return;
     }
 
-    const existingIds = managedImages
-      .filter((m): m is { kind: "existing"; id: string; image_url: string } => m.kind === "existing")
-      .map((m) => m.id);
-
-    if (existingIds.length > 0) {
-      const reorderForm = new FormData();
-      existingIds.forEach((id) => reorderForm.append("image_ids", id));
-      const reorderRes = await fetch(`/edit-surfboard/${surfboard.id}?/reorderImages`, {
-        method: "POST",
-        body: reorderForm,
-        headers: { accept: "application/json" },
-      });
-
-      if (!reorderRes.ok) {
-        let errorMessage = "Failed to save image order";
-        try {
-          const result = await reorderRes.json();
-          errorMessage = result?.message || errorMessage;
-        } catch {
-          // Fallback to generic message when response is not JSON
-        }
-        message = `❌ ${errorMessage}`;
-        loading = false;
-        return;
-      }
-    }
-
     const newItems = managedImages.filter(
       (m): m is { kind: "new"; file: File } => m.kind === "new"
     );
@@ -267,7 +240,7 @@
     if (imageUrls.length > 0) {
       const imagesFormData = new FormData();
       imageUrls.forEach((url) => imagesFormData.append("image_urls", url));
-      const response = await fetch(`/edit-surfboard/${surfboard.id}?/uploadImages`, {
+      const response = await fetch(`/api/surfboards/${surfboard.id}/images`, {
         method: "POST",
         body: imagesFormData,
         headers: { accept: "application/json" },
@@ -278,6 +251,59 @@
         failedCount += imageUrls.length;
         errors.push(`Failed to save images: ${result.message || "Unknown error"}`);
         uploadedCount = 0;
+      } else {
+        const result = await response.json();
+        const insertedImages = result?.images ?? [];
+
+        if (insertedImages.length !== newItems.length) {
+          console.warn("uploadImages count mismatch", { inserted: insertedImages.length, newItems: newItems.length });
+        }
+
+        // Replace each uploaded new item at its current position in managedImages
+        for (let i = 0; i < Math.min(insertedImages.length, newItems.length); i++) {
+          const inserted = insertedImages[i];
+          const targetNewItem = newItems[i];
+          const idx = managedImages.indexOf(targetNewItem);
+          if (idx === -1) {
+            console.warn("Could not find new item in managedImages by reference", { i });
+            continue;
+          }
+          managedImages[idx] = {
+            kind: "existing" as const,
+            id: inserted.id,
+            image_url: inserted.image_url
+          };
+        }
+
+        // Force Svelte reactivity since we mutated the array
+        managedImages = [...managedImages];
+      }
+    }
+
+    const allIds = managedImages
+      .filter((m): m is { kind: "existing"; id: string; image_url: string } => m.kind === "existing")
+      .map((m) => m.id);
+
+    if (allIds.length > 0) {
+      const reorderForm = new FormData();
+      allIds.forEach((id) => reorderForm.append("image_ids", id));
+      const reorderRes = await fetch(`/edit-surfboard/${surfboard.id}?/reorderImages`, {
+        method: "POST",
+        body: reorderForm,
+        headers: { accept: "application/json" },
+      });
+
+      if (!reorderRes.ok) {
+        let errorMessage = "Failed to save image order";
+        try {
+          const result = await reorderRes.json();
+          errorMessage = result?.message || errorMessage;
+        } catch {
+          // Fallback to generic message when response is not JSON
+        }
+        message = `❌ ${errorMessage}`;
+        loading = false;
+        return;
       }
     }
 
