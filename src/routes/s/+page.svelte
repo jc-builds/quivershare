@@ -59,7 +59,10 @@
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
   let currentPage = data.page ?? 1;
   let totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
-  const currentUserId = data.userId;
+  let isFiltersOpen = false;
+  let activeFilterLabels: string[] = [];
+  let hasActiveFilters = false;
+  let displayedResultsCount = data.total;
 
   $: boards = data.boards ?? [];
 
@@ -71,6 +74,20 @@
 
   $: currentPage = data.page ?? 1;
   $: totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
+  $: displayedResultsCount = activeLocationFilter ? visibleBoards.length : data.total;
+  $: {
+    const labels: string[] = [];
+    if (selectedLength) labels.push(`Length: ${selectedLength}`);
+    if (selectedVolume) labels.push(`Volume: ${selectedVolume}`);
+    if (selectedFinSystem) labels.push(`Fin System: ${selectedFinSystem}`);
+    if (selectedFinSetup) labels.push(`Fin Setup: ${selectedFinSetup}`);
+    if (selectedStyle) labels.push(`Style: ${selectedStyle}`);
+    if (activeLocationFilter) {
+      labels.push(`Location: ${activeLocationFilter.radius}mi from ${activeLocationFilter.location.label}`);
+    }
+    activeFilterLabels = labels;
+    hasActiveFilters = labels.length > 0;
+  }
 
   function navigateWithParams(params: Record<string, string | null>) {
     const current = get(page);
@@ -105,14 +122,28 @@
     goto(target);
   }
 
-  function handleEditClick(event: MouseEvent, boardId: string, isCurated?: boolean | null) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (isCurated === true) {
-      goto(`/admin/curated-boards/${boardId}`);
-    } else {
-      goto(`/edit-surfboard/${boardId}`);
+  function openFiltersDrawer() {
+    isFiltersOpen = true;
+  }
+
+  function closeFiltersDrawer() {
+    isFiltersOpen = false;
+  }
+
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && isFiltersOpen) {
+      closeFiltersDrawer();
     }
+  }
+
+  function clearAllFilters() {
+    activeLocationFilter = null;
+    selectedLocation = null;
+    locationSuggestions = [];
+    searchRadius = 50;
+    locationQuery = data.userLocation || '';
+    closeFiltersDrawer();
+    goto('/s');
   }
 
   // Location search state
@@ -228,6 +259,13 @@
   function displayStyle(style: string | null): string | null {
     if (!style) return null;
     return style === 'Groveler' ? 'Groveler / Fish' : style;
+  }
+
+  function formatBoardTitle(board: Board): string {
+    if (board.length == null || Number.isNaN(board.length)) return board.name;
+    const feet = Math.floor(board.length / 12);
+    const inches = board.length % 12;
+    return `${feet}'${inches}" ${board.name}`;
   }
 
   // Hydrate filter UI state from URL query parameters
@@ -386,130 +424,29 @@
     return distance <= activeLocationFilter.radius;
   }
 
-  // Format length
-  function formatLength(inches: number | null): string {
-    if (!inches) return 'N/A';
-    const feet = Math.floor(inches / 12);
-    const remainingInches = inches % 12;
-    return `${feet}'${remainingInches}"`;
-  }
 </script>
 
 <svelte:head>
   <title>{pageTitle('Browse Boards')}</title>
 </svelte:head>
 
+<svelte:window on:keydown={handleGlobalKeydown} />
+
 <div class="min-h-screen bg-background">
-  <!-- Mobile Filter Bar (mobile only) -->
-  <div class="block lg:hidden bg-surface-elevated/80 border-b border-border px-4 py-3">
-    <div class="max-w-7xl mx-auto space-y-3">
-      <!-- Location + Radius Row -->
-      <div class="flex gap-2">
-        <div class="flex-1 relative">
-          <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            class="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-            placeholder="Location"
-            value={locationQuery}
-            on:input={onLocationSearchInput}
-            autocomplete="off"
-            aria-autocomplete="list"
-            aria-controls="mobile-location-suggestions-list"
-          />
-          {#if locationSuggestions.length > 0}
-            <ul id="mobile-location-suggestions-list" class="absolute left-0 right-0 z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
-              {#each locationSuggestions as s}
-                <li>
-                  <button type="button" class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg" on:click={() => chooseLocationSuggestion(s)}>
-                    {s.label}
-                  </button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-        <div class="w-20">
-          <input
-            type="number"
-            min="1"
-            max="500"
-            bind:value={searchRadius}
-            class="w-full rounded-lg border border-border bg-background px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-            placeholder="mi"
-          />
-        </div>
-        {#if selectedLocation}
-          <button
-            type="button"
-            class="px-3 py-2 rounded-lg border border-border bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors whitespace-nowrap"
-            on:click={() => {
-              if (selectedLocation && selectedLocation.lat && selectedLocation.lon) {
-                activeLocationFilter = {
-                  location: selectedLocation,
-                  radius: searchRadius
-                };
-              }
-            }}
-          >
-            Apply
-          </button>
+  <div class="max-w-7xl mx-auto px-6 py-6">
+    <div class="flex items-center justify-between gap-4 mb-4">
+      <h1 class="text-xl font-semibold text-foreground">
+        {displayedResultsCount} Results
+        {#if hasActiveFilters}
+          <span class="text-sm font-normal text-muted-foreground"> for {activeFilterLabels.join(' · ')}</span>
         {/if}
-      </div>
-      
-      <!-- Filter Dropdowns Row -->
-      <div class="grid grid-cols-3 gap-2">
+      </h1>
+      <div class="flex items-center gap-2">
+        <label for="sort-by-header" class="text-sm text-muted-foreground whitespace-nowrap">Sort:</label>
         <select
-          bind:value={selectedLength}
-          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-          on:change={handleLengthChange}
-        >
-          <option value={null}>Length</option>
-          {#each lengthOptions as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
-        <select
-          bind:value={selectedVolume}
-          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-          on:change={handleVolumeChange}
-        >
-          <option value={null}>Volume</option>
-          {#each volumeOptions as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
-        <select
-          bind:value={selectedStyle}
-          class="w-full rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-          on:change={handleStyleChange}
-        >
-          <option value={null}>Style</option>
-          {#each styleOptions as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
-      </div>
-      
-      {#if activeLocationFilter}
-        <div class="text-xs text-muted-foreground">
-          Active: {activeLocationFilter.radius}mi from {activeLocationFilter.location.label}
-          <a href="/s" data-sveltekit-reload class="ml-2 text-primary hover:underline">Clear</a>
-        </div>
-      {/if}
-      
-      <!-- Sort By (mobile) -->
-      <div class="flex items-center gap-2 pt-2 border-t border-border">
-        <label for="sort-by-mobile" class="text-xs text-muted-foreground whitespace-nowrap">Sort:</label>
-        <select
-          id="sort-by-mobile"
+          id="sort-by-header"
           bind:value={sortBy}
-          class="flex-1 rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+          class="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
           on:change={handleSortChange}
         >
           <option value="price_asc">Price: Low to High</option>
@@ -521,21 +458,158 @@
         </select>
       </div>
     </div>
+
+    <div class="flex items-center gap-3 mb-6">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/80 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        aria-expanded={isFiltersOpen}
+        aria-controls="filters-drawer"
+        on:click={openFiltersDrawer}
+      >
+        All Filters
+      </button>
+      {#if hasActiveFilters}
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+          on:click={clearAllFilters}
+        >
+          Clear Filters
+        </button>
+      {/if}
+    </div>
+
+    {#if visibleBoards.length === 0}
+      <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
+        <p class="text-muted-foreground">No boards match your filters.</p>
+      </div>
+    {:else}
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        {#each visibleBoards as board, index (board.id)}
+          <a
+            href="/surfboards/{board.id}"
+            data-sveltekit-prefetch
+            class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
+          >
+            <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
+              {#if board.image_url}
+                {#if index < eagerImageCount}
+                  <img
+                    src={board.image_url}
+                    alt={board.name}
+                    class="absolute inset-0 w-full h-full object-cover"
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
+                  />
+                {:else}
+                  <img
+                    src={board.image_url}
+                    alt={board.name}
+                    class="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                {/if}
+              {:else}
+                {#if index < eagerImageCount}
+                  <img
+                    src={placeholderThumbnail}
+                    alt=""
+                    class="absolute inset-0 w-full h-full object-cover"
+                    aria-hidden="true"
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
+                  />
+                {:else}
+                  <img
+                    src={placeholderThumbnail}
+                    alt=""
+                    class="absolute inset-0 w-full h-full object-cover"
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                {/if}
+              {/if}
+            </div>
+            <div class="p-3 md:p-4">
+              <h3 class="text-base md:text-lg font-semibold text-foreground leading-tight line-clamp-2">{formatBoardTitle(board)}</h3>
+              {#if board.make}
+                <p class="text-sm text-muted-foreground mt-1 line-clamp-1">{board.make}</p>
+              {/if}
+              {#if board.style}
+                <p class="text-sm text-muted-foreground mt-1">{displayStyle(board.style)}</p>
+              {/if}
+              {#if board.price}
+                <p class="text-base font-semibold text-primary mt-2">${board.price}</p>
+              {/if}
+            </div>
+          </a>
+        {/each}
+      </div>
+    {/if}
+
+    {#if totalPages > 1}
+      <div class="flex justify-center items-center gap-3 mt-8">
+        <button
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
+          disabled={currentPage === 1 || activeLocationFilter !== null}
+          on:click={() => goToPage(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span class="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
+          disabled={currentPage === totalPages || activeLocationFilter !== null}
+          on:click={() => goToPage(currentPage + 1)}
+        >
+          Next
+        </button>
+      </div>
+    {/if}
   </div>
 
-  <!-- Main Content: 2-column layout -->
-  <div class="max-w-7xl mx-auto px-6 py-6">
-    <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Left: Filters (sticky on desktop, hidden on mobile) -->
-      <aside class="hidden lg:block lg:w-64 lg:sticky lg:top-6 lg:self-start space-y-4">
-        <!-- Location Search -->
-        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 border border-border shadow-sm">
-          <label for="location-search" class="block mb-2">
+  {#if isFiltersOpen}
+    <button
+      type="button"
+      class="fixed inset-0 z-40 bg-black/50"
+      aria-label="Close filters"
+      on:click={closeFiltersDrawer}
+    ></button>
+
+    <div
+      id="filters-drawer"
+      class="fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-surface-elevated border-r border-border shadow-xl overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="All filters"
+    >
+      <div class="p-4 border-b border-border flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-foreground">All Filters</h2>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+          aria-label="Close filters"
+          on:click={closeFiltersDrawer}
+        >
+          X
+        </button>
+      </div>
+
+      <div class="p-4 space-y-6">
+        <div class="bg-surface-elevated/80 rounded-xl p-4 border border-border shadow-sm">
+          <label for="drawer-location-search" class="block mb-2">
             <span class="font-medium text-sm text-foreground">Search Location</span>
           </label>
           <div class="relative">
             <input
-              id="location-search"
+              id="drawer-location-search"
               type="text"
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               placeholder="Enter location..."
@@ -543,10 +617,10 @@
               on:input={onLocationSearchInput}
               autocomplete="off"
               aria-autocomplete="list"
-              aria-controls="location-suggestions-list"
+              aria-controls="drawer-location-suggestions-list"
             />
             {#if locationSuggestions.length > 0}
-              <ul id="location-suggestions-list" class="absolute left-0 right-0 z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
+              <ul id="drawer-location-suggestions-list" class="absolute left-0 right-0 z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
                 {#each locationSuggestions as s}
                   <li>
                     <button type="button" class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg" on:click={() => chooseLocationSuggestion(s)}>
@@ -558,12 +632,12 @@
             {/if}
           </div>
           <div class="mt-4">
-            <label for="search-radius" class="block mb-2">
+            <label for="drawer-search-radius" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Within</span>
             </label>
             <div class="flex items-center gap-3">
               <input
-                id="search-radius"
+                id="drawer-search-radius"
                 type="number"
                 min="1"
                 max="500"
@@ -594,13 +668,13 @@
               <div class="text-foreground font-medium mb-2 text-xs">
                 Active: {activeLocationFilter.radius} miles from {activeLocationFilter.location.label}
               </div>
-                <a
-                  href="/s"
-                  data-sveltekit-reload
-                  class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
-                >
-                  Clear Location Filter
-                </a>
+              <a
+                href="/s"
+                data-sveltekit-reload
+                class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+              >
+                Clear Location Filter
+              </a>
             </div>
           {:else if selectedLocation}
             <div class="mt-4 text-xs text-muted-foreground">
@@ -609,17 +683,15 @@
           {/if}
         </div>
 
-        <!-- Filters -->
-        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 space-y-4 border border-border shadow-sm">
-          <h2 class="font-semibold text-lg mb-4 text-foreground">Filters</h2>
+        <div class="bg-surface-elevated/80 rounded-xl p-4 space-y-4 border border-border shadow-sm">
+          <h3 class="font-semibold text-lg text-foreground">Filters</h3>
 
-          <!-- Length Filter -->
           <div>
-            <label for="filter-length" class="block mb-2">
+            <label for="drawer-filter-length" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Length</span>
             </label>
             <select
-              id="filter-length"
+              id="drawer-filter-length"
               bind:value={selectedLength}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               on:change={handleLengthChange}
@@ -631,13 +703,12 @@
             </select>
           </div>
 
-          <!-- Volume Filter -->
           <div>
-            <label for="filter-volume" class="block mb-2">
+            <label for="drawer-filter-volume" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Volume</span>
             </label>
             <select
-              id="filter-volume"
+              id="drawer-filter-volume"
               bind:value={selectedVolume}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               on:change={handleVolumeChange}
@@ -649,13 +720,12 @@
             </select>
           </div>
 
-          <!-- Fin System Filter -->
           <div>
-            <label for="filter-fin-system" class="block mb-2">
+            <label for="drawer-filter-fin-system" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Fin System</span>
             </label>
             <select
-              id="filter-fin-system"
+              id="drawer-filter-fin-system"
               bind:value={selectedFinSystem}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               on:change={handleFinSystemChange}
@@ -667,13 +737,12 @@
             </select>
           </div>
 
-          <!-- Fin Setup Filter -->
           <div>
-            <label for="filter-fin-setup" class="block mb-2">
+            <label for="drawer-filter-fin-setup" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Fin Setup</span>
             </label>
             <select
-              id="filter-fin-setup"
+              id="drawer-filter-fin-setup"
               bind:value={selectedFinSetup}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               on:change={handleFinSetupChange}
@@ -685,13 +754,12 @@
             </select>
           </div>
 
-          <!-- Style Filter -->
           <div>
-            <label for="filter-style" class="block mb-2">
+            <label for="drawer-filter-style" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Style</span>
             </label>
             <select
-              id="filter-style"
+              id="drawer-filter-style"
               bind:value={selectedStyle}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               on:change={handleStyleChange}
@@ -703,186 +771,15 @@
             </select>
           </div>
 
-          <!-- Clear Filters -->
           <a
             href="/s"
             data-sveltekit-reload
-            class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated mt-4"
+            class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated mt-2"
           >
             Clear Filters
           </a>
         </div>
-
-        <!-- Sort By (desktop) -->
-        <div class="bg-surface-elevated/80 rounded-xl p-4 md:p-5 border border-border shadow-sm">
-          <label for="sort-by-desktop" class="block mb-2">
-            <span class="font-medium text-sm text-foreground">Sort By</span>
-          </label>
-          <select
-            id="sort-by-desktop"
-            bind:value={sortBy}
-            class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-            on:change={handleSortChange}
-          >
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="name_asc">A-Z</option>
-            <option value="name_desc">Z-A</option>
-            <option value="created_asc">Oldest to Newest</option>
-            <option value="created_desc">Newest to Oldest</option>
-          </select>
-        </div>
-      </aside>
-
-      <!-- Right: Board Cards -->
-      <main class="flex-1">
-        <div class="space-y-4">
-          {#if visibleBoards.length === 0}
-            <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
-              <p class="text-muted-foreground">No boards match your filters.</p>
-            </div>
-          {:else}
-            {#each visibleBoards as board, index (board.id)}
-              <a
-                href="/surfboards/{board.id}"
-                data-sveltekit-prefetch
-                class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-md transition-all duration-200 no-underline"
-              >
-                <div class="flex flex-col md:flex-row">
-                  <!-- Left: Photo -->
-                  <div class="md:w-56 flex-shrink-0 relative bg-muted rounded-t-xl md:rounded-l-xl md:rounded-tr-none overflow-hidden aspect-[3/4] min-h-[160px]">
-                    {#if board.image_url}
-                      {#if index < eagerImageCount}
-                        <img
-                          src={board.image_url}
-                          alt={board.name}
-                          class="absolute inset-0 w-full h-full object-cover"
-                          loading="eager"
-                          fetchpriority="high"
-                          decoding="async"
-                        />
-                      {:else}
-                        <img
-                          src={board.image_url}
-                          alt={board.name}
-                          class="absolute inset-0 w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      {/if}
-                    {:else}
-                      {#if index < eagerImageCount}
-                        <img
-                          src={placeholderThumbnail}
-                          alt=""
-                          class="absolute inset-0 w-full h-full object-cover"
-                          aria-hidden="true"
-                          loading="eager"
-                          fetchpriority="high"
-                          decoding="async"
-                        />
-                      {:else}
-                        <img
-                          src={placeholderThumbnail}
-                          alt=""
-                          class="absolute inset-0 w-full h-full object-cover"
-                          aria-hidden="true"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      {/if}
-                    {/if}
-                  </div>
-
-                  <!-- Right: Metadata -->
-                  <div class="flex-1 p-5 md:p-6 flex flex-col justify-between">
-                    <div>
-                      <div class="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <h3 class="text-xl font-bold text-foreground">{board.name}</h3>
-                          {#if board.make}
-                            <p class="text-sm text-muted-foreground mt-1">{board.make}</p>
-                          {/if}
-                        </div>
-                        {#if currentUserId && board.user_id === currentUserId}
-                          <button
-                            type="button"
-                            class="inline-flex items-center rounded-lg border border-border bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-alt shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
-                            on:click={(event) => handleEditClick(event, board.id, board.is_curated)}
-                            aria-label="Edit {board.name}"
-                          >
-                            Edit
-                          </button>
-                        {/if}
-                      </div>
-                      
-                      <div class="flex flex-wrap gap-4 text-sm mb-4 text-foreground">
-                        {#if board.price}
-                          <span class="font-semibold text-primary">${board.price}</span>
-                        {/if}
-                        {#if board.length}
-                          <span>{formatLength(board.length)}</span>
-                        {/if}
-                        {#if board.width}
-                          <span>{board.width}" wide</span>
-                        {/if}
-                        {#if board.thickness}
-                          <span>{board.thickness}" thick</span>
-                        {/if}
-                        {#if board.volume}
-                          <span>{board.volume}L</span>
-                        {/if}
-                      </div>
-
-                      <div class="flex flex-wrap gap-2 text-xs mb-4">
-                        {#if board.fin_system}
-                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.fin_system}</span>
-                        {/if}
-                        {#if board.fin_setup}
-                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.fin_setup}</span>
-                        {/if}
-                        {#if board.style}
-                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{displayStyle(board.style)}</span>
-                        {/if}
-                        {#if board.condition}
-                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.condition}</span>
-                        {/if}
-                      </div>
-
-                      {#if board.city || board.region}
-                        <p class="text-sm text-muted-foreground">
-                          {[board.city, board.region].filter(Boolean).join(', ')}
-                        </p>
-                      {/if}
-                    </div>
-                  </div>
-                </div>
-              </a>
-            {/each}
-          {/if}
-        </div>
-        {#if totalPages > 1}
-          <div class="flex justify-center items-center gap-3 mt-8">
-            <button
-              class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-              disabled={currentPage === 1 || activeLocationFilter !== null}
-              on:click={() => goToPage(currentPage - 1)}
-            >
-              Previous
-            </button>
-            <span class="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-              disabled={currentPage === totalPages || activeLocationFilter !== null}
-              on:click={() => goToPage(currentPage + 1)}
-            >
-              Next
-            </button>
-          </div>
-        {/if}
-      </main>
+      </div>
     </div>
-  </div>
+  {/if}
 </div>
