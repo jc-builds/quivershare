@@ -148,7 +148,7 @@
             {#each data.boards as board}
               <tr class="border-b border-border/60 last:border-0 hover:bg-surface/80 transition-colors">
                 <td class="px-4 py-3 align-middle">
-                  <div class="w-16 h-16 rounded-md overflow-hidden bg-surface border border-border">
+                  <div class="w-16 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border">
                     <img
                       src={board.image_url ??
                         "https://via.placeholder.com/800x600?text=No+Image"}

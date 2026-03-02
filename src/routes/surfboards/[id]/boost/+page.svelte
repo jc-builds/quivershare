@@ -176,7 +176,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
         <!-- Left: Image -->
         {#if mainImage}
-          <div class="group rounded-xl overflow-hidden bg-surface border border-border/70 w-full max-w-[280px] h-[420px] mx-auto md:mx-0">
+          <div class="group rounded-xl overflow-hidden bg-surface border border-border/70 w-full max-w-[280px] aspect-[3/4] mx-auto md:mx-0">
             <img
               src={mainImage}
               alt={boardTitle}
