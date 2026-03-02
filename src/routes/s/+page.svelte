@@ -197,27 +197,38 @@
     '50+': "More"
   };
 
-  const finSystemOptions = ["FCS II", "Futures", "Glass On", "FCS"];
-  const finSetupOptions = ["2+1", "Twin", "4+1", "Quad", "Single", "Tri", "Tri/Quad", "More"];
+  const finSystemOptions = ["FCS", "FCS II", "Futures", "Glass On", "Single Fin Box"];
+  const finSetupOptions = ["Single", "2+1", "Twin", "Twin + Trailer", "Twinzer", "Tri", "Quad", "Tri/Quad", "Bonzer", "4+1"];
   const FIN_SETUP_SLUG_MAP: Record<string, string> = {
-    '2+1': '2-plus-1',
-    '4+1': '4-plus-1',
-    'Twin': 'twin',
-    'Quad': 'quad',
-    'Tri': 'tri',
     'Single': 'single',
-    'Tri/Quad': 'tri-quad'
+    '2+1': '2-plus-1',
+    'Twin': 'twin',
+    'Twin + Trailer': 'twin-plus-trailer',
+    'Twinzer': 'twinzer',
+    'Tri': 'tri',
+    'Quad': 'quad',
+    'Tri/Quad': 'tri-quad',
+    'Bonzer': 'bonzer',
+    '4+1': '4-plus-1'
   };
   const FIN_SETUP_LABEL_MAP: Record<string, string> = {
-    '2-plus-1': '2+1',
-    '4-plus-1': '4+1',
-    'twin': 'Twin',
-    'quad': 'Quad',
-    'tri': 'Tri',
     'single': 'Single',
-    'tri-quad': 'Tri/Quad'
+    '2-plus-1': '2+1',
+    'twin': 'Twin',
+    'twin-plus-trailer': 'Twin + Trailer',
+    'twinzer': 'Twinzer',
+    'tri': 'Tri',
+    'quad': 'Quad',
+    'tri-quad': 'Tri/Quad',
+    'bonzer': 'Bonzer',
+    '4-plus-1': '4+1'
   };
-  const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler", "Gun"];
+  const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler / Fish", "Gun"];
+
+  function displayStyle(style: string | null): string | null {
+    if (!style) return null;
+    return style === 'Groveler' ? 'Groveler / Fish' : style;
+  }
 
   // Hydrate filter UI state from URL query parameters
   $: {
@@ -232,7 +243,8 @@
     selectedVolume = VOLUME_LABEL_MAP[volumeParam] ?? null;
     selectedFinSystem = finSystemOptions.includes(finSystemParam) ? finSystemParam : null;
     selectedFinSetup = FIN_SETUP_LABEL_MAP[finSetupParam] ?? null;
-    selectedStyle = styleOptions.includes(styleParam) ? styleParam : null;
+    const normalizedStyleParam = styleParam === 'Groveler' ? 'Groveler / Fish' : styleParam;
+    selectedStyle = styleOptions.includes(normalizedStyleParam) ? normalizedStyleParam : null;
   }
 
   // Location search functions
@@ -277,10 +289,7 @@
   }
 
   function handleFinSetupChange() {
-    const slug =
-      selectedFinSetup && selectedFinSetup !== 'More'
-        ? FIN_SETUP_SLUG_MAP[selectedFinSetup] ?? null
-        : null;
+    const slug = selectedFinSetup ? FIN_SETUP_SLUG_MAP[selectedFinSetup] ?? null : null;
     navigateWithParams({ fin_setup: slug, page: '1' });
   }
 
@@ -833,7 +842,7 @@
                           <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.fin_setup}</span>
                         {/if}
                         {#if board.style}
-                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.style}</span>
+                          <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{displayStyle(board.style)}</span>
                         {/if}
                         {#if board.condition}
                           <span class="inline-flex items-center px-2 py-1 rounded-md border border-border bg-surface text-muted-foreground">{board.condition}</span>

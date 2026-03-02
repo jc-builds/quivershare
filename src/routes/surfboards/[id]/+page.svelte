@@ -20,7 +20,6 @@
       city: string | null;
       region: string | null;
       notes: string | null;
-      thumbnail_url: string | null;
       user_id: string;
       state?: 'active' | 'inactive';
       is_curated?: boolean;
@@ -75,6 +74,11 @@
     if (width != null) parts.push(`${width}"`);
     if (thickness != null) parts.push(`${thickness}"`);
     return parts.length > 0 ? parts.join(' × ') : 'N/A';
+  }
+
+  function displayStyle(style: string | null): string | null {
+    if (!style) return null;
+    return style === 'Groveler' ? 'Groveler / Fish' : style;
   }
 
   // Get board title for H1 and <title>
@@ -438,7 +442,7 @@
           {#if data.board.style}
             <div>
               <p class="text-sm text-muted-foreground mb-1">Style</p>
-              <p class="text-lg font-semibold text-foreground">{data.board.style}</p>
+              <p class="text-lg font-semibold text-foreground">{displayStyle(data.board.style)}</p>
             </div>
           {/if}
 

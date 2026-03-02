@@ -22,6 +22,11 @@
     return parts.length > 0 ? parts.join(' × ') : 'N/A';
   }
 
+  function displayStyle(style: string | null): string | null {
+    if (!style) return null;
+    return style === 'Groveler' ? 'Groveler / Fish' : style;
+  }
+
   // Get board title (reused from board page)
   $: boardTitle = (() => {
     const parts: string[] = [];
@@ -36,7 +41,7 @@
   })();
 
   // Get main image for display
-  $: mainImage = data.images[0]?.image_url || data.board.thumbnail_url;
+  $: mainImage = data.images[0]?.image_url || null;
 
   // Boost status logic
   $: currentBoost = data.currentBoost;
@@ -215,7 +220,7 @@
           {#if data.board.style}
             <div>
               <p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Style</p>
-              <p class="text-sm sm:text-base font-medium text-foreground">{data.board.style}</p>
+              <p class="text-sm sm:text-base font-medium text-foreground">{displayStyle(data.board.style)}</p>
             </div>
           {/if}
 

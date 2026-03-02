@@ -13,7 +13,29 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Fetch the board (public access - anyone can view, but exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
-    .select('*')
+    .select(`
+      id,
+      name,
+      make,
+      length,
+      width,
+      thickness,
+      volume,
+      fin_system,
+      fin_setup,
+      style,
+      condition,
+      price,
+      city,
+      region,
+      notes,
+      user_id,
+      state,
+      is_curated,
+      is_deleted,
+      source_type,
+      source_url
+    `)
     .eq('id', id)
     .eq('is_deleted', false)
     .maybeSingle();

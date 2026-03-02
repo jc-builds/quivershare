@@ -6,6 +6,10 @@ import {
   MAX_IMAGES_PER_LISTING
 } from '$lib/server/imageValidation';
 
+const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
+const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
+const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
+
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in
   if (!locals.user) throw redirect(303, '/login');
@@ -16,7 +20,27 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Fetch the board for THIS user (exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
-    .select('*')
+    .select(`
+      id,
+      name,
+      make,
+      length,
+      width,
+      thickness,
+      volume,
+      fin_system,
+      fin_setup,
+      style,
+      price,
+      condition,
+      notes,
+      city,
+      region,
+      lat,
+      lon,
+      state,
+      user_id
+    `)
     .eq('id', id)
     .eq('user_id', uid)
     .eq('is_deleted', false)
@@ -85,6 +109,16 @@ export const actions: Actions = {
     const lat_raw = form.get('lat')?.toString();
     const lon_raw = form.get('lon')?.toString();
     const state = form.get('state')?.toString();
+
+    if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
+      return fail(400, { message: 'Invalid style value' });
+    }
+    if (fin_system && !ALLOWED_FIN_SYSTEMS.includes(fin_system as (typeof ALLOWED_FIN_SYSTEMS)[number])) {
+      return fail(400, { message: 'Invalid fin system value' });
+    }
+    if (fin_setup && !ALLOWED_FIN_SETUPS.includes(fin_setup as (typeof ALLOWED_FIN_SETUPS)[number])) {
+      return fail(400, { message: 'Invalid fin setup value' });
+    }
 
     // Convert numeric fields
     const updateData: any = {

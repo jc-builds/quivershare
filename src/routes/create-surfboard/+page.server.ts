@@ -2,6 +2,10 @@
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { validateImageUrls } from '$lib/server/imageValidation';
 
+const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
+const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
+const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
+
 export const actions: Actions = {
   default: async ({ request, locals }) => {
     const user = locals.user;
@@ -28,6 +32,16 @@ export const actions: Actions = {
     const lon_raw = form.get('lon')?.toString();
     const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
     const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
+
+    if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
+      return fail(400, { message: 'Invalid style value' });
+    }
+    if (fin_system && !ALLOWED_FIN_SYSTEMS.includes(fin_system as (typeof ALLOWED_FIN_SYSTEMS)[number])) {
+      return fail(400, { message: 'Invalid fin system value' });
+    }
+    if (fin_setup && !ALLOWED_FIN_SETUPS.includes(fin_setup as (typeof ALLOWED_FIN_SETUPS)[number])) {
+      return fail(400, { message: 'Invalid fin setup value' });
+    }
 
     const { data, error } = await locals.supabase
       .from('surfboards')

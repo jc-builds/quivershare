@@ -7,6 +7,10 @@ import {
   MAX_IMAGES_PER_LISTING
 } from '$lib/server/imageValidation';
 
+const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
+const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
+const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
+
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in (admin check is in parent layout)
   if (!locals.user) throw redirect(303, '/login');
@@ -16,7 +20,30 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   // Fetch the curated board (admin can edit any curated board)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
-    .select('*')
+    .select(`
+      id,
+      name,
+      make,
+      length,
+      width,
+      thickness,
+      volume,
+      fin_system,
+      fin_setup,
+      style,
+      price,
+      condition,
+      notes,
+      city,
+      region,
+      lat,
+      lon,
+      source_type,
+      source_url,
+      state,
+      is_curated,
+      is_deleted
+    `)
     .eq('id', id)
     .eq('is_curated', true)
     .eq('is_deleted', false)
@@ -333,6 +360,15 @@ export const actions: Actions = {
     // Validate state
     if (state !== 'active' && state !== 'inactive') {
       return fail(400, { success: false, message: 'Invalid state value' });
+    }
+    if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
+      return fail(400, { success: false, message: 'Invalid style value' });
+    }
+    if (fin_system && !ALLOWED_FIN_SYSTEMS.includes(fin_system as (typeof ALLOWED_FIN_SYSTEMS)[number])) {
+      return fail(400, { success: false, message: 'Invalid fin system value' });
+    }
+    if (fin_setup && !ALLOWED_FIN_SETUPS.includes(fin_setup as (typeof ALLOWED_FIN_SETUPS)[number])) {
+      return fail(400, { success: false, message: 'Invalid fin setup value' });
     }
 
     // Build update payload

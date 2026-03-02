@@ -312,10 +312,11 @@
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         >
           <option value="">Select fin system (optional)</option>
+          <option>FCS</option>
           <option>FCS II</option>
           <option>Futures</option>
           <option>Glass On</option>
-          <option>FCS</option>
+          <option>Single Fin Box</option>
         </select>
       </div>
 
@@ -331,13 +332,16 @@
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         >
           <option value="">Select fin setup (optional)</option>
+          <option>Single</option>
           <option>2+1</option>
           <option>Twin</option>
-          <option>4+1</option>
-          <option>Quad</option>
-          <option>Single</option>
+          <option>Twin + Trailer</option>
+          <option>Twinzer</option>
           <option>Tri</option>
+          <option>Quad</option>
           <option>Tri/Quad</option>
+          <option>Bonzer</option>
+          <option>4+1</option>
         </select>
       </div>
 
@@ -357,7 +361,7 @@
           <option>Shortboard</option>
           <option>Mid-length</option>
           <option>Longboard</option>
-          <option>Groveler</option>
+          <option value="Groveler / Fish">Groveler / Fish</option>
           <option>Gun</option>
         </select>
       </div>

@@ -16,7 +16,6 @@
     boards: Array<{
       id: string;
       name: string;
-      thumbnail_url?: string;
       image_url?: string;
       length?: number;
       width?: number;
@@ -151,8 +150,7 @@
                 <td class="px-4 py-3 align-middle">
                   <div class="w-16 h-16 rounded-md overflow-hidden bg-surface border border-border">
                     <img
-                      src={board.thumbnail_url ??
-                        board.image_url ??
+                      src={board.image_url ??
                         "https://via.placeholder.com/800x600?text=No+Image"}
                       alt={board.name}
                       class="w-full h-full object-cover"

@@ -7,7 +7,6 @@
   type Board = {
     id: string;
     name: string;
-    thumbnail_url?: string;
     image_url?: string;
     created_at?: string;
     state?: 'active' | 'inactive';
@@ -68,8 +67,7 @@
           <!-- Thumbnail -->
           <div class="w-full aspect-[3/4] max-h-[350px] bg-surface overflow-hidden">
             <img
-              src={board.thumbnail_url ??
-                board.image_url ??
+              src={board.image_url ??
                 "https://via.placeholder.com/800x600?text=No+Image"}
               alt={board.name}
               class="object-cover w-full h-full"
@@ -203,8 +201,7 @@
               <td class="px-4 py-3">
                 <div class="w-16 h-16 rounded-md overflow-hidden bg-surface border border-border">
                   <img
-                    src={board.thumbnail_url ??
-                      board.image_url ??
+                    src={board.image_url ??
                       "https://via.placeholder.com/800x600?text=No+Image"}
                     alt={board.name}
                     class="object-cover w-full h-full"

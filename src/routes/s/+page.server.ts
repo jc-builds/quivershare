@@ -84,13 +84,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   };
 
   const FIN_SETUP_MAP: Record<string, string> = {
-    '2-plus-1': '2+1',
-    '4-plus-1': '4+1',
-    'twin': 'Twin',
-    'quad': 'Quad',
-    'tri': 'Tri',
     'single': 'Single',
-    'tri-quad': 'Tri/Quad'
+    '2-plus-1': '2+1',
+    'twin': 'Twin',
+    'twin-plus-trailer': 'Twin + Trailer',
+    'twinzer': 'Twinzer',
+    'tri': 'Tri',
+    'quad': 'Quad',
+    'tri-quad': 'Tri/Quad',
+    'bonzer': 'Bonzer',
+    '4-plus-1': '4+1'
   };
 
   let boardsQuery = locals.supabase
@@ -155,7 +158,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   }
 
   if (styleFilter) {
-    boardsQuery = boardsQuery.eq('style', styleFilter);
+    if (styleFilter === 'Groveler / Fish' || styleFilter === 'Groveler') {
+      boardsQuery = boardsQuery.in('style', ['Groveler', 'Groveler / Fish']);
+    } else {
+      boardsQuery = boardsQuery.eq('style', styleFilter);
+    }
   }
 
   const {

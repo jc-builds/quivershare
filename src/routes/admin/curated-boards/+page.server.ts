@@ -34,7 +34,6 @@ export const load: PageServerLoad = async ({ locals }) => {
   // Attach a single fallback image per board
   const boardsWithImage = (data ?? []).map((board) => ({
     ...board,
-    thumbnail_url: board.surfboard_images?.[0]?.image_url || null,
     image_url: board.surfboard_images?.[0]?.image_url || null
   }));
 
