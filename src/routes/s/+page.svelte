@@ -434,13 +434,16 @@
 
 <div class="min-h-screen bg-background">
   <div class="max-w-7xl mx-auto px-6 py-6">
+    <h1 class="text-2xl font-bold text-foreground mb-3">
+      Used Surfboards for Sale in New York &amp; New Jersey
+    </h1>
     <div class="flex items-center justify-between gap-4 mb-4">
-      <h1 class="text-xl font-semibold text-foreground">
+      <h3 class="text-xl font-semibold text-foreground">
         {displayedResultsCount} Results
         {#if hasActiveFilters}
           <span class="text-sm font-normal text-muted-foreground"> for {activeFilterLabels.join(' · ')}</span>
         {/if}
-      </h1>
+      </h3>
       <div class="flex items-center gap-2">
         <label for="sort-by-header" class="text-sm text-muted-foreground whitespace-nowrap">Sort:</label>
         <select
