@@ -52,6 +52,7 @@
   let profileMenuOpen = false;
   let profileMenuElement: HTMLElement;
   let mobileMenuElement: HTMLElement;
+  $: isStagingHost = $page.url.hostname === "staging.quivershare.com";
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -112,6 +113,9 @@
 
 <svelte:head>
   <title>QuiverShare</title>
+  {#if isStagingHost}
+    <meta name="robots" content="noindex, nofollow" />
+  {/if}
 
   {#if browser && PUBLIC_ENV === "production"}
     <!-- Google Tag Manager -->
