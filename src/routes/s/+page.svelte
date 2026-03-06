@@ -434,9 +434,14 @@
 
 <div class="min-h-screen bg-background">
   <div class="max-w-7xl mx-auto px-6 py-6">
-    <h1 class="text-2xl font-bold text-foreground mb-3">
-      Used Surfboards for Sale in New York &amp; New Jersey
-    </h1>
+    <div class="rounded-xl border border-border bg-surface-elevated/80 shadow-sm p-6 sm:p-8 mb-6">
+      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+        Used Surfboards for Sale in New York &amp; New Jersey
+      </h1>
+      <p class="max-w-2xl text-sm sm:text-base text-muted-foreground mt-3">
+        Browse used surfboards for sale across New York and New Jersey. Find shortboards, fish, midlengths, and longboards listed by surfers throughout the Northeast.
+      </p>
+    </div>
     <div class="flex items-center justify-between gap-4 mb-4">
       <h3 class="text-xl font-semibold text-foreground">
         {displayedResultsCount} Results
@@ -576,6 +581,18 @@
         </button>
       </div>
     {/if}
+
+    <section class="rounded-xl border border-border bg-surface-elevated/80 shadow-sm p-6 sm:p-8 mt-12">
+      <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+        Buying Used Surfboards in New York &amp; New Jersey
+      </h2>
+      <p class="mt-3 max-w-3xl text-sm sm:text-base text-muted-foreground">
+        The Northeast has a growing surf community, and used surfboards are one of the best ways to build a quiver without spending thousands on new boards. Surfers across New York and New Jersey regularly buy and sell shortboards, fish, midlengths, and longboards as they experiment with different shapes and wave conditions.
+      </p>
+      <p class="mt-3 max-w-3xl text-sm sm:text-base text-muted-foreground">
+        QuiverShare helps surfers discover boards that might otherwise be buried in local marketplaces. Every listing links directly to the original seller so you can contact them and arrange the purchase locally.
+      </p>
+    </section>
   </div>
 
   {#if isFiltersOpen}
