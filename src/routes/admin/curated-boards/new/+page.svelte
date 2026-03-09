@@ -1,36 +1,52 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
 
+  type ShopOption = {
+    id: string;
+    name: string;
+    location_label: string | null;
+    city: string | null;
+    region: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  };
+
+  export let data: { shops: ShopOption[] };
   export let form;
 
   let submitting = false;
   let message = "";
+  const initialValues: Record<string, string> =
+    ((form as { values?: Record<string, string> } | undefined)?.values ?? {});
+  const getInitial = (key: string) => (initialValues[key] as string) ?? "";
 
   // Form data
-  let name = "";
-  let make = "";
-  let length = "";
-  let width = "";
-  let thickness = "";
-  let volume = "";
-  let fin_system = "";
-  let fin_setup = "";
-  let style = "";
-  let price = "";
-  let condition = "";
-  let city = "";
-  let region = "";
-  let source_type = "";
-  let source_url = "";
-  let notes = "";
-  let lat = "";
-  let lon = "";
+  let name = getInitial("name");
+  let make = getInitial("make");
+  let length = getInitial("length");
+  let width = getInitial("width");
+  let thickness = getInitial("thickness");
+  let volume = getInitial("volume");
+  let fin_system = getInitial("fin_system");
+  let fin_setup = getInitial("fin_setup");
+  let style = getInitial("style");
+  let price = getInitial("price");
+  let condition = getInitial("condition");
+  let city = getInitial("city");
+  let region = getInitial("region");
+  let source_type = getInitial("source_type");
+  let source_url = getInitial("source_url");
+  let shop_id = getInitial("shop_id");
+  let notes = getInitial("notes");
+  let lat = getInitial("lat");
+  let lon = getInitial("lon");
 
   // Location fields
-  let locationQuery = "";
+  let locationQuery = getInitial("city") && getInitial("region") ? `${getInitial("city")}, ${getInitial("region")}` : "";
   let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
   let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
   let locationDebounceHandle: any;
+  let lastAutoPopulatedShopId = "";
 
   async function searchLocationPlaces(q: string) {
     if (!q || q.length < 2) {
@@ -84,6 +100,54 @@
   // Handle form errors
   $: if (form?.message) {
     message = form.message;
+  }
+
+  $: if (source_type !== "shop" && shop_id !== "") {
+    shop_id = "";
+    lastAutoPopulatedShopId = "";
+  }
+
+  function getShopLocationLabel(shop: ShopOption): string {
+    const label = shop.location_label?.trim();
+    if (label) return label;
+
+    const cityPart = shop.city?.trim() ?? "";
+    const regionPart = shop.region?.trim() ?? "";
+    if (cityPart && regionPart) return `${cityPart}, ${regionPart}`;
+    return cityPart || regionPart;
+  }
+
+  function applyShopLocation(shop: ShopOption) {
+    const nextLabel = getShopLocationLabel(shop);
+    locationQuery = nextLabel;
+    locationSuggestions = [];
+
+    city = shop.city?.trim() ?? "";
+    region = shop.region?.trim() ?? "";
+
+    const hasCoords = shop.latitude != null && shop.longitude != null;
+    const shopLat = hasCoords ? shop.latitude : null;
+    const shopLon = hasCoords ? shop.longitude : null;
+    lat = shopLat != null ? shopLat.toString() : "";
+    lon = shopLon != null ? shopLon.toString() : "";
+
+    selectedLocation = shopLat != null && shopLon != null
+      ? {
+          label: nextLabel || "Selected shop location",
+          lat: shopLat,
+          lon: shopLon,
+          city,
+          region
+        }
+      : null;
+  }
+
+  $: if (source_type === "shop" && shop_id && shop_id !== lastAutoPopulatedShopId) {
+    const selectedShop = data.shops.find((shop) => shop.id === shop_id);
+    if (selectedShop) {
+      applyShopLocation(selectedShop);
+      lastAutoPopulatedShopId = shop_id;
+    }
   }
 </script>
 
@@ -337,7 +401,7 @@
       <!-- Source URL (required) -->
       <div class="space-y-1">
         <label for="source_url" class="block text-sm font-medium text-muted-foreground">
-          Source URL <span class="text-red-400">*</span>
+          {source_type === 'shop' ? 'Original Shop Listing URL' : 'Source URL'} <span class="text-red-400">*</span>
         </label>
         <input
           id="source_url"
@@ -349,6 +413,26 @@
           required
         />
       </div>
+
+      {#if source_type === 'shop'}
+        <div class="space-y-1">
+          <label for="shop_id" class="block text-sm font-medium text-muted-foreground">
+            Shop <span class="text-red-400">*</span>
+          </label>
+          <select
+            id="shop_id"
+            name="shop_id"
+            bind:value={shop_id}
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+            required
+          >
+            <option value="">Select shop</option>
+            {#each data.shops as shop}
+              <option value={shop.id}>{shop.name}</option>
+            {/each}
+          </select>
+        </div>
+      {/if}
 
       <!-- Location (required) -->
       <div class="space-y-1">
