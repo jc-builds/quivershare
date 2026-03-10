@@ -3,7 +3,6 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { browser } from '$app/environment';
-  import { pageTitle } from '$lib/title';
 
   export let data: { 
     userId: string | null;
@@ -427,7 +426,19 @@
 </script>
 
 <svelte:head>
-  <title>{pageTitle('Browse Boards')}</title>
+  <title>Used Surfboards for Sale in NY &amp; NJ | QuiverShare</title>
+  <meta name="description" content="Browse used surfboards for sale in New York and New Jersey. Filter by style, length, volume, and more on QuiverShare." />
+  <link rel="canonical" href="https://www.quivershare.com/s" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Used Surfboards for Sale in NY & NJ | QuiverShare" />
+  <meta property="og:description" content="Browse used surfboards for sale in New York and New Jersey. Filter by style, length, volume, and more on QuiverShare." />
+  <meta property="og:url" content="https://www.quivershare.com/s" />
+  <meta property="og:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta property="og:site_name" content="QuiverShare" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Used Surfboards for Sale in NY & NJ | QuiverShare" />
+  <meta name="twitter:description" content="Browse used surfboards for sale in New York and New Jersey. Filter by style, length, volume, and more on QuiverShare." />
+  <meta name="twitter:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
 </svelte:head>
 
 <svelte:window on:keydown={handleGlobalKeydown} />

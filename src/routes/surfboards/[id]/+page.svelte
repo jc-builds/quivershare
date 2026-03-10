@@ -94,6 +94,78 @@
     return parts.length > 0 ? parts.join(' ') : 'Untitled Board';
   })();
 
+  $: boardLocation = [data.board.city, data.board.region].filter(Boolean).join(', ');
+
+  $: seoTitle = boardLocation
+    ? `${boardTitle} in ${boardLocation} | QuiverShare`
+    : `${boardTitle} | QuiverShare`;
+
+  $: seoDescription = (() => {
+    const parts: string[] = [boardTitle];
+    if (data.board.price != null) {
+      parts.push(`for $${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
+    }
+    if (boardLocation) parts.push(`in ${boardLocation}`);
+    let sentence = parts.join(' ') + '.';
+    const qualifiers: string[] = [];
+    if (data.board.condition) qualifiers.push(data.board.condition.toLowerCase());
+    const style = displayStyle(data.board.style);
+    if (style) qualifiers.push(style.toLowerCase());
+    if (qualifiers.length > 0) {
+      sentence += ` ${qualifiers.map(q => q.charAt(0).toUpperCase() + q.slice(1)).join(' ')} listed on QuiverShare.`;
+    } else {
+      sentence += ' Listed on QuiverShare.';
+    }
+    return sentence;
+  })();
+
+  $: canonicalUrl = `https://www.quivershare.com/surfboards/${data.board.id}`;
+  $: ogImage = data.images.length > 0
+    ? data.images[0].image_url
+    : 'https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png';
+
+  // Condition mapping for JSON-LD
+  const CONDITION_SCHEMA_MAP: Record<string, string> = {
+    'New': 'https://schema.org/NewCondition',
+    'Lightly Used': 'https://schema.org/UsedCondition',
+    'Used': 'https://schema.org/UsedCondition',
+    'Well-loved': 'https://schema.org/UsedCondition',
+    'Needs Repair': 'https://schema.org/DamagedCondition'
+  };
+
+  $: jsonLd = (() => {
+    const schema: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: boardTitle,
+      url: canonicalUrl,
+      description: data.board.notes || seoDescription
+    };
+    if (data.images.length > 0) {
+      schema.image = data.images.map(img => img.image_url);
+    }
+    if (data.board.make) {
+      schema.brand = { '@type': 'Brand', name: data.board.make };
+    }
+    const style = displayStyle(data.board.style);
+    if (style) {
+      schema.category = style;
+    }
+    if (data.board.condition && CONDITION_SCHEMA_MAP[data.board.condition]) {
+      schema.itemCondition = CONDITION_SCHEMA_MAP[data.board.condition];
+    }
+    if (data.board.price != null) {
+      schema.offers = {
+        '@type': 'Offer',
+        price: data.board.price,
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        url: canonicalUrl
+      };
+    }
+    return JSON.stringify(schema);
+  })();
+
   // Get all images (for gallery modal)
   $: allImages = data.images;
   
@@ -257,7 +329,20 @@
 </script>
 
 <svelte:head>
-  <title>{boardTitle} | QuiverShare</title>
+  <title>{seoTitle}</title>
+  <meta name="description" content={seoDescription} />
+  <link rel="canonical" href={canonicalUrl} />
+  <meta property="og:type" content="product" />
+  <meta property="og:title" content={seoTitle} />
+  <meta property="og:description" content={seoDescription} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:site_name" content="QuiverShare" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={seoTitle} />
+  <meta name="twitter:description" content={seoDescription} />
+  <meta name="twitter:image" content={ogImage} />
+  {@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>
 
 <section class="min-h-screen bg-background text-foreground">
@@ -268,7 +353,7 @@
         href="/s"
         class="text-sm text-muted-foreground hover:text-foreground hover:underline"
       >
-        Search Results
+        Used Surfboards
       </a>
       <span class="text-sm text-muted-foreground mx-2">/</span>
       <span class="text-sm text-muted-foreground">
