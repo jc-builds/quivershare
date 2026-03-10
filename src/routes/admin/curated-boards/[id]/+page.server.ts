@@ -40,6 +40,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       lon,
       source_type,
       source_url,
+      shop_id,
       state,
       is_curated,
       is_deleted
@@ -64,9 +65,33 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     console.warn('Image fetch error:', imgErr.message);
   }
 
+  const { data: activeShops, error: shopsError } = await locals.supabase
+    .from('shops')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (shopsError) {
+    console.warn('Shops fetch error:', shopsError.message);
+  }
+
+  let shops = activeShops ?? [];
+  if (surfboard.shop_id && !shops.some((shop) => shop.id === surfboard.shop_id)) {
+    const { data: currentShop, error: currentShopError } = await locals.supabase
+      .from('shops')
+      .select('id, name')
+      .eq('id', surfboard.shop_id)
+      .maybeSingle();
+
+    if (!currentShopError && currentShop) {
+      shops = [currentShop, ...shops];
+    }
+  }
+
   return {
     surfboard,
-    existingImages: images ?? []
+    existingImages: images ?? [],
+    shops
   };
 };
 
@@ -316,7 +341,7 @@ export const actions: Actions = {
     // Verify the surfboard is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, is_curated, is_deleted')
+      .select('id, is_curated, is_deleted, source_type, source_url, shop_id')
       .eq('id', surfboardId)
       .eq('is_curated', true)
       .eq('is_deleted', false)
@@ -353,8 +378,6 @@ export const actions: Actions = {
     const lon_raw = form.get('lon')?.toString();
     const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
     const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
-    const source_type = form.get('source_type')?.toString() || null;
-    const source_url = form.get('source_url')?.toString() || null;
     const state = form.get('state')?.toString() || 'active';
     
     // Validate state
@@ -389,8 +412,9 @@ export const actions: Actions = {
       region,
       lat,
       lon,
-      source_type,
-      source_url,
+      source_type: board.source_type,
+      source_url: board.source_url,
+      shop_id: board.source_type === 'shop' ? board.shop_id : null,
       state,
       is_curated: true // Always keep curated boards as curated
     };
