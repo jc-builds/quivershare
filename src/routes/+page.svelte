@@ -41,11 +41,22 @@
 </script>
 
 <svelte:head>
-  <title>QuiverShare | Find used surfboards near you</title>
+  <title>Used Surfboard Marketplace | QuiverShare</title>
   <meta
     name="description"
-    content="Discover and list used surfboards in your area. Search QuiverShare by make, model, or location."
+    content="Buy and sell used surfboards in New York, New Jersey, and the East Coast on QuiverShare, the surfboard marketplace built for surfers."
   />
+  <link rel="canonical" href="https://www.quivershare.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Used Surfboard Marketplace | QuiverShare" />
+  <meta property="og:description" content="Buy and sell used surfboards in New York, New Jersey, and the East Coast on QuiverShare, the surfboard marketplace built for surfers." />
+  <meta property="og:url" content="https://www.quivershare.com/" />
+  <meta property="og:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta property="og:site_name" content="QuiverShare" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Used Surfboard Marketplace | QuiverShare" />
+  <meta name="twitter:description" content="Buy and sell used surfboards in New York, New Jersey, and the East Coast on QuiverShare, the surfboard marketplace built for surfers." />
+  <meta name="twitter:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
 </svelte:head>
 
 <main>
@@ -54,12 +65,15 @@
     <div class="mx-auto max-w-4xl px-4 md:px-6 lg:px-8 w-full">
       <div class="flex flex-col items-center text-center space-y-8 md:space-y-10">
         <div class="space-y-6 md:space-y-8">
-          <h1 id="hero-title" class="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-foreground">
-            Surfboards.<br />
-            Nothing but surfboards.
+          <h1 id="hero-title" class="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-foreground">
+            Used Surfboard Marketplace<br />
+            for New York &amp; New Jersey
           </h1>
+          <p class="text-xl md:text-2xl font-semibold text-foreground/80">
+            Surfboards. Nothing but surfboards.
+          </p>
           <p class="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-            The marketplace designed just for surfboards. Find boards near you, list your own, and use built-in advertising tools for shops and shapers.
+            Find boards near you, list your own, and use built-in advertising tools for shops and shapers.
           </p>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
