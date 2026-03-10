@@ -1,5 +1,9 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { supabase } from '$lib/supabaseClient';
+  import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from '$lib/imageValidation';
+  import ImageManager from '$lib/components/ImageManager.svelte';
+  import type { ManagedImage } from '$lib/types/image';
 
   type ShopOption = {
     id: string;
@@ -19,6 +23,16 @@
   const initialValues: Record<string, string> =
     ((form as { values?: Record<string, string> } | undefined)?.values ?? {});
   const getInitial = (key: string) => (initialValues[key] as string) ?? "";
+
+  // Image state
+  let managedImages: ManagedImage[] = [];
+  let fileInput: HTMLInputElement;
+  let dragActive = false;
+  let rejectionReasons: { file: string; reason: string }[] = [];
+  const MAX_IMAGES = MAX_IMAGES_PER_LISTING;
+
+  $: uploadingCount = managedImages.filter(img => img.kind === 'new').length;
+  $: uploadsInProgress = uploadingCount > 0;
 
   // Form data
   let name = getInitial("name");
@@ -149,6 +163,74 @@
       lastAutoPopulatedShopId = shop_id;
     }
   }
+
+  // Image upload handlers
+  function handleDragOver(event: DragEvent) {
+    event.preventDefault();
+    dragActive = true;
+  }
+
+  async function handleDrop(event: DragEvent) {
+    event.preventDefault();
+    dragActive = false;
+    if (!event.dataTransfer?.files?.length) return;
+    await addSelectedImages(Array.from(event.dataTransfer.files));
+  }
+
+  async function handleFileSelect(event: Event) {
+    const target = event.target as HTMLInputElement;
+    if (!target.files?.length) return;
+    await addSelectedImages(Array.from(target.files));
+    target.value = "";
+  }
+
+  async function addSelectedImages(selected: File[]) {
+    const existingCount = managedImages.length;
+    const { accepted, rejections } = validateAndFilterImageFiles(selected, existingCount);
+    rejectionReasons = rejections;
+
+    if (accepted.length > 0) {
+      managedImages = [
+        ...managedImages,
+        ...accepted.map((file) => ({ kind: 'new' as const, file }))
+      ];
+
+      for (const file of accepted) {
+        uploadFile(file);
+      }
+    }
+
+    if (rejections.length > 0 && accepted.length === 0) {
+      message = `${rejections.length} file(s) could not be added. See details below.`;
+    }
+  }
+
+  async function uploadFile(file: File) {
+    const rand = Math.random().toString(36).slice(2, 8);
+    const filePath = `temp_${Date.now()}_${rand}/${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('surfboard-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      managedImages = managedImages.filter(
+        img => !(img.kind === 'new' && img.file === file)
+      );
+      message = `Failed to upload ${file.name}: ${uploadError.message}`;
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('surfboard-images')
+      .getPublicUrl(filePath);
+
+    managedImages = managedImages.map(img =>
+      img.kind === 'new' && img.file === file
+        ? { kind: 'uploaded' as const, file, image_url: publicUrlData.publicUrl }
+        : img
+    );
+  }
 </script>
 
 <main class="min-h-screen bg-background px-4 py-8 flex flex-col items-center">
@@ -157,9 +239,14 @@
       Add Curated Board
     </h1>
 
-    <form method="POST" class="space-y-4" use:enhance={() => {
+    <form method="POST" class="space-y-4" use:enhance={({ formData }) => {
       submitting = true;
       message = "";
+      for (const img of managedImages) {
+        if (img.kind === 'uploaded') {
+          formData.append('image_urls', img.image_url);
+        }
+      }
       return async ({ update }) => {
         submitting = false;
         await update();
@@ -499,13 +586,74 @@
         ></textarea>
       </div>
 
+      <!-- Images (optional) -->
+      <div class="space-y-1">
+        <label for="image-upload" class="block text-sm font-medium text-muted-foreground">
+          Images
+        </label>
+        <div
+          role="button"
+          class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          class:border-primary={dragActive}
+          class:bg-surface-elevated={dragActive}
+          on:dragover|preventDefault={handleDragOver}
+          on:dragleave={() => (dragActive = false)}
+          on:drop|preventDefault={handleDrop}
+          on:click={() => fileInput?.click()}
+          tabindex="0"
+          on:keydown={(e) => e.key === "Enter" && fileInput?.click()}
+        >
+          <input
+            id="image-upload"
+            type="file"
+            multiple
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            bind:this={fileInput}
+            on:change={handleFileSelect}
+            class="hidden"
+          />
+          <p class="text-sm text-muted-foreground">
+            Drag & drop or click to add images (max {MAX_IMAGES})
+          </p>
+        </div>
+
+        {#if managedImages.length > 0}
+          <div class="mt-3">
+            <ImageManager bind:images={managedImages} />
+          </div>
+          <p class="text-xs text-muted-foreground mt-2">
+            {managedImages.length}/{MAX_IMAGES} images
+            {#if uploadsInProgress}
+              &middot; Uploading {uploadingCount}...
+            {/if}
+          </p>
+        {/if}
+
+        {#if rejectionReasons.length > 0}
+          <div class="mt-2 rounded-lg border border-border bg-surface p-3 text-sm">
+            <p class="font-medium text-foreground mb-2">Rejected files:</p>
+            <ul class="list-disc list-inside space-y-1 text-muted-foreground">
+              {#each rejectionReasons as { file, reason }}
+                <li><span class="font-mono text-foreground">{file}</span>: {reason}</li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+      </div>
+
       <!-- Submit Button -->
       <button
         type="submit"
         class="w-full mt-4 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
-        disabled={submitting}
+        disabled={submitting || uploadsInProgress}
       >
-        {submitting ? "Creating..." : "Create Curated Board"}
+        {#if uploadsInProgress}
+          Uploading images...
+        {:else if submitting}
+          Creating...
+        {:else}
+          Create Curated Board
+        {/if}
       </button>
 
       {#if message}

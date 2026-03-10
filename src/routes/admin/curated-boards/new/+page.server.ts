@@ -1,6 +1,7 @@
 // src/routes/admin/curated-boards/new/+page.server.ts
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { validateImageUrls } from '$lib/server/imageValidation';
 
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
@@ -149,6 +150,27 @@ export const actions: Actions = {
     if (error) {
       console.error('Insert error:', error.message);
       return fail(500, { message: 'Failed to save curated board', values });
+    }
+
+    const rawImageUrls = form.getAll('image_urls');
+    if (rawImageUrls.length > 0 && data?.id) {
+      const cleanedUrls = validateImageUrls(rawImageUrls);
+      if (cleanedUrls.length > 0) {
+        const imageInserts = cleanedUrls.map((image_url, index) => ({
+          surfboard_id: data.id,
+          image_url,
+          position: index
+        }));
+
+        const { error: imgError } = await locals.supabase
+          .from('surfboard_images')
+          .insert(imageInserts);
+
+        if (imgError) {
+          console.error('Image insert error:', imgError.message);
+          return fail(500, { message: `Board created but failed to save images: ${imgError.message}`, values });
+        }
+      }
     }
 
     throw redirect(303, '/admin/curated-boards');
