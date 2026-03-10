@@ -89,6 +89,7 @@
   }
 
   function navigateWithParams(params: Record<string, string | null>) {
+    window.dataLayer?.push({ event: 'search_used' });
     const current = get(page);
     const search = new URLSearchParams(current.url.search);
 

@@ -290,6 +290,7 @@
 
   // Preload and decode first hero image on mount
   onMount(async () => {
+    window.dataLayer?.push({ event: 'view_listing' });
     if (heroImages.length > 0) {
       const firstImage = heroImages[0];
       try {
@@ -572,7 +573,7 @@
               <button
                 type="button"
                 class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                on:click={() => window.open(data.board.source_url!, '_blank', 'noopener,noreferrer')}
+                on:click={() => { window.dataLayer?.push({ event: 'outbound_click' }); window.open(data.board.source_url!, '_blank', 'noopener,noreferrer'); }}
               >
                 View listing on {curatedSourceLabel || 'original site'}
               </button>
