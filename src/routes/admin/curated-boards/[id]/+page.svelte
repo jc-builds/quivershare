@@ -729,8 +729,8 @@
           id="source_type"
           name="source_type"
           bind:value={surfboard.source_type}
+          on:change={() => { if (surfboard.source_type !== 'shop') surfboard.shop_id = ''; }}
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-          disabled
         >
           <option value="">Select source type</option>
           <option>craigslist</option>
@@ -752,7 +752,6 @@
           bind:value={surfboard.source_url}
           placeholder="https://..."
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-          disabled
         />
       </div>
 
@@ -766,7 +765,6 @@
             name="shop_id"
             bind:value={surfboard.shop_id}
             class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-            disabled
           >
             <option value="">Select shop</option>
             {#each data.shops as shop}

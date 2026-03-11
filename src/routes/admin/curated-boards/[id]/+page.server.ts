@@ -10,6 +10,7 @@ import {
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
 const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
+const ALLOWED_SOURCE_TYPES = ['craigslist', 'facebook', 'shop', 'other'] as const;
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in (admin check is in parent layout)
@@ -341,7 +342,7 @@ export const actions: Actions = {
     // Verify the surfboard is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, is_curated, is_deleted, source_type, source_url, shop_id')
+      .select('id, is_curated, is_deleted')
       .eq('id', surfboardId)
       .eq('is_curated', true)
       .eq('is_deleted', false)
@@ -394,6 +395,17 @@ export const actions: Actions = {
       return fail(400, { success: false, message: 'Invalid fin setup value' });
     }
 
+    // Source fields – now editable from the form
+    const source_type = form.get('source_type')?.toString() || null;
+    const source_url = form.get('source_url')?.toString() || null;
+    const raw_shop_id = form.get('shop_id')?.toString() || null;
+
+    if (source_type && !ALLOWED_SOURCE_TYPES.includes(source_type as (typeof ALLOWED_SOURCE_TYPES)[number])) {
+      return fail(400, { success: false, message: 'Invalid source type value' });
+    }
+
+    const shop_id = source_type === 'shop' ? raw_shop_id : null;
+
     // Build update payload
     const updatePayload = {
       name,
@@ -412,9 +424,9 @@ export const actions: Actions = {
       region,
       lat,
       lon,
-      source_type: board.source_type,
-      source_url: board.source_url,
-      shop_id: board.source_type === 'shop' ? board.shop_id : null,
+      source_type,
+      source_url,
+      shop_id,
       state,
       is_curated: true // Always keep curated boards as curated
     };
