@@ -139,6 +139,7 @@ export const actions: Actions = {
           source_url,
           shop_id: source_type === 'shop' ? persistedShopId : null,
           user_id: user.id,
+          owner_type: 'curated',
           is_curated: true,
           state: 'active',
           is_deleted: false
@@ -148,8 +149,8 @@ export const actions: Actions = {
       .single();
 
     if (error) {
-      console.error('Insert error:', error.message);
-      return fail(500, { message: 'Failed to save curated board', values });
+      console.error('Curated board insert error:', error.message, error.details, error.hint);
+      return fail(500, { message: `Failed to save curated board: ${error.message}`, values });
     }
 
     const rawImageUrls = form.getAll('image_urls');

@@ -129,6 +129,15 @@
     event.preventDefault();
     if (submitting) return;
 
+    // Client-side required field check
+    if (!surfboard.name?.trim()) { message = '❌ Board name is required'; return; }
+    if (!surfboard.make?.trim()) { message = '❌ Make / Brand is required'; return; }
+    if (!surfboard.length) { message = '❌ Length is required'; return; }
+    if (!surfboard.style) { message = '❌ Board style is required'; return; }
+    if (!surfboard.price) { message = '❌ Price is required'; return; }
+    if (!surfboard.condition) { message = '❌ Condition is required'; return; }
+    if (!selectedLocation) { message = '❌ Location is required — please select a location from the suggestions'; return; }
+
     submitting = true;
     message = "";
 
@@ -169,18 +178,47 @@
       formData.append('image_urls', url);
     });
 
-    // Submit the form
-    const response = await fetch(form.action, {
-      method: 'POST',
-      body: formData
-    });
+    // Submit the form via fetch with JSON accept header for proper error handling
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { accept: 'application/json' }
+      });
 
-    if (response.ok) {
-      // Redirect handled by server
-      window.location.href = '/my-boards';
-    } else {
-      const result = await response.json();
-      message = result.message || 'Failed to save surfboard';
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
+
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch {
+        // Response was not JSON (e.g. HTML redirect page)
+      }
+
+      if (result?.type === 'redirect') {
+        window.location.href = result.location ?? '/my-boards';
+        return;
+      }
+
+      if (result?.type === 'failure' || result?.type === 'error') {
+        message = `❌ ${result.data?.message || 'Failed to save surfboard'}`;
+        submitting = false;
+        return;
+      }
+
+      // Fallback: if we got here and response was ok, assume success
+      if (response.ok) {
+        window.location.href = '/my-boards';
+      } else {
+        message = `❌ ${result?.data?.message || 'Failed to save surfboard'}`;
+        submitting = false;
+      }
+    } catch (e) {
+      console.error('Submit error:', e);
+      message = '❌ Something went wrong. Please try again.';
       submitting = false;
     }
   }
@@ -197,7 +235,7 @@
       <!-- Board Name -->
       <div class="space-y-1">
         <label for="name" class="block text-sm font-medium text-muted-foreground">
-          Board Name
+          Board Name <span class="text-red-400">*</span>
         </label>
         <input
           id="name"
@@ -213,7 +251,7 @@
       <!-- Make -->
       <div class="space-y-1">
         <label for="make" class="block text-sm font-medium text-muted-foreground">
-          Make / Brand
+          Make / Brand <span class="text-red-400">*</span>
         </label>
         <input
           id="make"
@@ -222,19 +260,21 @@
           bind:value={surfboard.make}
           placeholder="e.g. Album, Firewire, JS"
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          required
         />
       </div>
 
       <!-- Length -->
       <div class="space-y-1">
         <label for="length" class="block text-sm font-medium text-muted-foreground">
-          Length
+          Length <span class="text-red-400">*</span>
         </label>
         <select
           id="length"
           name="length"
           bind:value={surfboard.length}
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          required
         >
           <option disabled selected>Select length</option>
           {#each Array(79) as _, i}
@@ -349,15 +389,16 @@
       <!-- Style -->
       <div class="space-y-1">
         <label for="style" class="block text-sm font-medium text-muted-foreground">
-          Board Style
+          Board Style <span class="text-red-400">*</span>
         </label>
         <select
           id="style"
           name="style"
           bind:value={surfboard.style}
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          required
         >
-          <option value="">Select style (optional)</option>
+          <option value="">Select style</option>
           <option>Shortboard</option>
           <option>Mid-length</option>
           <option>Longboard</option>
@@ -369,7 +410,7 @@
       <!-- Price -->
       <div class="space-y-1">
         <label for="price" class="block text-sm font-medium text-muted-foreground">
-          Price ($)
+          Price ($) <span class="text-red-400">*</span>
         </label>
         <input
           id="price"
@@ -380,21 +421,23 @@
           bind:value={surfboard.price}
           placeholder="e.g. 850.00"
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          required
         />
       </div>
 
       <!-- Condition -->
       <div class="space-y-1">
         <label for="condition" class="block text-sm font-medium text-muted-foreground">
-          Condition
+          Condition <span class="text-red-400">*</span>
         </label>
         <select
           id="condition"
           name="condition"
           bind:value={surfboard.condition}
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          required
         >
-          <option disabled selected>Select condition</option>
+          <option disabled selected value="">Select condition</option>
           <option>New</option>
           <option>Lightly Used</option>
           <option>Used</option>
@@ -406,7 +449,7 @@
       <!-- Location -->
       <div class="space-y-1">
         <label for="location" class="block text-sm font-medium text-muted-foreground">
-          Location (optional)
+          Location <span class="text-red-400">*</span>
         </label>
         <div class="relative">
           <input

@@ -110,7 +110,17 @@
     >
       + Add Board
     </a>
-  </div>  
+  </div>
+
+  {#if data.userShop}
+    <div class="mb-6 rounded-lg border border-border bg-surface-elevated p-4 text-sm text-foreground">
+      <p>
+        These are your personal boards. Boards listed under
+        <a href="/shops/{data.userShop.slug}" class="text-primary hover:underline font-medium">{data.userShop.name}</a>
+        are managed separately and will appear in the Shop Dashboard (coming soon).
+      </p>
+    </div>
+  {/if}
 
 
   {#if errorMessage}

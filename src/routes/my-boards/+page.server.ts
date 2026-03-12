@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) throw redirect(303, '/login');
   const userId = locals.user.id;
 
-  // 2) Fetch only this user's personal boards (exclude deleted and curated)
+  // 2) Fetch only this user's individual-owned boards
   const { data, error } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -23,15 +23,15 @@ export const load: PageServerLoad = async ({ locals }) => {
       boosts(status)
     `)
     .eq('user_id', userId)
+    .eq('owner_type', 'individual')
     .eq('is_deleted', false)
-    .or('is_curated.is.null,is_curated.eq.false')
     .order('position', { foreignTable: 'surfboard_images', ascending: true })
     .order('last_modified', { ascending: false });
 
   // 3) Handle errors
   if (error) {
     console.error('Error loading boards:', error);
-    return { boards: [], errorMessage: error.message };
+    return { boards: [], errorMessage: error.message, userShop: null };
   }
 
   // 4) Attach a single fallback image per board
@@ -41,10 +41,18 @@ export const load: PageServerLoad = async ({ locals }) => {
     boosts: board.boosts ?? []
   }));
 
-  // 5) Return to +page.svelte
+  // 5) Check if user owns a shop (for the clarifying banner)
+  const { data: userShop } = await locals.supabase
+    .from('shops')
+    .select('slug, name')
+    .eq('owner_user_id', userId)
+    .maybeSingle();
+
+  // 6) Return to +page.svelte
   return {
     boards: boardsWithImage,
-    errorMessage: null
+    errorMessage: null,
+    userShop: userShop ?? null
   };
 };
 
@@ -67,13 +75,13 @@ export const actions: Actions = {
       return fail(400, { context: 'updateState', success: false, message: 'Invalid state value' });
     }
 
-    // Verify the board belongs to the user, is not deleted, and is not curated
+    // Verify the board belongs to the user and is an individual-owned board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('user_id, is_curated')
+      .select('user_id')
       .eq('id', boardId)
+      .eq('owner_type', 'individual')
       .eq('is_deleted', false)
-      .or('is_curated.is.null,is_curated.eq.false')
       .single();
 
     if (boardError || !board) {
@@ -110,13 +118,13 @@ export const actions: Actions = {
       return fail(400, { context: 'deleteBoard', success: false, message: 'Missing board ID' });
     }
 
-    // Verify the board belongs to the user, is not deleted, and is not curated
+    // Verify the board belongs to the user and is an individual-owned board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('user_id, is_curated')
+      .select('user_id')
       .eq('id', boardId)
+      .eq('owner_type', 'individual')
       .eq('is_deleted', false)
-      .or('is_curated.is.null,is_curated.eq.false')
       .single();
 
     if (boardError || !board) {

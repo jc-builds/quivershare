@@ -12,8 +12,9 @@ export const actions: Actions = {
     if (!user) throw redirect(303, '/login');
 
     const form = await request.formData();
-    const name = form.get('name')?.toString() ?? '';
-    const make = form.get('make')?.toString() ?? '';
+
+    const name = form.get('name')?.toString()?.trim() ?? '';
+    const make = form.get('make')?.toString()?.trim() ?? '';
     const length = form.get('length') ? Number(form.get('length')) : null;
     const width = form.get('width') ? Number(form.get('width')) : null;
     const thickness = form.get('thickness') ? Number(form.get('thickness')) : null;
@@ -22,25 +23,63 @@ export const actions: Actions = {
     const fin_setup = form.get('fin_setup')?.toString() || null;
     const style = form.get('style')?.toString() || null;
     const price = form.get('price') ? Number(form.get('price')) : null;
-    const condition = form.get('condition')?.toString() ?? '';
-    const notes = form.get('notes')?.toString() ?? '';
-    
-    // Location fields
-    const city = form.get('city')?.toString() || null;
-    const region = form.get('region')?.toString() || null;
+    const condition = form.get('condition')?.toString()?.trim() ?? '';
+    const notes = form.get('notes')?.toString()?.trim() || null;
+
+    const city = form.get('city')?.toString()?.trim() || null;
+    const region = form.get('region')?.toString()?.trim() || null;
     const lat_raw = form.get('lat')?.toString();
     const lon_raw = form.get('lon')?.toString();
     const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
     const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
 
+    const values = {
+      name,
+      make,
+      length: form.get('length')?.toString() ?? '',
+      width: form.get('width')?.toString() ?? '',
+      thickness: form.get('thickness')?.toString() ?? '',
+      volume: form.get('volume')?.toString() ?? '',
+      fin_system: fin_system ?? '',
+      fin_setup: fin_setup ?? '',
+      style: style ?? '',
+      price: form.get('price')?.toString() ?? '',
+      condition,
+      notes: notes ?? '',
+    };
+
+    // Required field validation
+    if (!name) {
+      return fail(400, { message: 'Board name is required', values });
+    }
+    if (!make) {
+      return fail(400, { message: 'Make / Brand is required', values });
+    }
+    if (!length) {
+      return fail(400, { message: 'Length is required', values });
+    }
+    if (!style) {
+      return fail(400, { message: 'Board style is required', values });
+    }
+    if (!price || price <= 0) {
+      return fail(400, { message: 'Price is required', values });
+    }
+    if (!condition) {
+      return fail(400, { message: 'Condition is required', values });
+    }
+    if (!city || !region) {
+      return fail(400, { message: 'Location is required', values });
+    }
+
+    // Enum validation
     if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
-      return fail(400, { message: 'Invalid style value' });
+      return fail(400, { message: 'Invalid style value', values });
     }
     if (fin_system && !ALLOWED_FIN_SYSTEMS.includes(fin_system as (typeof ALLOWED_FIN_SYSTEMS)[number])) {
-      return fail(400, { message: 'Invalid fin system value' });
+      return fail(400, { message: 'Invalid fin system value', values });
     }
     if (fin_setup && !ALLOWED_FIN_SETUPS.includes(fin_setup as (typeof ALLOWED_FIN_SETUPS)[number])) {
-      return fail(400, { message: 'Invalid fin setup value' });
+      return fail(400, { message: 'Invalid fin setup value', values });
     }
 
     const { data, error } = await locals.supabase
@@ -63,20 +102,29 @@ export const actions: Actions = {
           region,
           lat,
           lon,
-          user_id: user.id
+          user_id: user.id,
+          owner_type: 'individual',
+          is_curated: false,
+          state: 'active',
+          is_deleted: false
         }
       ])
       .select('id')
       .single();
 
     if (error) {
-      console.error('Insert error:', error.message);
-      return fail(500, { message: 'Failed to save surfboard' });
+      console.error('Surfboard insert error:', error.message, error.details, error.hint);
+      return fail(500, { message: `Failed to save surfboard: ${error.message}`, values });
+    }
+
+    if (!data?.id) {
+      console.error('Surfboard insert returned no data');
+      return fail(500, { message: 'Failed to save surfboard: no ID returned', values });
     }
 
     // Handle image URLs if provided
     const rawImageUrls = form.getAll('image_urls');
-    if (rawImageUrls.length > 0 && data?.id) {
+    if (rawImageUrls.length > 0) {
       const cleanedUrls = validateImageUrls(rawImageUrls);
       if (cleanedUrls.length > 0) {
         const imageInserts = cleanedUrls.map((image_url, index) => ({
@@ -90,7 +138,8 @@ export const actions: Actions = {
           .insert(imageInserts);
 
         if (imgError) {
-          return fail(500, { message: `Failed to save images: ${imgError.message}` });
+          console.error('Image insert error:', imgError.message);
+          return fail(500, { message: `Board created but failed to save images: ${imgError.message}`, values });
         }
       }
     }
