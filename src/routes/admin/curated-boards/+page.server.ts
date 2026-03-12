@@ -18,6 +18,9 @@ export const load: PageServerLoad = async ({ locals }) => {
       source_url,
       city,
       region,
+      price,
+      last_checked_at,
+      last_check_result,
       surfboard_images(image_url, position)
     `)
     .eq('is_curated', true)
@@ -126,6 +129,76 @@ export const actions: Actions = {
     }
 
     throw redirect(303, '/admin/curated-boards');
+  },
+
+  recordMaintenanceReview: async ({ request, locals }) => {
+    const user = locals.user;
+    if (!user) {
+      return fail(401, { context: 'recordMaintenanceReview', success: false, message: 'Unauthorized' });
+    }
+
+    const form = await request.formData();
+    const boardId = form.get('boardId')?.toString();
+    const result = form.get('result')?.toString();
+    const newPriceRaw = form.get('new_price')?.toString();
+
+    if (!boardId) {
+      return fail(400, { context: 'recordMaintenanceReview', success: false, message: 'Missing board ID' });
+    }
+
+    const ALLOWED_RESULTS = ['no_change', 'price_changed', 'sold', 'source_unavailable'];
+    if (!result || !ALLOWED_RESULTS.includes(result)) {
+      return fail(400, { context: 'recordMaintenanceReview', success: false, message: 'Invalid result value' });
+    }
+
+    const { data: board, error: boardError } = await locals.supabase
+      .from('surfboards')
+      .select('is_curated')
+      .eq('id', boardId)
+      .eq('is_curated', true)
+      .eq('is_deleted', false)
+      .single();
+
+    if (boardError || !board) {
+      return fail(404, { context: 'recordMaintenanceReview', success: false, message: 'Curated board not found' });
+    }
+
+    let newPrice: number | undefined;
+    if (result === 'price_changed') {
+      newPrice = newPriceRaw ? Number(newPriceRaw) : NaN;
+      if (!Number.isFinite(newPrice) || newPrice <= 0) {
+        return fail(400, {
+          context: 'recordMaintenanceReview',
+          success: false,
+          message: 'A valid positive price is required when result is "price changed"'
+        });
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      last_checked_at: new Date().toISOString(),
+      last_check_result: result
+    };
+
+    if (result === 'price_changed') {
+      updatePayload.price = newPrice;
+    }
+
+    if (result === 'sold' || result === 'source_unavailable') {
+      updatePayload.state = 'inactive';
+    }
+
+    const { error: updateError } = await locals.supabase
+      .from('surfboards')
+      .update(updatePayload)
+      .eq('id', boardId);
+
+    if (updateError) {
+      console.error('Maintenance review error:', updateError.message);
+      return fail(500, { context: 'recordMaintenanceReview', success: false, message: 'Failed to record review' });
+    }
+
+    return { context: 'recordMaintenanceReview', success: true, boardId, result };
   }
 };
 
