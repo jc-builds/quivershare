@@ -21,6 +21,21 @@ const SORT_COLUMNS: Record<
   created_desc: { column: 'created_at', ascending: false }
 };
 
+function haversineDistanceMiles(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number
+): number {
+  const R = 3959;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
   const userId = locals.user?.id ?? null;
 
@@ -62,6 +77,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const finSystemFilter = url.searchParams.get('fin_system')?.trim() || '';
   const finSetupSlug = url.searchParams.get('fin_setup')?.trim() || '';
   const styleFilter = url.searchParams.get('style')?.trim() || '';
+
+  const locLatRaw = url.searchParams.get('loc_lat');
+  const locLonRaw = url.searchParams.get('loc_lon');
+  const distanceRaw = url.searchParams.get('distance');
+  const locLabel = url.searchParams.get('loc_label')?.trim() || null;
+  const locLat = locLatRaw ? Number(locLatRaw) : NaN;
+  const locLon = locLonRaw ? Number(locLonRaw) : NaN;
+  const distanceVal = distanceRaw ? Number(distanceRaw) : NaN;
+  const locationFilterActive =
+    Number.isFinite(locLat) && Number.isFinite(locLon) &&
+    Number.isFinite(distanceVal) && distanceVal > 0;
 
   const lengthRanges: Record<string, { min: number; max: number | null }> = {
     '66-72': { min: 66, max: 72 },
@@ -165,6 +191,51 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     }
   }
 
+  function mapBoardImages(rows: any[]) {
+    return rows.map((board: any) => {
+      const { surfboard_images, ...rest } = board;
+      return { ...rest, image_url: surfboard_images?.[0]?.image_url ?? null };
+    });
+  }
+
+  if (locationFilterActive) {
+    const { data: allBoards, error: boardsError } = await boardsQuery
+      .order('position', { foreignTable: 'surfboard_images', ascending: true })
+      .order(sortConfig.column, { ascending: sortConfig.ascending });
+
+    if (boardsError) {
+      console.error('Error loading surfboards for /s route:', boardsError);
+    }
+
+    const allWithImages = mapBoardImages(allBoards ?? []);
+
+    const filtered = allWithImages.filter((b: any) => {
+      if (b.lat == null || b.lon == null || !Number.isFinite(b.lat) || !Number.isFinite(b.lon)) {
+        return false;
+      }
+      return haversineDistanceMiles(locLat, locLon, b.lat, b.lon) <= distanceVal;
+    });
+
+    const total = filtered.length;
+    const paged = filtered.slice(from, from + limit);
+
+    return {
+      userId,
+      userLocation,
+      userLocationLat,
+      userLocationLon,
+      boards: paged,
+      total,
+      page,
+      limit,
+      sort: sortKey,
+      locLabel,
+      locLat,
+      locLon,
+      distance: distanceVal
+    };
+  }
+
   const {
     data: boards,
     error: boardsError,
@@ -178,24 +249,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     console.error('Error loading surfboards for /s route:', boardsError);
   }
 
-  const boardsWithImage = (boards ?? []).map((board: any) => {
-    const { surfboard_images, ...rest } = board;
-    return {
-      ...rest,
-      image_url: surfboard_images?.[0]?.image_url ?? null
-    };
-  });
-
   return {
     userId,
     userLocation,
     userLocationLat,
     userLocationLon,
-    boards: boardsWithImage,
+    boards: mapBoardImages(boards ?? []),
     total: count ?? 0,
     page,
     limit,
-    sort: sortKey
+    sort: sortKey,
+    locLabel: null,
+    locLat: null,
+    locLon: null,
+    distance: null
   };
 };
 
