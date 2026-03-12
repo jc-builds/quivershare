@@ -21,7 +21,7 @@
     </div>
   </div>
 
-  <div class="mx-auto max-w-6xl px-4 md:px-8 py-6">
+  <div class="w-full px-4 sm:px-6 xl:px-8 py-6">
     <slot />
   </div>
 </div>
