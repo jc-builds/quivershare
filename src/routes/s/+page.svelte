@@ -3,6 +3,8 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { browser } from '$app/environment';
+  import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
+  import type { StructuredLocation } from '$lib/types/location';
 
   export let data: { 
     userId: string | null;
@@ -139,28 +141,27 @@
   function clearAllFilters() {
     activeLocationFilter = null;
     selectedLocation = null;
-    locationSuggestions = [];
     searchRadius = 50;
-    locationQuery = data.userLocation || '';
     closeFiltersDrawer();
     goto('/s');
   }
 
   // Location search state
-  let locationQuery = data.userLocation || '';
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let selectedLocation: { label: string; lat: number; lon: number } | null = null;
-  let searchRadius = 50; // Default 50 miles
-  let locationDebounceHandle: any;
+  let selectedLocation: StructuredLocation | null = null;
+  let searchRadius = 50;
   let activeLocationFilter: { location: { label: string; lat: number; lon: number }; radius: number } | null = null;
   let initializedFromQuery = false;
 
   // Initialize selected location from user's profile
   $: if (data.userLocationLat && data.userLocationLon && !selectedLocation) {
     selectedLocation = {
+      id: '',
       label: data.userLocation || 'Your location',
       lat: data.userLocationLat,
-      lon: data.userLocationLon
+      lon: data.userLocationLon,
+      city: '',
+      region: '',
+      country: '',
     };
   }
 
@@ -285,25 +286,6 @@
     selectedStyle = styleOptions.includes(normalizedStyleParam) ? normalizedStyleParam : null;
   }
 
-  // Location search functions
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationSearchInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    selectedLocation = null;
-
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
 
   function handleLengthChange() {
     const paramValue =
@@ -336,66 +318,46 @@
     navigateWithParams({ style: paramValue, page: '1' });
   }
 
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    selectedLocation = {
-      label: s.label,
-      lat: s.lat,
-      lon: s.lon
-    };
-    locationSuggestions = [];
-  }
 
-  // Hydrate location filter from URL query parameters (from homepage search)
-  $: (async () => {
-    // Only run on client-side and only once
+  // Hydrate location filter from URL query parameters (structured params from homepage)
+  $: (() => {
     if (!browser || initializedFromQuery) return;
 
     const $page = get(page);
     const searchParams = $page.url.searchParams;
 
-    const q = searchParams.get('q');
+    const locLabel = searchParams.get('loc_label');
+    const locLat = searchParams.get('loc_lat');
+    const locLon = searchParams.get('loc_lon');
     const distanceParam = searchParams.get('distance');
 
-    if (!q) return; // nothing to hydrate from
+    if (!locLabel || !locLat || !locLon) return;
+
+    const lat = Number(locLat);
+    const lon = Number(locLon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
     initializedFromQuery = true;
 
-    try {
-      // Set the visible input value
-      locationQuery = q;
+    selectedLocation = {
+      id: '',
+      label: locLabel,
+      lat,
+      lon,
+      city: '',
+      region: '',
+      country: '',
+    };
 
-      // Use existing API to resolve the place
-      const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      const features = data.features ?? [];
-
-      if (!features.length) {
-        console.warn('No features returned for q=', q);
-        return;
-      }
-
-      const first = features[0];
-
-      selectedLocation = {
-        label: first.label,
-        lat: first.lat,
-        lon: first.lon
-      };
-
-      // Hydrate radius from query or fall back to default
-      const parsedDistance = distanceParam ? Number(distanceParam) : NaN;
-      if (!Number.isNaN(parsedDistance) && parsedDistance > 0) {
-        searchRadius = parsedDistance;
-      }
-
-      activeLocationFilter = {
-        location: selectedLocation,
-        radius: searchRadius
-      };
-
-    } catch (err) {
-      console.error('❌ Error hydrating location from query params:', err);
+    const parsedDistance = distanceParam ? Number(distanceParam) : NaN;
+    if (!Number.isNaN(parsedDistance) && parsedDistance > 0) {
+      searchRadius = parsedDistance;
     }
+
+    activeLocationFilter = {
+      location: selectedLocation,
+      radius: searchRadius
+    };
   })();
 
   // Calculate distance between two coordinates using Haversine formula
@@ -636,33 +598,14 @@
 
       <div class="p-4 space-y-6">
         <div class="bg-surface-elevated/80 rounded-xl p-4 border border-border shadow-sm">
-          <label for="drawer-location-search" class="block mb-2">
-            <span class="font-medium text-sm text-foreground">Search Location</span>
-          </label>
-          <div class="relative">
-            <input
-              id="drawer-location-search"
-              type="text"
-              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              placeholder="Enter location..."
-              value={locationQuery}
-              on:input={onLocationSearchInput}
-              autocomplete="off"
-              aria-autocomplete="list"
-              aria-controls="drawer-location-suggestions-list"
-            />
-            {#if locationSuggestions.length > 0}
-              <ul id="drawer-location-suggestions-list" class="absolute left-0 right-0 z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm">
-                {#each locationSuggestions as s}
-                  <li>
-                    <button type="button" class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg" on:click={() => chooseLocationSuggestion(s)}>
-                      {s.label}
-                    </button>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
+          <LocationAutocomplete
+            bind:value={selectedLocation}
+            required={false}
+            label="Search Location"
+            id="drawer-location-search"
+            placeholder="Enter location..."
+            clearable={true}
+          />
           <div class="mt-4">
             <label for="drawer-search-radius" class="block mb-2">
               <span class="font-medium text-sm text-foreground">Within</span>

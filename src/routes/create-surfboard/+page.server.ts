@@ -1,6 +1,7 @@
 // src/routes/create-surfboard/+page.server.ts
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { validateImageUrls } from '$lib/server/imageValidation';
+import { requireLocation, LocationValidationError } from '$lib/server/location';
 
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
@@ -25,13 +26,6 @@ export const actions: Actions = {
     const price = form.get('price') ? Number(form.get('price')) : null;
     const condition = form.get('condition')?.toString()?.trim() ?? '';
     const notes = form.get('notes')?.toString()?.trim() || null;
-
-    const city = form.get('city')?.toString()?.trim() || null;
-    const region = form.get('region')?.toString()?.trim() || null;
-    const lat_raw = form.get('lat')?.toString();
-    const lon_raw = form.get('lon')?.toString();
-    const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
-    const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
 
     const values = {
       name,
@@ -67,8 +61,15 @@ export const actions: Actions = {
     if (!condition) {
       return fail(400, { message: 'Condition is required', values });
     }
-    if (!city || !region) {
-      return fail(400, { message: 'Location is required', values });
+
+    let location;
+    try {
+      location = requireLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { message: e.message, values });
+      }
+      throw e;
     }
 
     // Enum validation
@@ -98,10 +99,12 @@ export const actions: Actions = {
           price,
           condition,
           notes,
-          city,
-          region,
-          lat,
-          lon,
+          location_label: location.label,
+          city: location.city,
+          region: location.region,
+          country: location.country,
+          lat: location.lat,
+          lon: location.lon,
           user_id: user.id,
           owner_type: 'individual',
           is_curated: false,

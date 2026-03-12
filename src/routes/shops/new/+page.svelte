@@ -1,5 +1,7 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import LocationAutocomplete from "$lib/components/LocationAutocomplete.svelte";
+  import type { StructuredLocation } from "$lib/types/location";
 
   export let form: {
     message?: string;
@@ -39,59 +41,7 @@
   $: slugPreview = slugify(name);
 
   // Location state
-  let locationQuery = form?.values?.location_label ?? '';
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string; country: string } | null = null;
-  let locationDebounceHandle: ReturnType<typeof setTimeout>;
-
-  let loc_city = '';
-  let loc_region = '';
-  let loc_country = '';
-  let loc_lat = '';
-  let loc_lon = '';
-
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    if (!v || v.trim() === '') {
-      clearLocation();
-      return;
-    }
-    selectedLocation = null;
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
-
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    selectedLocation = { label: s.label, lat: s.lat, lon: s.lon, city: s.city, region: s.region, country: s.country };
-    locationSuggestions = [];
-    loc_city = s.city;
-    loc_region = s.region;
-    loc_country = s.country;
-    loc_lat = s.lat.toString();
-    loc_lon = s.lon.toString();
-  }
-
-  function clearLocation() {
-    locationQuery = '';
-    selectedLocation = null;
-    loc_city = '';
-    loc_region = '';
-    loc_country = '';
-    loc_lat = '';
-    loc_lon = '';
-  }
+  let selectedLocation: StructuredLocation | null = null;
 
   // Logo drag-and-drop state
   let logoFile: File | null = null;
@@ -280,47 +230,13 @@
         </div>
 
         <!-- Location -->
-        <div class="space-y-1">
-          <label for="location" class="block text-sm font-medium text-muted-foreground">Location (optional)</label>
-          <div class="relative">
-            <input
-              id="location"
-              type="text"
-              class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
-              placeholder="Start typing... e.g. San Diego, CA"
-              value={locationQuery}
-              on:input={onLocationInput}
-              autocomplete="off"
-              aria-autocomplete="list"
-              aria-controls="location-suggestions-list"
-            />
-            {#if locationSuggestions.length > 0}
-              <ul id="location-suggestions-list" class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
-                {#each locationSuggestions as s}
-                  <li>
-                    <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseLocationSuggestion(s)}>
-                      {s.label}
-                    </button>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
-          {#if selectedLocation}
-            <div class="flex items-center justify-between mt-1">
-              <p class="text-xs text-muted-foreground">Selected: {selectedLocation.label}</p>
-              <button type="button" class="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline" on:click={clearLocation}>
-                Clear
-              </button>
-            </div>
-          {/if}
-          <input type="hidden" name="location_label" value={locationQuery} />
-          <input type="hidden" name="city" value={loc_city} />
-          <input type="hidden" name="region" value={loc_region} />
-          <input type="hidden" name="country" value={loc_country} />
-          <input type="hidden" name="lat" value={loc_lat} />
-          <input type="hidden" name="lon" value={loc_lon} />
-        </div>
+        <LocationAutocomplete
+          bind:value={selectedLocation}
+          required={true}
+          label="Location"
+          id="location"
+          placeholder="Start typing... e.g. San Diego, CA"
+        />
 
         <!-- Logo -->
         <div class="space-y-1">

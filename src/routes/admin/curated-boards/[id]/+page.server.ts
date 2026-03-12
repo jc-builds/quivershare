@@ -6,6 +6,7 @@ import {
   validateImageUrls,
   MAX_IMAGES_PER_LISTING
 } from '$lib/server/imageValidation';
+import { requireLocation, LocationValidationError } from '$lib/server/location';
 
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const id = params.id;
 
   // Fetch the curated board (admin can edit any curated board)
-  const { data: surfboard, error: boardErr } = await locals.supabase
+    const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
     .select(`
       id,
@@ -35,8 +36,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       price,
       condition,
       notes,
+      location_label,
       city,
       region,
+      country,
       lat,
       lon,
       source_type,
@@ -373,13 +376,17 @@ export const actions: Actions = {
     const price = form.get('price')?.toString() ? Number(form.get('price')) : null;
     const condition = form.get('condition')?.toString() || null;
     const notes = form.get('notes')?.toString() || null;
-    const city = form.get('city')?.toString() || null;
-    const region = form.get('region')?.toString() || null;
-    const lat_raw = form.get('lat')?.toString();
-    const lon_raw = form.get('lon')?.toString();
-    const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
-    const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
     const state = form.get('state')?.toString() || 'active';
+
+    let location;
+    try {
+      location = requireLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { success: false, message: e.message });
+      }
+      throw e;
+    }
     
     // Validate state
     if (state !== 'active' && state !== 'inactive') {
@@ -420,10 +427,12 @@ export const actions: Actions = {
       price,
       condition,
       notes,
-      city,
-      region,
-      lat,
-      lon,
+      location_label: location.label,
+      city: location.city,
+      region: location.region,
+      country: location.country,
+      lat: location.lat,
+      lon: location.lon,
       source_type,
       source_url,
       shop_id,

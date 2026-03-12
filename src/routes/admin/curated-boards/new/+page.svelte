@@ -3,7 +3,9 @@
   import { supabase } from '$lib/supabaseClient';
   import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from '$lib/imageValidation';
   import ImageManager from '$lib/components/ImageManager.svelte';
+  import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import type { ManagedImage } from '$lib/types/image';
+  import type { StructuredLocation } from '$lib/types/location';
 
   type ShopOption = {
     id: string;
@@ -46,70 +48,15 @@
   let style = getInitial("style");
   let price = getInitial("price");
   let condition = getInitial("condition");
-  let city = getInitial("city");
-  let region = getInitial("region");
   let source_type = getInitial("source_type");
   let source_url = getInitial("source_url");
   let shop_id = getInitial("shop_id");
   let notes = getInitial("notes");
-  let lat = getInitial("lat");
-  let lon = getInitial("lon");
 
-  // Location fields
-  let locationQuery = getInitial("city") && getInitial("region") ? `${getInitial("city")}, ${getInitial("region")}` : "";
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
-  let locationDebounceHandle: any;
+  // Location
+  let selectedLocation: StructuredLocation | null = null;
   let lastAutoPopulatedShopId = "";
 
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    
-    if (!v || v.trim() === "") {
-      clearLocation();
-      return;
-    }
-    
-    selectedLocation = null;
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
-
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    selectedLocation = {
-      label: s.label,
-      lat: s.lat,
-      lon: s.lon,
-      city: s.city,
-      region: s.region
-    };
-    locationSuggestions = [];
-    city = s.city;
-    region = s.region;
-    lat = s.lat.toString();
-    lon = s.lon.toString();
-  }
-
-  function clearLocation() {
-    locationQuery = "";
-    selectedLocation = null;
-    city = "";
-    region = "";
-    lat = "";
-    lon = "";
-  }
 
   // Handle form errors
   $: if (form?.message) {
@@ -133,25 +80,17 @@
 
   function applyShopLocation(shop: ShopOption) {
     const nextLabel = getShopLocationLabel(shop);
-    locationQuery = nextLabel;
-    locationSuggestions = [];
-
-    city = shop.city?.trim() ?? "";
-    region = shop.region?.trim() ?? "";
-
     const hasCoords = shop.latitude != null && shop.longitude != null;
-    const shopLat = hasCoords ? shop.latitude : null;
-    const shopLon = hasCoords ? shop.longitude : null;
-    lat = shopLat != null ? shopLat.toString() : "";
-    lon = shopLon != null ? shopLon.toString() : "";
 
-    selectedLocation = shopLat != null && shopLon != null
+    selectedLocation = hasCoords
       ? {
+          id: '',
           label: nextLabel || "Selected shop location",
-          lat: shopLat,
-          lon: shopLon,
-          city,
-          region
+          lat: shop.latitude!,
+          lon: shop.longitude!,
+          city: shop.city?.trim() ?? '',
+          region: shop.region?.trim() ?? '',
+          country: '',
         }
       : null;
   }
@@ -522,55 +461,14 @@
       {/if}
 
       <!-- Location (required) -->
-      <div class="space-y-1">
-        <label for="location" class="block text-sm font-medium text-muted-foreground">
-          Location <span class="text-red-400">*</span>
-        </label>
-        <div class="relative">
-          <input
-            id="location"
-            type="text"
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-            placeholder="Start typing... e.g. San Diego, CA"
-            value={locationQuery}
-            on:input={onLocationInput}
-            autocomplete="off"
-            aria-autocomplete="list"
-            aria-controls="location-suggestions-list"
-            required
-          />
-          {#if locationSuggestions.length > 0}
-            <ul id="location-suggestions-list" class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
-              {#each locationSuggestions as s}
-                <li>
-                  <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseLocationSuggestion(s)}>
-                    {s.label}
-                  </button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-        {#if selectedLocation}
-          <div class="flex items-center justify-between mt-1">
-            <p class="text-xs text-muted-foreground">
-              Selected: {selectedLocation.label}
-            </p>
-            <button
-              type="button"
-              class="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              on:click={clearLocation}
-            >
-              Clear
-            </button>
-          </div>
-        {/if}
-        <!-- Hidden inputs for city, region, lat, lon -->
-        <input type="hidden" name="city" bind:value={city} />
-        <input type="hidden" name="region" bind:value={region} />
-        <input type="hidden" name="lat" bind:value={lat} />
-        <input type="hidden" name="lon" bind:value={lon} />
-      </div>
+      <LocationAutocomplete
+        bind:value={selectedLocation}
+        required={true}
+        label="Location"
+        id="location"
+        placeholder="Start typing... e.g. San Diego, CA"
+        clearable={true}
+      />
 
       <!-- Notes (optional) -->
       <div class="space-y-1">

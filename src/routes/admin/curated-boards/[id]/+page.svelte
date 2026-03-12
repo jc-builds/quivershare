@@ -6,7 +6,9 @@
   import { page } from "$app/stores";
   import { invalidateAll } from "$app/navigation";
   import ImageManager from "$lib/components/ImageManager.svelte";
+  import LocationAutocomplete from "$lib/components/LocationAutocomplete.svelte";
   import type { ManagedImage } from "$lib/types/image";
+  import type { StructuredLocation } from "$lib/types/location";
 
   export let data: {
     surfboard: any;
@@ -60,22 +62,19 @@
     surfboard.state = surfboard.state === 'active' ? 'inactive' : 'active';
   }
 
-  // Location fields
-  let locationQuery = sb.city && sb.region ? `${sb.city}, ${sb.region}` : "";
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
-  let locationDebounceHandle: any;
-
-  // Initialize selected location from existing data
-  if (sb.lat && sb.lon) {
-    selectedLocation = {
-      label: locationQuery || "Selected location",
-      lat: sb.lat,
-      lon: sb.lon,
-      city: sb.city || "",
-      region: sb.region || ""
-    };
-  }
+  // Location
+  let selectedLocation: StructuredLocation | null =
+    sb.lat && sb.lon
+      ? {
+          id: '',
+          label: sb.location_label || (sb.city && sb.region ? `${sb.city}, ${sb.region}` : 'Selected location'),
+          lat: sb.lat,
+          lon: sb.lon,
+          city: sb.city || '',
+          region: sb.region || '',
+          country: sb.country || '',
+        }
+      : null;
 
   let existingImages: ExistingImage[] = (data?.existingImages ??
     []) as ExistingImage[];
@@ -99,60 +98,6 @@
   let deleteBoardConfirmText = '';
   const requiredDeleteConfirmText = 'DELETE';
 
-  // ---------------------------------------------------------
-  // 2. Location search functions
-  // ---------------------------------------------------------
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    
-    // If user clears the input, clear location data
-    if (!v || v.trim() === "") {
-      clearLocation();
-      return;
-    }
-    
-    selectedLocation = null;
-
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
-
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    selectedLocation = {
-      label: s.label,
-      lat: s.lat,
-      lon: s.lon,
-      city: s.city,
-      region: s.region
-    };
-    locationSuggestions = [];
-    // Update surfboard object with location data
-    surfboard.city = s.city;
-    surfboard.region = s.region;
-    surfboard.lat = s.lat;
-    surfboard.lon = s.lon;
-  }
-
-  function clearLocation() {
-    locationQuery = "";
-    selectedLocation = null;
-    surfboard.city = "";
-    surfboard.region = "";
-    surfboard.lat = "";
-    surfboard.lon = "";
-  }
 
   // ---------------------------------------------------------
   // 3. Upload & UI state
@@ -775,54 +720,14 @@
       {/if}
 
       <!-- Location -->
-      <div class="space-y-1">
-        <label for="location" class="block text-sm font-medium text-muted-foreground">
-          Location (optional)
-        </label>
-        <div class="relative">
-          <input
-            id="location"
-            type="text"
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-            placeholder="Start typing... e.g. San Diego, CA"
-            value={locationQuery}
-            on:input={onLocationInput}
-            autocomplete="off"
-            aria-autocomplete="list"
-            aria-controls="location-suggestions-list"
-          />
-          {#if locationSuggestions.length > 0}
-            <ul id="location-suggestions-list" class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
-              {#each locationSuggestions as s}
-                <li>
-                  <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseLocationSuggestion(s)}>
-                    {s.label}
-                  </button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-        {#if selectedLocation}
-          <div class="flex items-center justify-between mt-1">
-            <p class="text-xs text-muted-foreground">
-              Selected: {selectedLocation.label}
-            </p>
-            <button
-              type="button"
-              class="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              on:click={clearLocation}
-            >
-              Clear
-            </button>
-          </div>
-        {/if}
-        <!-- Hidden inputs for location data -->
-        <input type="hidden" name="city" value={surfboard.city || ''} />
-        <input type="hidden" name="region" value={surfboard.region || ''} />
-        <input type="hidden" name="lat" value={surfboard.lat || ''} />
-        <input type="hidden" name="lon" value={surfboard.lon || ''} />
-      </div>
+      <LocationAutocomplete
+        bind:value={selectedLocation}
+        required={true}
+        label="Location"
+        id="location"
+        placeholder="Start typing... e.g. San Diego, CA"
+        clearable={true}
+      />
 
       <!-- Notes -->
       <div class="space-y-1">
