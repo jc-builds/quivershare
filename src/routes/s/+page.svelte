@@ -16,6 +16,10 @@
     page: number;
     limit: number;
     sort: SortOption;
+    locLabel: string | null;
+    locLat: number | null;
+    locLon: number | null;
+    distance: number | null;
   };
 
   // Board type
@@ -56,7 +60,6 @@
   const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
   const eagerImageCount = browser && window.innerWidth < 768 ? 1 : 2;
   let boards: Board[] = data.boards ?? [];
-  let visibleBoards: Board[] = boards;
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
   let currentPage = data.page ?? 1;
   let totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
@@ -67,15 +70,11 @@
 
   $: boards = data.boards ?? [];
 
-  $: visibleBoards = activeLocationFilter
-    ? boards.filter((board) => passesLocationFilter(board))
-    : boards;
-
   $: sortBy = (data.sort ?? 'created_desc') as SortOption;
 
   $: currentPage = data.page ?? 1;
   $: totalPages = Math.max(1, Math.ceil((data.total ?? 0) / (data.limit || 1)));
-  $: displayedResultsCount = activeLocationFilter ? visibleBoards.length : data.total;
+  $: displayedResultsCount = data.total;
   $: {
     const labels: string[] = [];
     if (selectedLength) labels.push(`Length: ${selectedLength}`);
@@ -83,8 +82,8 @@
     if (selectedFinSystem) labels.push(`Fin System: ${selectedFinSystem}`);
     if (selectedFinSetup) labels.push(`Fin Setup: ${selectedFinSetup}`);
     if (selectedStyle) labels.push(`Style: ${selectedStyle}`);
-    if (activeLocationFilter) {
-      labels.push(`Location: ${activeLocationFilter.radius}mi from ${activeLocationFilter.location.label}`);
+    if (data.locLabel && data.distance) {
+      labels.push(`Location: ${data.distance}mi from ${data.locLabel}`);
     }
     activeFilterLabels = labels;
     hasActiveFilters = labels.length > 0;
@@ -115,7 +114,6 @@
 
   function goToPage(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    if (activeLocationFilter) return;
     const current = get(page);
     const search = new URLSearchParams(current.url.search);
     search.set('page', String(newPage));
@@ -125,6 +123,30 @@
   }
 
   function openFiltersDrawer() {
+    if (data.locLat != null && data.locLon != null && data.locLabel) {
+      selectedLocation = {
+        id: '', label: data.locLabel, lat: data.locLat, lon: data.locLon,
+        city: '', region: '', country: ''
+      };
+      searchRadius = data.distance ?? 50;
+    } else if (data.userLocationLat && data.userLocationLon) {
+      selectedLocation = {
+        id: '', label: data.userLocation || 'Your location',
+        lat: data.userLocationLat, lon: data.userLocationLon,
+        city: '', region: '', country: ''
+      };
+      searchRadius = 50;
+    } else {
+      selectedLocation = null;
+      searchRadius = 50;
+    }
+
+    draftLength = selectedLength;
+    draftVolume = selectedVolume;
+    draftFinSystem = selectedFinSystem;
+    draftFinSetup = selectedFinSetup;
+    draftStyle = selectedStyle;
+
     isFiltersOpen = true;
   }
 
@@ -139,38 +161,77 @@
   }
 
   function clearAllFilters() {
-    activeLocationFilter = null;
-    selectedLocation = null;
-    searchRadius = 50;
     closeFiltersDrawer();
     goto('/s');
   }
 
-  // Location search state
-  let selectedLocation: StructuredLocation | null = null;
-  let searchRadius = 50;
-  let activeLocationFilter: { location: { label: string; lat: number; lon: number }; radius: number } | null = null;
-  let initializedFromQuery = false;
+  function applyAllFilters() {
+    const params: Record<string, string | null> = { page: '1' };
 
-  // Initialize selected location from user's profile
-  $: if (data.userLocationLat && data.userLocationLon && !selectedLocation) {
-    selectedLocation = {
-      id: '',
-      label: data.userLocation || 'Your location',
-      lat: data.userLocationLat,
-      lon: data.userLocationLon,
-      city: '',
-      region: '',
-      country: '',
-    };
+    params.length = draftLength
+      ? LENGTH_PARAM_MAP[draftLength] ?? null
+      : null;
+    params.volume = draftVolume
+      ? VOLUME_PARAM_MAP[draftVolume] ?? null
+      : null;
+    params.fin_system = draftFinSystem || null;
+    params.fin_setup = draftFinSetup
+      ? FIN_SETUP_SLUG_MAP[draftFinSetup] ?? null
+      : null;
+    params.style = draftStyle || null;
+
+    if (selectedLocation && selectedLocation.lat && selectedLocation.lon) {
+      params.loc_label = selectedLocation.label;
+      params.loc_lat = String(selectedLocation.lat);
+      params.loc_lon = String(selectedLocation.lon);
+      params.distance = String(searchRadius);
+    } else {
+      params.loc_label = null;
+      params.loc_lat = null;
+      params.loc_lon = null;
+      params.distance = null;
+    }
+
+    closeFiltersDrawer();
+    navigateWithParams(params);
   }
 
-  // Filter state
+  let selectedLocation: StructuredLocation | null = null;
+  let searchRadius = 50;
+
+  $: {
+    if (data.locLat != null && data.locLon != null && data.locLabel) {
+      selectedLocation = {
+        id: '', label: data.locLabel, lat: data.locLat, lon: data.locLon,
+        city: '', region: '', country: ''
+      };
+      searchRadius = data.distance ?? 50;
+    } else if (data.userLocationLat && data.userLocationLon) {
+      selectedLocation = {
+        id: '', label: data.userLocation || 'Your location',
+        lat: data.userLocationLat, lon: data.userLocationLon,
+        city: '', region: '', country: ''
+      };
+      searchRadius = 50;
+    } else {
+      selectedLocation = null;
+      searchRadius = 50;
+    }
+  }
+
+  // Applied filter state (hydrated from URL)
   let selectedLength: string | null = null;
   let selectedVolume: string | null = null;
   let selectedFinSystem: string | null = null;
   let selectedFinSetup: string | null = null;
   let selectedStyle: string | null = null;
+
+  // Draft state for the filters drawer (synced when drawer opens)
+  let draftLength: string | null = null;
+  let draftVolume: string | null = null;
+  let draftFinSystem: string | null = null;
+  let draftFinSetup: string | null = null;
+  let draftStyle: string | null = null;
 
   // Filter options
   const lengthOptions = [
@@ -271,7 +332,7 @@
 
   // Hydrate filter UI state from URL query parameters
   $: {
-    const searchParams = get(page).url.searchParams;
+    const searchParams = $page.url.searchParams;
     const lengthParam = searchParams.get('length') ?? '';
     const volumeParam = searchParams.get('volume') ?? '';
     const finSystemParam = searchParams.get('fin_system') ?? '';
@@ -287,104 +348,8 @@
   }
 
 
-  function handleLengthChange() {
-    const paramValue =
-      selectedLength && selectedLength !== 'More'
-        ? LENGTH_PARAM_MAP[selectedLength] ?? null
-        : null;
-    navigateWithParams({ length: paramValue, page: '1' });
-  }
-
-  function handleVolumeChange() {
-    const paramValue =
-      selectedVolume && selectedVolume !== 'More'
-        ? VOLUME_PARAM_MAP[selectedVolume] ?? null
-        : null;
-    navigateWithParams({ volume: paramValue, page: '1' });
-  }
-
-  function handleFinSystemChange() {
-    const paramValue = selectedFinSystem || null;
-    navigateWithParams({ fin_system: paramValue, page: '1' });
-  }
-
-  function handleFinSetupChange() {
-    const slug = selectedFinSetup ? FIN_SETUP_SLUG_MAP[selectedFinSetup] ?? null : null;
-    navigateWithParams({ fin_setup: slug, page: '1' });
-  }
-
-  function handleStyleChange() {
-    const paramValue = selectedStyle || null;
-    navigateWithParams({ style: paramValue, page: '1' });
-  }
 
 
-  // Hydrate location filter from URL query parameters (structured params from homepage)
-  $: (() => {
-    if (!browser || initializedFromQuery) return;
-
-    const $page = get(page);
-    const searchParams = $page.url.searchParams;
-
-    const locLabel = searchParams.get('loc_label');
-    const locLat = searchParams.get('loc_lat');
-    const locLon = searchParams.get('loc_lon');
-    const distanceParam = searchParams.get('distance');
-
-    if (!locLabel || !locLat || !locLon) return;
-
-    const lat = Number(locLat);
-    const lon = Number(locLon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-
-    initializedFromQuery = true;
-
-    selectedLocation = {
-      id: '',
-      label: locLabel,
-      lat,
-      lon,
-      city: '',
-      region: '',
-      country: '',
-    };
-
-    const parsedDistance = distanceParam ? Number(distanceParam) : NaN;
-    if (!Number.isNaN(parsedDistance) && parsedDistance > 0) {
-      searchRadius = parsedDistance;
-    }
-
-    activeLocationFilter = {
-      location: selectedLocation,
-      radius: searchRadius
-    };
-  })();
-
-  // Calculate distance between two coordinates using Haversine formula
-  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 3959; // Earth's radius in miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-  function passesLocationFilter(board: Board): boolean {
-    if (!activeLocationFilter) return true;
-    if (board.lat == null || board.lon == null) return false;
-
-    const distance = calculateDistance(
-      activeLocationFilter.location.lat,
-      activeLocationFilter.location.lon,
-      board.lat,
-      board.lon
-    );
-
-    return distance <= activeLocationFilter.radius;
-  }
 
 </script>
 
@@ -462,13 +427,13 @@
       {/if}
     </div>
 
-    {#if visibleBoards.length === 0}
+    {#if boards.length === 0}
       <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
         <p class="text-muted-foreground">No boards match your filters.</p>
       </div>
     {:else}
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {#each visibleBoards as board, index (board.id)}
+        {#each boards as board, index (board.id)}
           <a
             href="/surfboards/{board.id}"
             data-sveltekit-prefetch
@@ -538,7 +503,7 @@
       <div class="flex justify-center items-center gap-3 mt-8">
         <button
           class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-          disabled={currentPage === 1 || activeLocationFilter !== null}
+          disabled={currentPage === 1}
           on:click={() => goToPage(currentPage - 1)}
         >
           Previous
@@ -548,7 +513,7 @@
         </span>
         <button
           class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
-          disabled={currentPage === totalPages || activeLocationFilter !== null}
+          disabled={currentPage === totalPages}
           on:click={() => goToPage(currentPage + 1)}
         >
           Next
@@ -622,34 +587,26 @@
               <span class="text-sm text-muted-foreground whitespace-nowrap">miles</span>
             </div>
           </div>
-          <button
-            type="button"
-            class="inline-flex w-full items-center justify-center rounded-lg border border-border bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-            disabled={!selectedLocation}
-            on:click={() => {
-              if (!selectedLocation) return;
-              if (!selectedLocation.lat || !selectedLocation.lon) return;
-
-              activeLocationFilter = {
-                location: selectedLocation,
-                radius: searchRadius
-              };
-            }}
-          >
-            Apply Location Search
-          </button>
-          {#if activeLocationFilter}
+          {#if data.locLabel && data.distance}
             <div class="mt-4 p-3 bg-primary-soft/30 rounded-lg border border-primary/20">
               <div class="text-foreground font-medium mb-2 text-xs">
-                Active: {activeLocationFilter.radius} miles from {activeLocationFilter.location.label}
+                Active: {data.distance} miles from {data.locLabel}
               </div>
-              <a
-                href="/s"
-                data-sveltekit-reload
+              <button
+                type="button"
                 class="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+                on:click={() => {
+                  navigateWithParams({
+                    loc_label: null,
+                    loc_lat: null,
+                    loc_lon: null,
+                    distance: null,
+                    page: '1'
+                  });
+                }}
               >
                 Clear Location Filter
-              </a>
+              </button>
             </div>
           {:else if selectedLocation}
             <div class="mt-4 text-xs text-muted-foreground">
@@ -667,9 +624,8 @@
             </label>
             <select
               id="drawer-filter-length"
-              bind:value={selectedLength}
+              bind:value={draftLength}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              on:change={handleLengthChange}
             >
               <option value={null}>All</option>
               {#each lengthOptions as opt}
@@ -684,9 +640,8 @@
             </label>
             <select
               id="drawer-filter-volume"
-              bind:value={selectedVolume}
+              bind:value={draftVolume}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              on:change={handleVolumeChange}
             >
               <option value={null}>All</option>
               {#each volumeOptions as opt}
@@ -701,9 +656,8 @@
             </label>
             <select
               id="drawer-filter-fin-system"
-              bind:value={selectedFinSystem}
+              bind:value={draftFinSystem}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              on:change={handleFinSystemChange}
             >
               <option value={null}>All</option>
               {#each finSystemOptions as opt}
@@ -718,9 +672,8 @@
             </label>
             <select
               id="drawer-filter-fin-setup"
-              bind:value={selectedFinSetup}
+              bind:value={draftFinSetup}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              on:change={handleFinSetupChange}
             >
               <option value={null}>All</option>
               {#each finSetupOptions as opt}
@@ -735,9 +688,8 @@
             </label>
             <select
               id="drawer-filter-style"
-              bind:value={selectedStyle}
+              bind:value={draftStyle}
               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              on:change={handleStyleChange}
             >
               <option value={null}>All</option>
               {#each styleOptions as opt}
@@ -746,13 +698,25 @@
             </select>
           </div>
 
-          <a
-            href="/s"
-            data-sveltekit-reload
-            class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated mt-2"
+        </div>
+
+        <div class="space-y-3">
+          <button
+            type="button"
+            class="inline-flex w-full items-center justify-center rounded-lg border border-border bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+            on:click={applyAllFilters}
           >
-            Clear Filters
-          </a>
+            Apply Filters
+          </button>
+          {#if hasActiveFilters}
+            <button
+              type="button"
+              class="inline-flex w-full items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated"
+              on:click={clearAllFilters}
+            >
+              Clear All Filters
+            </button>
+          {/if}
         </div>
       </div>
     </div>
