@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
   import { pageTitle } from '$lib/title';
+  import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
+  import type { StructuredLocation } from '$lib/types/location';
 
   export let data: {
     profile: {
@@ -48,99 +50,19 @@
     }
   });
 
-  // Location autocomplete state
-  let locationQuery = data.profile.location_label || '';
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let loc_id = '';
-  let loc_label = '';
-  let loc_lat: number | '' = '';
-  let loc_lon: number | '' = '';
-  let loc_city = '';
-  let loc_region = '';
-  let loc_country = '';
-  let locationDebounceHandle: any;
-
-  // Home break location autocomplete
-  let homeBreakQuery = data.profile.home_break_label || '';
-  let suggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let homeBreakLat: number | '' = data.profile.home_break_lat || '';
-  let homeBreakLon: number | '' = data.profile.home_break_lon || '';
-  let homeBreakCity = '';
-  let homeBreakRegion = '';
-  let homeBreakCountry = '';
-  let debounceHandle: any;
-
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    // Clear selection if user edits text again
-    loc_id = '';
-    loc_label = '';
-    loc_lat = '';
-    loc_lon = '';
-    loc_city = '';
-    loc_region = '';
-    loc_country = '';
-
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
-
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    loc_id = s.id;
-    loc_label = s.label;
-    loc_lat = s.lat;
-    loc_lon = s.lon;
-    loc_city = s.city;
-    loc_region = s.region;
-    loc_country = s.country;
-    locationSuggestions = [];
-  }
-
-  async function searchPlaces(q: string) {
-    if (!q || q.length < 2) {
-      suggestions = [];
-      return;
-    }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    suggestions = data.features ?? [];
-  }
-
-  function onHomeBreakInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    homeBreakQuery = v;
-    homeBreakLat = '';
-    homeBreakLon = '';
-    homeBreakCity = '';
-    homeBreakRegion = '';
-    homeBreakCountry = '';
-
-    clearTimeout(debounceHandle);
-    debounceHandle = setTimeout(() => searchPlaces(homeBreakQuery), 200);
-  }
-
-  function chooseSuggestion(s: (typeof suggestions)[number]) {
-    homeBreakQuery = s.label;
-    homeBreakLabel = s.label;
-    homeBreakLat = s.lat;
-    homeBreakLon = s.lon;
-    homeBreakCity = s.city;
-    homeBreakRegion = s.region;
-    homeBreakCountry = s.country;
-    suggestions = [];
-  }
+  // Location — shared component
+  let selectedLocation: StructuredLocation | null =
+    data.profile.latitude != null && data.profile.longitude != null
+      ? {
+          id: '',
+          label: data.profile.location_label || 'Selected location',
+          lat: data.profile.latitude,
+          lon: data.profile.longitude,
+          city: data.profile.city || '',
+          region: data.profile.region || '',
+          country: data.profile.country || '',
+        }
+      : null;
 
   // Profile picture handling
   async function handleFileSelect(event: Event) {
@@ -316,87 +238,33 @@
       </p>
     </div>
 
-    <!-- Home Break -->
+    <!-- Home Break (plain text) -->
     <div class="space-y-1">
       <label for="home_break" class="block text-sm font-medium text-muted-foreground">
         Home Break
       </label>
-      <div class="relative">
-        <input
-          id="home_break"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-          name="home_break_query"
-          placeholder="Start typing... e.g. Trestles, Pipeline"
-          value={homeBreakQuery}
-          on:input={onHomeBreakInput}
-          autocomplete="off"
-        />
-
-        {#if suggestions.length > 0}
-          <ul class="absolute z-10 mt-2 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
-            {#each suggestions as s}
-              <li>
-                <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseSuggestion(s)}>
-                  {s.label}
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </div>
-
-      <input type="hidden" name="home_break_label" value={homeBreakLabel} />
-      <input type="hidden" name="home_break_lat" value={homeBreakLat} />
-      <input type="hidden" name="home_break_lon" value={homeBreakLon} />
+      <input
+        id="home_break"
+        name="home_break_label"
+        type="text"
+        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+        placeholder="e.g. 2nd Jetty on the Left, Trestles, Pipeline"
+        bind:value={homeBreakLabel}
+        maxlength="200"
+      />
       <p class="text-xs text-muted-foreground mt-1">
-        Your favorite surf spot or home break
+        Optional — can be specific or playful (e.g. "2nd Jetty on the Left")
       </p>
     </div>
 
     <!-- Location -->
-    <div class="space-y-1">
-      <label for="location" class="block text-sm font-medium text-muted-foreground">
-        Location
-      </label>
-      <div class="relative">
-        <input
-          id="location"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-          name="locationQuery"
-          placeholder="Start typing... e.g. Brooklyn"
-          value={locationQuery}
-          on:input={onLocationInput}
-          autocomplete="off"
-          aria-autocomplete="list"
-          aria-expanded={locationSuggestions.length > 0}
-          aria-controls="location-suggestions"
-        />
-
-        {#if locationSuggestions.length > 0}
-          <ul id="location-suggestions" class="absolute z-10 mt-2 w-full max-h-60 overflow-y-auto bg-surface-elevated border border-border rounded-lg shadow-lg text-sm">
-            {#each locationSuggestions as s}
-              <li>
-                <button type="button" class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground" on:click={() => chooseLocationSuggestion(s)}>
-                  {s.label}
-                </button>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </div>
-
-      <!-- Hidden fields sent to server on submit -->
-      <input type="hidden" name="place_id" value={loc_id} />
-      <input type="hidden" name="place_label" value={loc_label} />
-      <input type="hidden" name="lat" value={loc_lat} />
-      <input type="hidden" name="lon" value={loc_lon} />
-      <input type="hidden" name="city" value={loc_city} />
-      <input type="hidden" name="region" value={loc_region} />
-      <input type="hidden" name="country" value={loc_country} />
-      <p class="text-xs text-muted-foreground mt-1">
-        Your current location
-      </p>
-    </div>
+    <LocationAutocomplete
+      bind:value={selectedLocation}
+      required={false}
+      label="Location"
+      id="location"
+      placeholder="Start typing... e.g. Brooklyn"
+    />
 
     {#if form?.message}
       <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">

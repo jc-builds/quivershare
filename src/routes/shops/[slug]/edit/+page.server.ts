@@ -1,6 +1,7 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
+import { parseLocation, LocationValidationError } from '$lib/server/location';
 
 function isValidUrl(str: string): boolean {
   try {
@@ -107,19 +108,20 @@ export const actions: Actions = {
     const website_url = form.get('website_url')?.toString()?.trim() ?? '';
     const email = form.get('email')?.toString()?.trim() ?? '';
     const phone = form.get('phone')?.toString()?.trim() || null;
-    const location_label = form.get('location_label')?.toString()?.trim() || null;
-    const city = form.get('city')?.toString()?.trim() || null;
-    const region = form.get('region')?.toString()?.trim() || null;
-    const country = form.get('country')?.toString()?.trim() || null;
-    const lat_raw = form.get('lat')?.toString()?.trim();
-    const lon_raw = form.get('lon')?.toString()?.trim();
-    const latitude = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
-    const longitude = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
-
     const logoFile = form.get('logo') as File | null;
     const bannerFile = form.get('banner') as File | null;
 
-    const values = { name, description: description ?? '', website_url, email, phone: phone ?? '', location_label: location_label ?? '' };
+    const values = { name, description: description ?? '', website_url, email, phone: phone ?? '', location_label: '' };
+
+    let location;
+    try {
+      location = parseLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { message: e.message, values });
+      }
+      throw e;
+    }
 
     if (!name) {
       return fail(400, { message: 'Shop name is required.', values });
@@ -179,12 +181,12 @@ export const actions: Actions = {
       website_url,
       email,
       phone,
-      location_label,
-      city,
-      region,
-      country,
-      latitude,
-      longitude
+      location_label: location?.label ?? null,
+      city: location?.city ?? null,
+      region: location?.region ?? null,
+      country: location?.country ?? null,
+      latitude: location?.lat ?? null,
+      longitude: location?.lon ?? null,
     };
 
     if (logo_image_url !== undefined) updatePayload.logo_image_url = logo_image_url;

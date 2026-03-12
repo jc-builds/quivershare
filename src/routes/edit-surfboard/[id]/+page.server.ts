@@ -5,6 +5,7 @@ import {
   validateImageUrls,
   MAX_IMAGES_PER_LISTING
 } from '$lib/server/imageValidation';
+import { requireLocation, LocationValidationError } from '$lib/server/location';
 
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
@@ -34,8 +35,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       price,
       condition,
       notes,
+      location_label,
       city,
       region,
+      country,
       lat,
       lon,
       state,
@@ -104,11 +107,17 @@ export const actions: Actions = {
     const price = form.get('price')?.toString();
     const condition = form.get('condition')?.toString() ?? '';
     const notes = form.get('notes')?.toString() ?? '';
-    const city = form.get('city')?.toString() || null;
-    const region = form.get('region')?.toString() || null;
-    const lat_raw = form.get('lat')?.toString();
-    const lon_raw = form.get('lon')?.toString();
     const state = form.get('state')?.toString();
+
+    let location;
+    try {
+      location = requireLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { message: e.message });
+      }
+      throw e;
+    }
 
     if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
       return fail(400, { message: 'Invalid style value' });
@@ -134,10 +143,12 @@ export const actions: Actions = {
       price: price === '' || !price ? null : Number(price),
       condition,
       notes,
-      city: city === '' ? null : city,
-      region: region === '' ? null : region,
-      lat: lat_raw === '' || !lat_raw ? null : Number(lat_raw),
-      lon: lon_raw === '' || !lon_raw ? null : Number(lon_raw),
+      location_label: location.label,
+      city: location.city,
+      region: location.region,
+      country: location.country,
+      lat: location.lat,
+      lon: location.lon,
     };
 
     // Include state if provided (for consistency with existing data structure)

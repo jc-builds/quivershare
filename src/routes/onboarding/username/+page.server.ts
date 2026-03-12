@@ -1,6 +1,7 @@
 // src/routes/onboarding/username/+page.server.ts
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
+import { parseLocation, LocationValidationError } from '$lib/server/location';
 
 const isAutoUsername = (u: string | null | undefined) => !!u && u.startsWith('user_');
 
@@ -113,22 +114,22 @@ export const actions: Actions = {
       });
     }
 
-    // Location (optional)
-    const place_id = (form.get('place_id') as string | null) ?? '';
-    const place_label = (form.get('place_label') as string | null) ?? '';
-    const lat = Number(form.get('lat') ?? '');
-    const lon = Number(form.get('lon') ?? '');
-    const city = (form.get('city') as string | null) ?? '';
-    const region = (form.get('region') as string | null) ?? '';
-    const country = (form.get('country') as string | null) ?? '';
-    const hasLocation = !!place_id && Number.isFinite(lat) && Number.isFinite(lon);
+    // Location (optional — uses shared validator)
+    let location;
+    try {
+      location = parseLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, {
+          message: e.message,
+          values: { username, redirectTo }
+        });
+      }
+      throw e;
+    }
 
-    // Home break (optional)
+    // Home break (plain text only)
     const home_break_label = (form.get('home_break_label') as string | null)?.trim() || null;
-    const home_break_lat_raw = form.get('home_break_lat');
-    const home_break_lon_raw = form.get('home_break_lon');
-    const home_break_lat = home_break_lat_raw && home_break_lat_raw !== '' ? Number(home_break_lat_raw) : null;
-    const home_break_lon = home_break_lon_raw && home_break_lon_raw !== '' ? Number(home_break_lon_raw) : null;
 
     // Handle profile picture upload
     let profile_picture_url: string | null = null;
@@ -180,25 +181,17 @@ export const actions: Actions = {
       update.full_name = full_name;
     }
     
-    if (hasLocation) {
-      update.location_label = place_label;
-      update.latitude = lat;
-      update.longitude = lon;
-      update.city = city;
-      update.region = region;
-      update.country = country;
+    if (location) {
+      update.location_label = location.label;
+      update.latitude = location.lat;
+      update.longitude = location.lon;
+      update.city = location.city;
+      update.region = location.region;
+      update.country = location.country;
     }
     
     if (home_break_label !== null) {
       update.home_break_label = home_break_label;
-    }
-    
-    if (home_break_lat !== null && Number.isFinite(home_break_lat)) {
-      update.home_break_lat = home_break_lat;
-    }
-    
-    if (home_break_lon !== null && Number.isFinite(home_break_lon)) {
-      update.home_break_lon = home_break_lon;
     }
     
     if (magic_board !== null) {

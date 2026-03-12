@@ -1,42 +1,26 @@
 <script lang="ts">
   import './styles.css';
+  import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
+  import type { StructuredLocation } from '$lib/types/location';
+  import { goto } from '$app/navigation';
 
-  // Location autocomplete state
-  let locationQuery = '';
-  let locationSuggestions: Array<{ id: string; label: string; lat: number; lon: number; city: string; region: string; country: string }> = [];
-  let locationDebounceHandle: any;
-  let selectedLocation: { label: string; lat: number; lon: number; city: string; region: string } | null = null;
-  let searchRadius = 15; // Default 15 miles
+  let selectedLocation: StructuredLocation | null = null;
+  let searchRadius = 15;
+  let searchError = '';
 
-  async function searchLocationPlaces(q: string) {
-    if (!q || q.length < 2) {
-      locationSuggestions = [];
+  function handleSearchSubmit(e: Event) {
+    e.preventDefault();
+    if (!selectedLocation) {
+      searchError = 'Please select a location from the suggestions';
       return;
     }
-    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    locationSuggestions = data.features ?? [];
-  }
-
-  function onLocationInput(e: Event) {
-    const v = (e.target as HTMLInputElement).value;
-    locationQuery = v;
-    selectedLocation = null;
-
-    clearTimeout(locationDebounceHandle);
-    locationDebounceHandle = setTimeout(() => searchLocationPlaces(locationQuery), 200);
-  }
-
-  function chooseLocationSuggestion(s: (typeof locationSuggestions)[number]) {
-    locationQuery = s.label;
-    selectedLocation = {
-      label: s.label,
-      lat: s.lat,
-      lon: s.lon,
-      city: s.city,
-      region: s.region
-    };
-    locationSuggestions = [];
+    searchError = '';
+    const params = new URLSearchParams();
+    params.set('loc_label', selectedLocation.label);
+    params.set('loc_lat', selectedLocation.lat.toString());
+    params.set('loc_lon', selectedLocation.lon.toString());
+    params.set('distance', searchRadius.toString());
+    goto(`/s?${params.toString()}`);
   }
 </script>
 
@@ -148,47 +132,19 @@
         </p>
       </div>
       <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm">
-        <form method="get" action="/s" aria-label="Search surfboards by location" class="flex flex-col gap-5">
-          <div>
-            <label
-              for="search-location"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Location
-            </label>
-            <div class="relative">
-              <input
-                id="search-location"
-                name="q"
-                type="text"
-                placeholder="Enter city, state, or zip code…"
-                class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                value={locationQuery}
-                on:input={onLocationInput}
-                autocomplete="off"
-                aria-autocomplete="list"
-                aria-controls="location-suggestions-list"
-              />
-              {#if locationSuggestions.length > 0}
-                <ul
-                  id="location-suggestions-list"
-                  class="absolute left-0 right-0 z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-surface-elevated shadow-lg backdrop-blur-sm"
-                >
-                  {#each locationSuggestions as s}
-                    <li>
-                      <button
-                        type="button"
-                        class="flex w-full items-center px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg"
-                        on:click={() => chooseLocationSuggestion(s)}
-                      >
-                        {s.label}
-                      </button>
-                    </li>
-                  {/each}
-                </ul>
-              {/if}
-            </div>
-          </div>
+        <form on:submit|preventDefault={handleSearchSubmit} aria-label="Search surfboards by location" class="flex flex-col gap-5">
+          <LocationAutocomplete
+            bind:value={selectedLocation}
+            required={false}
+            label="Location"
+            id="search-location"
+            placeholder="Enter city, state, or zip code…"
+            clearable={true}
+          />
+
+          {#if searchError}
+            <p class="text-sm text-red-400">{searchError}</p>
+          {/if}
 
           <div>
             <label
@@ -200,7 +156,6 @@
             <div class="flex items-center gap-3">
               <input
                 id="search-radius"
-                name="distance"
                 type="number"
                 min="1"
                 max="500"

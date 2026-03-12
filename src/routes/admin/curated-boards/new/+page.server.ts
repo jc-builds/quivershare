@@ -2,6 +2,7 @@
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { validateImageUrls } from '$lib/server/imageValidation';
+import { requireLocation, LocationValidationError } from '$lib/server/location';
 
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
@@ -40,8 +41,6 @@ export const actions: Actions = {
     const condition = form.get('condition')?.toString() ?? '';
     const style = form.get('style')?.toString() ?? '';
     const price = form.get('price') ? Number(form.get('price')) : null;
-    const city = form.get('city')?.toString() ?? '';
-    const region = form.get('region')?.toString() ?? '';
     const source_type = form.get('source_type')?.toString() ?? '';
     const source_url = form.get('source_url')?.toString() ?? '';
     const shop_id_raw = form.get('shop_id')?.toString() ?? '';
@@ -54,10 +53,6 @@ export const actions: Actions = {
     const fin_system = form.get('fin_system')?.toString() || null;
     const fin_setup = form.get('fin_setup')?.toString() || null;
     const notes = form.get('notes')?.toString() || null;
-    const lat_raw = form.get('lat')?.toString();
-    const lon_raw = form.get('lon')?.toString();
-    const lat = lat_raw && lat_raw !== '' ? Number(lat_raw) : null;
-    const lon = lon_raw && lon_raw !== '' ? Number(lon_raw) : null;
     const values = {
       name,
       make,
@@ -70,19 +65,25 @@ export const actions: Actions = {
       style,
       price: form.get('price')?.toString() ?? '',
       condition,
-      city,
-      region,
       source_type,
       source_url,
       shop_id: shop_id ?? '',
       notes: notes ?? '',
-      lat: lat_raw ?? '',
-      lon: lon_raw ?? ''
     };
 
     // Validation
-    if (!name || !make || !length || !condition || !style || !price || !city || !region || !source_type || !source_url) {
+    if (!name || !make || !length || !condition || !style || !price || !source_type || !source_url) {
       return fail(400, { message: 'All required fields must be filled', values });
+    }
+
+    let location;
+    try {
+      location = requireLocation(form);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { message: e.message, values });
+      }
+      throw e;
     }
 
     if (style && !ALLOWED_STYLES.includes(style as (typeof ALLOWED_STYLES)[number])) {
@@ -131,10 +132,12 @@ export const actions: Actions = {
           price,
           condition,
           notes,
-          city,
-          region,
-          lat,
-          lon,
+          location_label: location.label,
+          city: location.city,
+          region: location.region,
+          country: location.country,
+          lat: location.lat,
+          lon: location.lon,
           source_type,
           source_url,
           shop_id: source_type === 'shop' ? persistedShopId : null,

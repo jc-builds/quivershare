@@ -1,6 +1,7 @@
 // src/routes/profile/edit/+page.server.ts
 import { redirect, fail, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
+import { parseLocation, LocationValidationError } from '$lib/server/location';
 
 export const load: PageServerLoad = async ({ locals }) => {
   // Must be logged in - use locals.user as the source of truth
@@ -246,28 +247,19 @@ export const actions: Actions = {
     }
 
     // Handle profile update (default branch)
-    // Use the same formData from above
     const bio = formData.get('bio')?.toString() ?? null;
-    const home_break_label = formData.get('home_break_label')?.toString() ?? null;
-    
-    // Home break coordinates (optional)
-    const home_break_lat_raw = formData.get('home_break_lat');
-    const home_break_lon_raw = formData.get('home_break_lon');
-    const home_break_lat = home_break_lat_raw ? Number(home_break_lat_raw) : null;
-    const home_break_lon = home_break_lon_raw ? Number(home_break_lon_raw) : null;
+    const home_break_label = formData.get('home_break_label')?.toString()?.trim() || null;
 
-    // Location fields
-    const place_id = formData.get('place_id')?.toString() ?? '';
-    const place_label = formData.get('place_label')?.toString() ?? '';
-    const lat_raw = formData.get('lat');
-    const lon_raw = formData.get('lon');
-    const lat = lat_raw ? Number(lat_raw) : NaN;
-    const lon = lon_raw ? Number(lon_raw) : NaN;
-    const city = formData.get('city')?.toString() ?? '';
-    const region = formData.get('region')?.toString() ?? '';
-    const country = formData.get('country')?.toString() ?? '';
-
-    const hasLocation = !!place_id && Number.isFinite(lat) && Number.isFinite(lon);
+    // Location — uses shared validator, allows clear (optional)
+    let location;
+    try {
+      location = parseLocation(formData);
+    } catch (e) {
+      if (e instanceof LocationValidationError) {
+        return fail(400, { message: e.message, error: e.message });
+      }
+      throw e;
+    }
 
     // Handle profile picture upload
     let profile_picture_url: string | null = null;
@@ -351,23 +343,19 @@ export const actions: Actions = {
       // Otherwise, leave it undefined so we don't update it
     }
 
-    // Build update payload (only include fields that are being updated)
+    // Build update payload
     const update: Record<string, any> = {};
     
     if (bio !== null) update.bio = bio || null;
-    if (home_break_label !== null) update.home_break_label = home_break_label || null;
-    if (home_break_lat !== null && Number.isFinite(home_break_lat)) update.home_break_lat = home_break_lat;
-    if (home_break_lon !== null && Number.isFinite(home_break_lon)) update.home_break_lon = home_break_lon;
-    
-    // Update location fields if hasLocation is true
-    if (hasLocation) {
-      update.location_label = place_label || null;
-      update.latitude = lat;
-      update.longitude = lon;
-      update.city = city || null;
-      update.region = region || null;
-      update.country = country || null;
-    }
+    update.home_break_label = home_break_label;
+
+    // Location: always write — either full valid location or all null (clear)
+    update.location_label = location?.label ?? null;
+    update.latitude = location?.lat ?? null;
+    update.longitude = location?.lon ?? null;
+    update.city = location?.city ?? null;
+    update.region = location?.region ?? null;
+    update.country = location?.country ?? null;
     
     // Only update profile_picture_url if it was changed (uploaded, removed, or explicitly set)
     if (profilePictureFile || removePicture || formData.get('profile_picture_url') === '') {
