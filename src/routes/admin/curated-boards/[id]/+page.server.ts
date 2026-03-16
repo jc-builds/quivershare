@@ -11,7 +11,7 @@ import { requireLocation, LocationValidationError } from '$lib/server/location';
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
 const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
-const ALLOWED_SOURCE_TYPES = ['craigslist', 'facebook', 'shop', 'other'] as const;
+const ALLOWED_SOURCE_TYPES = ['facebook', 'shop', 'other'] as const;
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   // Must be logged in (admin check is in parent layout)

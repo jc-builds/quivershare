@@ -678,7 +678,6 @@
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         >
           <option value="">Select source type</option>
-          <option>craigslist</option>
           <option>facebook</option>
           <option>shop</option>
           <option>other</option>
