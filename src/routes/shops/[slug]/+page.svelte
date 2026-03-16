@@ -26,6 +26,7 @@
       style: string | null;
       image_url: string | null;
     }>;
+    isOwnerOrAdmin?: boolean;
   };
 
   const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
@@ -66,6 +67,24 @@
   {/if}
 
   <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-8">
+    {#if data.isOwnerOrAdmin}
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-border">
+        <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Shop owner</span>
+        <a
+          href="/shops/{data.shop.slug}/edit"
+          class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors"
+        >
+          Edit Shop
+        </a>
+        <a
+          href="/shops/{data.shop.slug}/dashboard"
+          class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm"
+        >
+          Shop Dashboard
+        </a>
+      </div>
+    {/if}
+
     <!-- Shop Header -->
     <div class="flex items-start gap-5 mb-8">
       {#if data.shop.logo_image_url}

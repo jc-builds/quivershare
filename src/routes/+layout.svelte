@@ -15,6 +15,7 @@
       is_deleted?: boolean | null;
     } | null;
     boostCredits: { total_credits: number | null } | null;
+    shopSlug: string | null;
   };
 
   const isActiveUser = !!(
@@ -278,6 +279,33 @@
                 >
                   Settings
                 </a>
+                {#if data.shopSlug}
+                  <a
+                    href="/shops/{data.shopSlug}"
+                    class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                    data-sveltekit-prefetch
+                    on:click={closeMenus}
+                  >
+                    My Shop
+                  </a>
+                  <a
+                    href="/shops/{data.shopSlug}/dashboard"
+                    class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                    data-sveltekit-prefetch
+                    on:click={closeMenus}
+                  >
+                    Shop Dashboard
+                  </a>
+                {:else}
+                  <a
+                    href="/shops/new"
+                    class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                    data-sveltekit-prefetch
+                    on:click={closeMenus}
+                  >
+                    Create Shop
+                  </a>
+                {/if}
                 <a
                   href="/logout"
                   class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -361,6 +389,33 @@
               >
                 My Boards
               </a>
+              {#if data.shopSlug}
+                <a
+                  href="/shops/{data.shopSlug}"
+                  class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  data-sveltekit-prefetch
+                  on:click={closeMenus}
+                >
+                  My Shop
+                </a>
+                <a
+                  href="/shops/{data.shopSlug}/dashboard"
+                  class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  data-sveltekit-prefetch
+                  on:click={closeMenus}
+                >
+                  Shop Dashboard
+                </a>
+              {:else}
+                <a
+                  href="/shops/new"
+                  class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  data-sveltekit-prefetch
+                  on:click={closeMenus}
+                >
+                  Create Shop
+                </a>
+              {/if}
               <a
                 href="/logout"
                 class="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"

@@ -3,6 +3,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
   const slug = params.slug;
+  const user = locals.user;
 
   const { data: shop, error: shopErr } = await locals.supabase
     .from('shops')
@@ -22,6 +23,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       longitude,
       logo_image_url,
       banner_image_url,
+      owner_user_id,
       is_active
     `)
     .eq('slug', slug)
@@ -33,6 +35,20 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   if (!shop.is_active) {
     throw error(404, 'Shop not found');
+  }
+
+  let isOwnerOrAdmin = false;
+  if (user) {
+    if (shop.owner_user_id === user.id) {
+      isOwnerOrAdmin = true;
+    } else {
+      const { data: profile } = await locals.supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+      isOwnerOrAdmin = profile?.is_admin === true;
+    }
   }
 
   // Fetch active, non-deleted surfboards for this shop
@@ -80,6 +96,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
   return {
     shop,
-    boards: boardsWithImage
+    boards: boardsWithImage,
+    isOwnerOrAdmin
   };
 };
