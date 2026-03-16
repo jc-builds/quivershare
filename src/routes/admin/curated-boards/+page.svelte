@@ -26,12 +26,14 @@
   let reviewBoard: Board | null = null;
   let reviewResult = '';
   let reviewNewPrice = '';
+  let reviewNewSourceUrl = '';
   let reviewSubmitting = false;
   let reviewError = '';
 
   let openMenuId: string | null = null;
 
   $: boards = data.boards ?? [];
+  $: currentStatus = (data as any).status ?? 'active';
 
   $: if (form?.context === 'deleteBoard' && form?.success === false) {
     errorMessage = form.message || 'Failed to delete board';
@@ -61,14 +63,16 @@
     no_change: 'No change',
     price_changed: 'Price changed',
     sold: 'Sold',
-    source_unavailable: 'Unavailable'
+    source_unavailable: 'Unavailable',
+    link_changed: 'Link changed'
   };
 
   const RESULT_COLORS: Record<string, string> = {
     no_change: 'bg-surface text-muted-foreground border border-border',
     price_changed: 'bg-blue-500/10 text-blue-400 border border-blue-500/30',
     sold: 'bg-red-500/10 text-red-400 border border-red-500/30',
-    source_unavailable: 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
+    source_unavailable: 'bg-orange-500/10 text-orange-400 border border-orange-500/30',
+    link_changed: 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
   };
 
   function resultBadge(result: string | null | undefined): { label: string; cls: string } {
@@ -92,6 +96,7 @@
     reviewBoard = board;
     reviewResult = '';
     reviewNewPrice = board.price != null ? String(board.price) : '';
+    reviewNewSourceUrl = board.source_url ?? '';
     reviewError = '';
     reviewSubmitting = false;
   }
@@ -100,6 +105,7 @@
     reviewBoard = null;
     reviewResult = '';
     reviewNewPrice = '';
+    reviewNewSourceUrl = '';
     reviewError = '';
     reviewSubmitting = false;
   }
@@ -184,7 +190,8 @@
               { value: 'no_change', label: 'No change' },
               { value: 'price_changed', label: 'Price changed' },
               { value: 'sold', label: 'Sold' },
-              { value: 'source_unavailable', label: 'Unavailable' }
+              { value: 'source_unavailable', label: 'Unavailable' },
+              { value: 'link_changed', label: 'Link change' }
             ] as opt}
               <button
                 type="button"
@@ -217,6 +224,21 @@
           </div>
         {/if}
 
+        {#if reviewResult === 'link_changed'}
+          <div>
+            <label for="review-new-source-url" class="block text-sm font-medium text-muted-foreground mb-1">New source URL</label>
+            <input
+              id="review-new-source-url"
+              type="url"
+              name="new_source_url"
+              required
+              bind:value={reviewNewSourceUrl}
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              placeholder="https://..."
+            />
+          </div>
+        {/if}
+
         {#if reviewError}
           <p class="text-sm text-red-400">{reviewError}</p>
         {/if}
@@ -245,12 +267,23 @@
 <section class="bg-background text-foreground">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 text-center sm:text-left gap-4">
     <h1 class="text-3xl font-semibold tracking-tight text-foreground">Curated Boards</h1>
-    <a
-      href="/admin/curated-boards/new"
-      class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-    >
-      + Add Curated Board
-    </a>
+    <div class="flex items-center gap-3">
+      <select
+        class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        value={currentStatus}
+        on:change={(e) => goto(`/admin/curated-boards?status=${e.currentTarget.value}`)}
+      >
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="all">All</option>
+      </select>
+      <a
+        href="/admin/curated-boards/new"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        + Add Curated Board
+      </a>
+    </div>
   </div>
 
   {#if errorMessage}

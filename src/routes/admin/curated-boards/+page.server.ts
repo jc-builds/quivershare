@@ -2,12 +2,13 @@
 import { redirect, fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
   // Require admin (gated by parent layout)
   if (!locals.user) throw redirect(303, '/');
 
-  // Fetch curated boards only
-  const { data, error } = await locals.supabase
+  const status = url.searchParams.get('status') || 'active';
+
+  let query = locals.supabase
     .from('surfboards')
     .select(`
       id,
@@ -24,7 +25,12 @@ export const load: PageServerLoad = async ({ locals }) => {
       surfboard_images(image_url, position)
     `)
     .eq('is_curated', true)
-    .eq('is_deleted', false)
+    .eq('is_deleted', false);
+
+  if (status === 'active') query = query.eq('state', 'active');
+  else if (status === 'inactive') query = query.eq('state', 'inactive');
+
+  const { data, error } = await query
     .order('position', { foreignTable: 'surfboard_images', ascending: true })
     .order('created_at', { ascending: false });
 
@@ -42,7 +48,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     boards: boardsWithImage,
-    errorMessage: null
+    errorMessage: null,
+    status
   };
 };
 
@@ -146,7 +153,7 @@ export const actions: Actions = {
       return fail(400, { context: 'recordMaintenanceReview', success: false, message: 'Missing board ID' });
     }
 
-    const ALLOWED_RESULTS = ['no_change', 'price_changed', 'sold', 'source_unavailable'];
+    const ALLOWED_RESULTS = ['no_change', 'price_changed', 'sold', 'source_unavailable', 'link_changed'];
     if (!result || !ALLOWED_RESULTS.includes(result)) {
       return fail(400, { context: 'recordMaintenanceReview', success: false, message: 'Invalid result value' });
     }
@@ -175,6 +182,18 @@ export const actions: Actions = {
       }
     }
 
+    let newSourceUrl: string | undefined;
+    if (result === 'link_changed') {
+      newSourceUrl = form.get('new_source_url')?.toString()?.trim();
+      if (!newSourceUrl) {
+        return fail(400, {
+          context: 'recordMaintenanceReview',
+          success: false,
+          message: 'A new source URL is required when result is "link changed"'
+        });
+      }
+    }
+
     const updatePayload: Record<string, unknown> = {
       last_checked_at: new Date().toISOString(),
       last_check_result: result
@@ -182,6 +201,10 @@ export const actions: Actions = {
 
     if (result === 'price_changed') {
       updatePayload.price = newPrice;
+    }
+
+    if (result === 'link_changed') {
+      updatePayload.source_url = newSourceUrl;
     }
 
     if (result === 'sold' || result === 'source_unavailable') {
