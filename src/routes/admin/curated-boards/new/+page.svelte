@@ -417,7 +417,6 @@
           required
         >
           <option disabled selected value="">Select source type</option>
-          <option>craigslist</option>
           <option>facebook</option>
           <option>shop</option>
           <option>other</option>
