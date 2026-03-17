@@ -5,6 +5,7 @@
   import { browser } from '$app/environment';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import type { StructuredLocation } from '$lib/types/location';
+  import { formatPrice } from '$lib/formatPrice';
 
   export let data: { 
     userId: string | null;
@@ -491,7 +492,7 @@
                 <p class="text-sm text-muted-foreground mt-1">{displayStyle(board.style)}</p>
               {/if}
               {#if board.price}
-                <p class="text-base font-semibold text-primary mt-2">${board.price}</p>
+                <p class="text-base font-semibold text-primary mt-2">{formatPrice(board.price)}</p>
               {/if}
             </div>
           </a>

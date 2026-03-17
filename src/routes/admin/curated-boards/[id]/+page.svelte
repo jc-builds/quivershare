@@ -637,10 +637,10 @@
           id="price"
           name="price"
           type="number"
-          step="0.01"
+          step="1"
           min="0"
           bind:value={surfboard.price}
-          placeholder="e.g. 850.00"
+          placeholder="e.g. 850"
           class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
         />
       </div>

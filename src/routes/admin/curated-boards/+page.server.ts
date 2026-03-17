@@ -172,7 +172,7 @@ export const actions: Actions = {
 
     let newPrice: number | undefined;
     if (result === 'price_changed') {
-      newPrice = newPriceRaw ? Number(newPriceRaw) : NaN;
+      newPrice = newPriceRaw ? Math.round(Number(newPriceRaw)) : NaN;
       if (!Number.isFinite(newPrice) || newPrice <= 0) {
         return fail(400, {
           context: 'recordMaintenanceReview',

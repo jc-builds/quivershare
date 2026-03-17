@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { formatPrice } from '$lib/formatPrice';
   import type { BoardPageData } from './+page.server';
 
   export let data: BoardPageData;
@@ -196,7 +197,7 @@
             <div>
               <p class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Asking Price</p>
               <p class="text-lg sm:text-xl font-semibold text-primary">
-                ${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatPrice(data.board.price)}
               </p>
             </div>
           {/if}

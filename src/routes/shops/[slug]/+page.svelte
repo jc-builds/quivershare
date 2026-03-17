@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { formatPrice } from '$lib/formatPrice';
+
   export let data: {
     shop: {
       id: string;
@@ -26,6 +28,7 @@
       style: string | null;
       image_url: string | null;
     }>;
+    isOwnerOrAdmin?: boolean;
   };
 
   const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
@@ -67,20 +70,38 @@
 
   <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-8">
     <!-- Shop Header -->
-    <div class="flex items-start gap-5 mb-8">
-      {#if data.shop.logo_image_url}
-        <img
-          src={data.shop.logo_image_url}
-          alt="{data.shop.name} logo"
-          class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-border shadow-sm flex-shrink-0 {data.shop.banner_image_url ? '-mt-12 sm:-mt-16 ring-4 ring-background' : ''}"
-        />
-      {/if}
-      <div class="flex-1 min-w-0">
-        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{data.shop.name}</h1>
-        {#if locationDisplay(data.shop)}
-          <p class="text-sm text-muted-foreground mt-1">{locationDisplay(data.shop)}</p>
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 {data.isOwnerOrAdmin ? 'pb-6 border-b border-border' : ''}">
+      <div class="flex items-start gap-5">
+        {#if data.shop.logo_image_url}
+          <img
+            src={data.shop.logo_image_url}
+            alt="{data.shop.name} logo"
+            class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border border-border shadow-sm flex-shrink-0 {data.shop.banner_image_url ? '-mt-12 sm:-mt-16 ring-4 ring-background' : ''}"
+          />
         {/if}
+        <div class="flex-1 min-w-0">
+          <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">{data.shop.name}</h1>
+          {#if locationDisplay(data.shop)}
+            <p class="text-sm text-muted-foreground mt-1">{locationDisplay(data.shop)}</p>
+          {/if}
+        </div>
       </div>
+      {#if data.isOwnerOrAdmin}
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a
+            href="/shops/{data.shop.slug}/edit"
+            class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors"
+          >
+            Edit Shop
+          </a>
+          <a
+            href="/shops/{data.shop.slug}/dashboard"
+            class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm"
+          >
+            Shop Dashboard
+          </a>
+        </div>
+      {/if}
     </div>
 
     <!-- Shop Details -->
@@ -162,7 +183,7 @@
                   <p class="text-sm text-muted-foreground mt-1">{displayStyle(board.style)}</p>
                 {/if}
                 {#if board.price}
-                  <p class="text-base font-semibold text-primary mt-2">${board.price}</p>
+                  <p class="text-base font-semibold text-primary mt-2">{formatPrice(board.price)}</p>
                 {/if}
               </div>
             </a>

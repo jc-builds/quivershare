@@ -48,10 +48,21 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
       : { total_credits: null };
   }
 
+  let shopSlug: string | null = null;
+  if (user) {
+    const { data: shopRow } = await locals.supabase
+      .from('shops')
+      .select('slug')
+      .eq('owner_user_id', user.id)
+      .maybeSingle();
+    shopSlug = shopRow?.slug ?? null;
+  }
+
   return {
     session,
     user,
     profile,
-    boostCredits
+    boostCredits,
+    shopSlug
   };
 };
