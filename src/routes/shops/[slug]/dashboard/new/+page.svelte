@@ -6,14 +6,32 @@
   import type { ManagedImage } from "$lib/types/image";
   import type { StructuredLocation } from "$lib/types/location";
 
-  export let data: { shop: { id: string; name: string; slug: string } };
+  export let data: {
+    shop: {
+      id: string; name: string; slug: string;
+      location_label: string | null; city: string | null; region: string | null;
+      country: string | null; latitude: number | null; longitude: number | null;
+    };
+  };
 
   let surfboard = {
     name: "", make: "", length: "", width: "", thickness: "", volume: "",
     fin_system: "", fin_setup: "", style: "", price: "", condition: "", notes: "",
+    source_url: "",
   };
 
-  let selectedLocation: StructuredLocation | null = null;
+  let selectedLocation: StructuredLocation | null =
+    data.shop.latitude && data.shop.longitude
+      ? {
+          id: '',
+          label: data.shop.location_label || [data.shop.city, data.shop.region].filter(Boolean).join(', ') || 'Shop location',
+          lat: data.shop.latitude,
+          lon: data.shop.longitude,
+          city: data.shop.city || '',
+          region: data.shop.region || '',
+          country: data.shop.country || '',
+        }
+      : null;
 
   let fileInput: HTMLInputElement;
   let dragActive = false;
@@ -170,7 +188,7 @@
       </div>
       <div class="space-y-1">
         <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-red-400">*</span></label>
-        <input id="price" name="price" type="number" step="0.01" min="0" bind:value={surfboard.price} placeholder="e.g. 850.00" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
+        <input id="price" name="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
       </div>
       <div class="space-y-1">
         <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-red-400">*</span></label>
@@ -183,6 +201,10 @@
       <div class="space-y-1">
         <label for="notes" class="block text-sm font-medium text-muted-foreground">Notes</label>
         <textarea id="notes" name="notes" bind:value={surfboard.notes} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" placeholder="Anything special about this board?"></textarea>
+      </div>
+      <div class="space-y-1">
+        <label for="source_url" class="block text-sm font-medium text-muted-foreground">Landing Page URL</label>
+        <input id="source_url" name="source_url" type="url" bind:value={surfboard.source_url} placeholder="e.g. https://yourshop.com/boards/star-cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
       </div>
 
       <div

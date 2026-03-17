@@ -10,7 +10,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw error(404, 'Surfboard not found');
   }
 
-  // Fetch the board (public access - anyone can view, but exclude deleted)
   const { data: surfboard, error: boardErr } = await locals.supabase
     .from('surfboards')
     .select(`
@@ -34,7 +33,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       is_curated,
       is_deleted,
       source_type,
-      source_url
+      source_url,
+      owner_type,
+      shop_id
     `)
     .eq('id', id)
     .eq('is_deleted', false)
@@ -44,17 +45,90 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw error(404, 'Surfboard not found');
   }
 
-  // Fetch the owner's profile (exclude deleted)
-  // Note: email is fetched separately in actions, not exposed to client
-  const { data: ownerProfile, error: ownerError } = await locals.supabase
-    .from('profiles')
-    .select('id, username, full_name, profile_picture_url, city, region, is_deleted')
-    .eq('id', surfboard.user_id)
-    .eq('is_deleted', false)
-    .maybeSingle();
+  const currentUserId = locals.user?.id ?? null;
+  const ownerType: string = surfboard.owner_type ?? 'individual';
 
-  if (ownerError) {
-    console.warn('Error loading owner profile:', ownerError);
+  // Resolve shop details for shop-owned boards
+  let shopSlug: string | null = null;
+  let shopOwnerUserId: string | null = null;
+  let shopInfo: {
+    name: string;
+    slug: string;
+    logo_image_url: string | null;
+    website_url: string | null;
+    location_label: string | null;
+    city: string | null;
+    region: string | null;
+  } | null = null;
+  if (ownerType === 'shop' && surfboard.shop_id) {
+    const { data: shop } = await locals.supabase
+      .from('shops')
+      .select('slug, owner_user_id, name, logo_image_url, website_url, location_label, city, region')
+      .eq('id', surfboard.shop_id)
+      .maybeSingle();
+    if (shop) {
+      shopSlug = shop.slug;
+      shopOwnerUserId = shop.owner_user_id;
+      shopInfo = {
+        name: shop.name,
+        slug: shop.slug,
+        logo_image_url: shop.logo_image_url,
+        website_url: shop.website_url,
+        location_label: shop.location_label,
+        city: shop.city,
+        region: shop.region,
+      };
+    }
+  }
+
+  // Resolve admin status (only needed for curated/shop branches)
+  let isAdmin = false;
+  if (currentUserId && (ownerType === 'curated' || ownerType === 'shop')) {
+    const { data: currentUserProfile } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', currentUserId)
+      .maybeSingle();
+    isAdmin = currentUserProfile?.is_admin === true;
+  }
+
+  // Compute canEdit based on owner_type
+  let canEdit = false;
+  if (currentUserId) {
+    if (ownerType === 'individual') {
+      canEdit = surfboard.user_id === currentUserId;
+    } else if (ownerType === 'shop') {
+      canEdit = (shopOwnerUserId === currentUserId) || isAdmin;
+    } else if (ownerType === 'curated') {
+      canEdit = isAdmin;
+    }
+  }
+
+  // Compute the correct edit href server-side based on ownership
+  let editHref: string | null = null;
+  if (canEdit) {
+    if (ownerType === 'individual') {
+      editHref = `/edit-surfboard/${surfboard.id}`;
+    } else if (ownerType === 'shop' && shopSlug) {
+      editHref = `/shops/${shopSlug}/dashboard/${surfboard.id}/edit`;
+    } else if (ownerType === 'curated') {
+      editHref = `/admin/curated-boards/${surfboard.id}`;
+    }
+  }
+
+  // Fetch owner profile (relevant for individual boards with a user_id)
+  let ownerProfile = null;
+  if (surfboard.user_id) {
+    const { data: profile, error: ownerError } = await locals.supabase
+      .from('profiles')
+      .select('id, username, full_name, profile_picture_url, city, region, is_deleted')
+      .eq('id', surfboard.user_id)
+      .eq('is_deleted', false)
+      .maybeSingle();
+    if (ownerError) {
+      console.warn('Error loading owner profile:', ownerError);
+    }
+    ownerProfile = profile ?? null;
   }
 
   // Fetch images
@@ -68,37 +142,19 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     console.warn('Image fetch error:', imgErr.message);
   }
 
-  // Determine if the current user can edit this board
-  const currentUserId = locals.user?.id ?? null;
-  const canEdit = Boolean(currentUserId && surfboard.user_id === currentUserId);
-
-  // Check if current user is admin and board is curated
-  let isAdmin = false;
-  const isCurated = surfboard.is_curated === true && surfboard.is_deleted === false;
-  
-  if (currentUserId && isCurated) {
-    // Fetch the current user's profile to check is_admin
-    const { data: currentUserProfile, error: profileError } = await locals.supabase
-      .from('profiles')
-      .select('id, is_admin')
-      .eq('id', currentUserId)
-      .maybeSingle();
-    
-    if (!profileError && currentUserProfile && currentUserProfile.is_admin === true) {
-      isAdmin = true;
-    }
-  }
-
-  // Return all ordered images based on surfboard_images.position
-  const allImages = images ?? [];
+  const isCurated = ownerType === 'curated' || surfboard.is_curated === true;
 
   return {
     board: surfboard,
-    images: allImages,
-    owner: ownerProfile ?? null,
+    images: images ?? [],
+    owner: ownerProfile,
     canEdit,
     isAdmin,
-    isCurated
+    isCurated,
+    ownerType,
+    editHref,
+    shopSlug,
+    shop: shopInfo
   };
 };
 
@@ -215,7 +271,7 @@ export const actions: Actions = {
     // Verify the board exists and is not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, name, price, user_id, is_curated')
+      .select('id, name, price, user_id, is_curated, owner_type')
       .eq('id', id)
       .eq('is_deleted', false)
       .maybeSingle();
@@ -228,12 +284,20 @@ export const actions: Actions = {
       });
     }
 
-    // Block contactSeller action for curated boards
+    // Block contactSeller for curated and shop-owned boards
     if (board.is_curated) {
       return fail(400, {
         context: 'contactSeller',
         success: false,
         message: 'This is a curated listing. Please use the original listing to contact the seller.'
+      });
+    }
+
+    if (board.owner_type === 'shop') {
+      return fail(400, {
+        context: 'contactSeller',
+        success: false,
+        message: 'This board is sold by a shop. Please contact the shop directly.'
       });
     }
 
@@ -259,7 +323,7 @@ export const actions: Actions = {
     // Construct email content
     const boardName = board.name || 'Untitled Board';
     const priceText = board.price != null 
-      ? `$${board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? `$${Math.round(board.price).toLocaleString('en-US')}`
       : 'price not specified';
     
     const subject = `QuiverShare inquiry: ${boardName}`;

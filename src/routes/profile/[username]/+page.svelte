@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { formatPrice } from '$lib/formatPrice';
+
   export let data: {
     profile: {
       id: string;
@@ -43,11 +45,6 @@
     return parts.length > 0 ? parts.join(' × ') : 'N/A';
   }
 
-  // Format price as currency
-  function formatPrice(price: number | null | undefined): string {
-    if (price == null) return '—';
-    return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
 
   // Format location string
   function formatLocation(): string {

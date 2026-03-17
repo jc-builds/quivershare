@@ -1,6 +1,7 @@
 <script lang="ts">
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
+  import { enhance } from "$app/forms";
   import { validateAndFilterImageFiles, MAX_IMAGES_PER_LISTING } from "$lib/imageValidation";
   import ImageManager from "$lib/components/ImageManager.svelte";
   import LocationAutocomplete from "$lib/components/LocationAutocomplete.svelte";
@@ -26,6 +27,7 @@
     style: sb.style ?? "", price: sb.price ?? "",
     condition: sb.condition ?? "", notes: sb.notes ?? "",
     state: sb.state ?? "active",
+    source_url: sb.source_url ?? "",
   };
 
   $: boardState = surfboard.state === "active" ? "active" : "inactive";
@@ -48,6 +50,9 @@
 
   let loading = false;
   let message = "";
+  let showDeleteBoardConfirm = false;
+  let deleteBoardConfirmText = "";
+  const requiredDeleteConfirmText = "DELETE";
   let fileInput: HTMLInputElement;
   let dragActive = false;
   let rejectionReasons: { file: string; reason: string }[] = [];
@@ -99,6 +104,7 @@
     formData.append("price", surfboard.price || "");
     formData.append("condition", surfboard.condition || "");
     formData.append("notes", surfboard.notes || "");
+    formData.append("source_url", surfboard.source_url || "");
     formData.append("location_label", selectedLocation?.label || "");
     formData.append("location_city", selectedLocation?.city || "");
     formData.append("location_region", selectedLocation?.region || "");
@@ -334,7 +340,7 @@
       </div>
       <div class="space-y-1">
         <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-red-400">*</span></label>
-        <input id="price" type="number" step="0.01" min="0" bind:value={surfboard.price} placeholder="e.g. 850.00" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
       </div>
       <div class="space-y-1">
         <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-red-400">*</span></label>
@@ -347,6 +353,10 @@
       <div class="space-y-1">
         <label for="notes" class="block text-sm font-medium text-muted-foreground">Notes</label>
         <textarea id="notes" bind:value={surfboard.notes} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" placeholder="Anything special about this board?"></textarea>
+      </div>
+      <div class="space-y-1">
+        <label for="source_url" class="block text-sm font-medium text-muted-foreground">Landing Page URL</label>
+        <input id="source_url" type="url" bind:value={surfboard.source_url} placeholder="e.g. https://yourshop.com/boards/star-cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
       </div>
 
       <div
@@ -393,7 +403,108 @@
         </div>
       {/if}
     </form>
+    <!-- Danger Zone Section -->
+    <div class="mt-12 pt-8 border-t border-border">
+      <h2 class="text-lg font-semibold text-foreground mb-2">Danger Zone</h2>
+      <p class="text-sm text-muted-foreground mb-4">
+        Once you delete this listing, there is no going back. This will remove
+        the surfboard from search and from the shop dashboard.
+      </p>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        on:click={() => {
+          showDeleteBoardConfirm = true;
+          deleteBoardConfirmText = "";
+        }}
+      >
+        Delete listing
+      </button>
+    </div>
   </div>
+
+  <!-- Delete Board Confirmation Modal -->
+  {#if showDeleteBoardConfirm}
+    <div
+      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-board-title"
+      on:click={() => (showDeleteBoardConfirm = false)}
+      on:keydown={(e) => e.key === "Escape" && (showDeleteBoardConfirm = false)}
+      tabindex="-1"
+    >
+      <div
+        class="bg-surface-elevated border border-border rounded-xl p-6 max-w-md w-full shadow-xl text-foreground"
+        role="presentation"
+        on:click|stopPropagation={(e) => e.stopPropagation()}
+        on:keydown={(e) => e.stopPropagation()}
+      >
+        <h2
+          id="delete-board-title"
+          class="text-xl font-semibold mb-4 text-foreground"
+        >
+          Delete Listing
+        </h2>
+        <div class="space-y-4 mb-6">
+          <p class="text-sm text-foreground">
+            Are you sure you want to delete this listing? This action cannot be
+            undone.
+          </p>
+          <div
+            class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground"
+          >
+            <p class="font-medium text-foreground mb-2">What will happen:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>This listing will be permanently deleted</li>
+              <li>The surfboard will be removed from search</li>
+              <li>The surfboard will be removed from the shop page and dashboard</li>
+              <li>All associated images will be removed</li>
+            </ul>
+          </div>
+          <div class="space-y-2">
+            <label
+              for="delete-board-confirm"
+              class="block text-sm font-medium text-foreground"
+            >
+              Type <span class="font-mono font-semibold text-red-400"
+                >{requiredDeleteConfirmText}</span
+              > to confirm:
+            </label>
+            <input
+              id="delete-board-confirm"
+              type="text"
+              bind:value={deleteBoardConfirmText}
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              placeholder={requiredDeleteConfirmText}
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <form method="POST" action="?/deleteBoard" use:enhance>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              on:click={() => {
+                showDeleteBoardConfirm = false;
+                deleteBoardConfirmText = "";
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
+            >
+              Confirm Delete
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
 
   {#if showConfirm}
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

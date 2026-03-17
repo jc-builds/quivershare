@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
+  import { formatPrice } from '$lib/formatPrice';
 
   export let data: {
     board: {
@@ -20,11 +21,13 @@
       city: string | null;
       region: string | null;
       notes: string | null;
-      user_id: string;
+      user_id: string | null;
       state?: 'active' | 'inactive';
       is_curated?: boolean;
       source_type?: string | null;
       source_url?: string | null;
+      owner_type?: string | null;
+      shop_id?: string | null;
     };
     images: Array<{ id: string; image_url: string }>;
     owner: {
@@ -38,6 +41,18 @@
     canEdit: boolean;
     isAdmin: boolean;
     isCurated: boolean;
+    ownerType: string;
+    editHref: string | null;
+    shopSlug: string | null;
+    shop: {
+      name: string;
+      slug: string;
+      logo_image_url: string | null;
+      website_url: string | null;
+      location_label: string | null;
+      city: string | null;
+      region: string | null;
+    } | null;
   };
 
   export let form;
@@ -52,7 +67,7 @@
   function getInitialMessage(): string {
     const boardName = data.board.name || 'this board';
     const priceText = data.board.price != null 
-      ? ` for $${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? ` for ${formatPrice(data.board.price)}`
       : '';
     return `I'd like to know if the ${boardName} you have listed on QuiverShare${priceText} is still available.`;
   }
@@ -103,7 +118,7 @@
   $: seoDescription = (() => {
     const parts: string[] = [boardTitle];
     if (data.board.price != null) {
-      parts.push(`for $${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`);
+      parts.push(`for ${formatPrice(data.board.price)}`);
     }
     if (boardLocation) parts.push(`in ${boardLocation}`);
     let sentence = parts.join(' ') + '.';
@@ -323,9 +338,14 @@
     craigslist: 'Craigslist'
   };
 
-  $: isCurated = data.board.is_curated === true;
+  $: isCurated = data.isCurated;
   $: curatedSourceLabel = isCurated && data.board.source_type
     ? sourceTypeLabels[data.board.source_type] ?? 'Original source'
+    : null;
+
+  $: shopExternalUrl = data.board.source_url || data.shop?.website_url || null;
+  $: shopLocation = data.shop
+    ? (data.shop.location_label || [data.shop.city, data.shop.region].filter(Boolean).join(', ') || null)
     : null;
 </script>
 
@@ -365,32 +385,29 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{boardTitle}</h1>
-      {#if data.canEdit || (data.isAdmin && data.isCurated)}
+      {#if data.canEdit && data.editHref}
         <div class="flex items-center gap-3">
-          {#if data.isAdmin && data.isCurated}
-            <!-- Admin edit for curated boards (prioritized) -->
-            <a
-              href={`/admin/curated-boards/${data.board.id}`}
-              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Edit
-            </a>
-          {:else if data.canEdit}
-            <!-- Owner edit for non-curated boards -->
+          {#if data.ownerType === 'individual'}
             <a
               href={`/surfboards/${data.board.id}/boost`}
               class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Manage Boost
             </a>
-            
+          {:else if data.ownerType === 'shop' && data.shopSlug}
             <a
-              href={`/edit-surfboard/${data.board.id}`}
-              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              href={`/shops/${data.shopSlug}/dashboard`}
+              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Edit
+              Shop Dashboard
             </a>
           {/if}
+          <a
+            href={data.editHref}
+            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Edit
+          </a>
         </div>
       {/if}
     </div>
@@ -493,7 +510,7 @@
           {#if data.board.price != null}
             <div>
               <p class="text-sm text-muted-foreground mb-1">Price</p>
-              <p class="text-2xl font-bold text-primary">${data.board.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p class="text-2xl font-bold text-primary">{formatPrice(data.board.price)}</p>
             </div>
           {/if}
 
@@ -559,10 +576,8 @@
 
       <!-- Right: Contact Seller / How to Buy Card -->
       <div class="bg-surface-elevated border border-border rounded-xl shadow-sm p-6">
-        <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">
-          {isCurated ? 'How to Buy' : 'Contact Seller'}
-        </h2>
         {#if isCurated}
+          <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">How to Buy</h2>
           <div class="space-y-4">
             <p class="text-sm text-muted-foreground">
               This board was sourced from {curatedSourceLabel || 'an external marketplace'}. 
@@ -583,7 +598,51 @@
               </p>
             {/if}
           </div>
+        {:else if data.ownerType === 'shop' && data.shop}
+          <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">Sold by Shop</h2>
+          <div class="space-y-4">
+            <a
+              href="/shops/{data.shop.slug}"
+              class="flex items-center gap-4 group"
+            >
+              {#if data.shop.logo_image_url}
+                <img
+                  src={data.shop.logo_image_url}
+                  alt="{data.shop.name} logo"
+                  class="w-14 h-14 rounded-xl object-cover border border-border shadow-sm flex-shrink-0"
+                />
+              {:else}
+                <div class="w-14 h-14 rounded-xl bg-surface border border-border flex items-center justify-center flex-shrink-0">
+                  <span class="text-xl text-muted-foreground">🏪</span>
+                </div>
+              {/if}
+              <div class="min-w-0">
+                <p class="text-lg font-semibold text-foreground group-hover:text-primary transition-colors truncate">{data.shop.name}</p>
+                {#if shopLocation}
+                  <p class="text-sm text-muted-foreground truncate">{shopLocation}</p>
+                {/if}
+              </div>
+            </a>
+
+            {#if shopExternalUrl}
+              <button
+                type="button"
+                class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                on:click={() => { window.dataLayer?.push({ event: 'outbound_click' }); window.open(shopExternalUrl!, '_blank', 'noopener,noreferrer'); }}
+              >
+                Buy from {data.shop.name}
+              </button>
+            {/if}
+
+            <a
+              href="/shops/{data.shop.slug}"
+              class="block text-center text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+            >
+              View all boards from {data.shop.name}
+            </a>
+          </div>
         {:else if data.owner}
+          <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">Contact Seller</h2>
           <div class="space-y-4">
             <div>
               <p class="text-sm text-muted-foreground mb-1">Seller</p>
@@ -715,6 +774,7 @@
             </div>
           </div>
         {:else}
+          <h2 class="text-2xl font-bold mb-4 text-foreground tracking-tight">Contact Seller</h2>
           <p class="text-muted-foreground">Seller information unavailable</p>
         {/if}
       </div>

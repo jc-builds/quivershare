@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { formatPrice } from '$lib/formatPrice';
 
   export let data;
   export let form;
@@ -31,10 +32,6 @@
     return d.toLocaleDateString('en-US', { year: '2-digit', month: 'numeric', day: 'numeric' });
   }
 
-  function formatPrice(price: number | null | undefined): string {
-    if (price == null) return '—';
-    return `$${price}`;
-  }
 
   function viewBoard(boardId: string) {
     goto(`/surfboards/${boardId}`);

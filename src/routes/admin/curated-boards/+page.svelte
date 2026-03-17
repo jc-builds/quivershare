@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
+  import { formatPrice } from '$lib/formatPrice';
 
   export let data;
   export let form;
@@ -54,10 +55,6 @@
       + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
 
-  function formatPrice(price: number | null | undefined): string {
-    if (price == null) return '—';
-    return `$${price}`;
-  }
 
   const RESULT_LABELS: Record<string, string> = {
     no_change: 'No change',

@@ -6,6 +6,15 @@ import {
 } from '$lib/server/imageValidation';
 import { requireLocation, LocationValidationError } from '$lib/server/location';
 
+function isValidUrl(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 const ALLOWED_STYLES = ['Shortboard', 'Mid-length', 'Longboard', 'Groveler / Fish', 'Gun', 'Groveler'] as const;
 const ALLOWED_FIN_SYSTEMS = ['FCS', 'FCS II', 'Futures', 'Glass On', 'Single Fin Box'] as const;
 const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer', 'Tri', 'Quad', 'Tri/Quad', 'Bonzer', '4+1'] as const;
@@ -61,7 +70,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     .select(`
       id, name, make, length, width, thickness, volume,
       fin_system, fin_setup, style, price, condition, notes,
-      location_label, city, region, country, lat, lon, state
+      location_label, city, region, country, lat, lon, state,
+      source_url
     `)
     .eq('id', params.id)
     .eq('shop_id', shop.id)
@@ -109,6 +119,14 @@ export const actions: Actions = {
     const condition = form.get('condition')?.toString() ?? '';
     const notes = form.get('notes')?.toString() ?? '';
     const state = form.get('state')?.toString();
+    const rawSourceUrl = form.get('source_url')?.toString()?.trim() || null;
+
+    if (rawSourceUrl && !isValidUrl(rawSourceUrl)) {
+      return fail(400, { message: 'Landing Page URL must be a valid URL (e.g. https://example.com)' });
+    }
+
+    const source_url = rawSourceUrl || null;
+    const source_type = source_url ? 'shop' : null;
 
     let location;
     try {
@@ -138,7 +156,7 @@ export const actions: Actions = {
       fin_system: fin_system === '' ? null : fin_system,
       fin_setup: fin_setup === '' ? null : fin_setup,
       style: style === '' ? null : style,
-      price: price === '' || !price ? null : Number(price),
+      price: price === '' || !price ? null : Math.round(Number(price)),
       condition, notes,
       location_label: location.label,
       city: location.city,
@@ -146,6 +164,8 @@ export const actions: Actions = {
       country: location.country,
       lat: location.lat,
       lon: location.lon,
+      source_url,
+      source_type,
     };
 
     if (state === 'active' || state === 'inactive') updateData.state = state;
@@ -308,5 +328,27 @@ export const actions: Actions = {
     }
 
     return { success: true };
+  },
+
+  deleteBoard: async ({ locals, params }) => {
+    const { shop } = await resolveShopAndAuthorize(
+      locals, params.slug, `/shops/${params.slug}/dashboard/${params.id}/edit`
+    );
+
+    const boardId = params.id;
+    const board = await verifyBoardBelongsToShop(locals, boardId, shop.id);
+    if (!board) return fail(404, { message: 'Board not found or access denied' });
+
+    const { error: deleteError } = await locals.supabase
+      .from('surfboards')
+      .update({ is_deleted: true })
+      .eq('id', boardId);
+
+    if (deleteError) {
+      console.error('Board delete error:', deleteError.message);
+      return fail(500, { message: 'Failed to delete board' });
+    }
+
+    throw redirect(303, `/shops/${shop.slug}/dashboard`);
   }
 };

@@ -23,7 +23,7 @@ export const actions: Actions = {
     const fin_system = form.get('fin_system')?.toString() || null;
     const fin_setup = form.get('fin_setup')?.toString() || null;
     const style = form.get('style')?.toString() || null;
-    const price = form.get('price') ? Number(form.get('price')) : null;
+    const price = form.get('price') ? Math.round(Number(form.get('price'))) : null;
     const condition = form.get('condition')?.toString()?.trim() ?? '';
     const notes = form.get('notes')?.toString()?.trim() || null;
 

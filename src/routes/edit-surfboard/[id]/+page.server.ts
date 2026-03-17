@@ -140,7 +140,7 @@ export const actions: Actions = {
       fin_system: fin_system === '' ? null : fin_system,
       fin_setup: fin_setup === '' ? null : fin_setup,
       style: style === '' ? null : style,
-      price: price === '' || !price ? null : Number(price),
+      price: price === '' || !price ? null : Math.round(Number(price)),
       condition,
       notes,
       location_label: location.label,

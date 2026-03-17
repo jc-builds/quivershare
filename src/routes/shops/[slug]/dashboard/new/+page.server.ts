@@ -13,7 +13,7 @@ async function resolveShopAndAuthorize(locals: App.Locals, slug: string) {
 
   const { data: shop, error: shopErr } = await locals.supabase
     .from('shops')
-    .select('id, name, slug, owner_user_id')
+    .select('id, name, slug, owner_user_id, location_label, city, region, country, latitude, longitude')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -34,9 +34,30 @@ async function resolveShopAndAuthorize(locals: App.Locals, slug: string) {
   return { user, shop };
 }
 
+function isValidUrl(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export const load: PageServerLoad = async ({ locals, params }) => {
   const { shop } = await resolveShopAndAuthorize(locals, params.slug);
-  return { shop };
+  return {
+    shop: {
+      id: shop.id,
+      name: shop.name,
+      slug: shop.slug,
+      location_label: shop.location_label,
+      city: shop.city,
+      region: shop.region,
+      country: shop.country,
+      latitude: shop.latitude,
+      longitude: shop.longitude,
+    }
+  };
 };
 
 export const actions: Actions = {
@@ -54,9 +75,10 @@ export const actions: Actions = {
     const fin_system = form.get('fin_system')?.toString() || null;
     const fin_setup = form.get('fin_setup')?.toString() || null;
     const style = form.get('style')?.toString() || null;
-    const price = form.get('price') ? Number(form.get('price')) : null;
+    const price = form.get('price') ? Math.round(Number(form.get('price'))) : null;
     const condition = form.get('condition')?.toString()?.trim() ?? '';
     const notes = form.get('notes')?.toString()?.trim() || null;
+    const rawSourceUrl = form.get('source_url')?.toString()?.trim() || null;
 
     const values = {
       name, make,
@@ -76,6 +98,13 @@ export const actions: Actions = {
     if (!style) return fail(400, { message: 'Board style is required', values });
     if (!price || price <= 0) return fail(400, { message: 'Price is required', values });
     if (!condition) return fail(400, { message: 'Condition is required', values });
+
+    if (rawSourceUrl && !isValidUrl(rawSourceUrl)) {
+      return fail(400, { message: 'Landing Page URL must be a valid URL (e.g. https://example.com)', values });
+    }
+
+    const source_url = rawSourceUrl || null;
+    const source_type = source_url ? 'shop' : null;
 
     let location;
     try {
@@ -110,6 +139,8 @@ export const actions: Actions = {
         lon: location.lon,
         owner_type: 'shop',
         shop_id: shop.id,
+        source_url,
+        source_type,
         is_curated: false,
         state: 'active',
         is_deleted: false
