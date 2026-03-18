@@ -145,7 +145,30 @@
       </h2>
 
       {#if data.boards.length === 0}
-        <p class="text-sm text-muted-foreground">No boards listed yet.</p>
+        <div class="rounded-xl border border-border bg-surface-elevated/80 p-8 text-center">
+          {#if data.isOwnerOrAdmin}
+            <p class="text-foreground font-medium">Your shop doesn't have any boards yet.</p>
+            <p class="text-sm text-muted-foreground mt-2">Add your first listing from the Shop Dashboard to start showing boards here.</p>
+            <a
+              href="/shops/{data.shop.slug}/dashboard/new"
+              class="inline-flex items-center justify-center mt-4 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors shadow-sm"
+            >
+              + Add Your First Board
+            </a>
+          {:else}
+            <p class="text-muted-foreground">{data.shop.name} hasn't listed any boards yet. Check back soon.</p>
+            {#if data.shop.website_url}
+              <a
+                href={data.shop.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block mt-3 text-sm text-primary hover:underline"
+              >
+                Visit {data.shop.name}'s website
+              </a>
+            {/if}
+          {/if}
+        </div>
       {:else}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {#each data.boards as board (board.id)}

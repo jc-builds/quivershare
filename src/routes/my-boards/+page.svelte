@@ -117,7 +117,8 @@
       <p>
         These are your personal boards. Boards listed under
         <a href="/shops/{data.userShop.slug}" class="text-primary hover:underline font-medium">{data.userShop.name}</a>
-        are managed separately and will appear in the Shop Dashboard (coming soon).
+        are managed separately in your
+        <a href="/shops/{data.userShop.slug}/dashboard" class="text-primary hover:underline font-medium">Shop Dashboard</a>.
       </p>
     </div>
   {/if}

@@ -241,7 +241,7 @@
         <!-- Logo -->
         <div class="space-y-1">
           <label for="logo" class="block text-sm font-medium text-muted-foreground">Logo (optional)</label>
-          <p class="text-xs text-muted-foreground">Recommended: square image, PNG/JPG/WebP, at least 400×400</p>
+          <p class="text-xs text-muted-foreground">Square or near-square. Keep it simple and readable at small sizes. PNG/JPG/WebP, at least 400×400px.</p>
           <div
             role="button"
             class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -284,7 +284,7 @@
         <!-- Banner -->
         <div class="space-y-1">
           <label for="banner" class="block text-sm font-medium text-muted-foreground">Banner (optional)</label>
-          <p class="text-xs text-muted-foreground">Recommended: wide banner image, PNG/JPG/WebP, about 6:1 ratio, at least 1200×200</p>
+          <p class="text-xs text-muted-foreground">Wide landscape image. Keep key content centered — edges may be cropped on smaller screens. Avoid small text. PNG/JPG/WebP, at least 1200×200px.</p>
           <div
             role="button"
             class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"

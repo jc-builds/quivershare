@@ -143,6 +143,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
         lat,
         lon,
         is_curated,
+        owner_type,
+        shop_id,
         user_id,
         created_at,
         last_modified,
@@ -198,6 +200,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     });
   }
 
+  async function attachShopAttribution(boardRows: any[]) {
+    const shopIds = [...new Set(
+      boardRows
+        .filter((b: any) => b.owner_type === 'shop' && b.shop_id)
+        .map((b: any) => b.shop_id as string)
+    )];
+    if (shopIds.length === 0) return boardRows;
+
+    const { data: shops } = await locals.supabase
+      .from('shops')
+      .select('id, name, logo_image_url')
+      .in('id', shopIds);
+
+    const shopMap = new Map<string, { name: string; logo_image_url: string | null }>();
+    for (const s of shops ?? []) {
+      shopMap.set(s.id, { name: s.name, logo_image_url: s.logo_image_url });
+    }
+
+    return boardRows.map((b: any) => {
+      if (b.owner_type === 'shop' && b.shop_id) {
+        const shop = shopMap.get(b.shop_id);
+        return { ...b, shop_name: shop?.name ?? null, shop_logo_url: shop?.logo_image_url ?? null };
+      }
+      return { ...b, shop_name: null, shop_logo_url: null };
+    });
+  }
+
   if (locationFilterActive) {
     const { data: allBoards, error: boardsError } = await boardsQuery
       .order('position', { foreignTable: 'surfboard_images', ascending: true })
@@ -224,7 +253,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       userLocation,
       userLocationLat,
       userLocationLon,
-      boards: paged,
+      boards: await attachShopAttribution(paged),
       total,
       page,
       limit,
@@ -254,7 +283,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     userLocation,
     userLocationLat,
     userLocationLon,
-    boards: mapBoardImages(boards ?? []),
+    boards: await attachShopAttribution(mapBoardImages(boards ?? [])),
     total: count ?? 0,
     page,
     limit,

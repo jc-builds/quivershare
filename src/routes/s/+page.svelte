@@ -43,6 +43,10 @@
     lon: number | null;
     image_url: string | null;
     is_curated?: boolean | null;
+    owner_type?: string | null;
+    shop_id?: string | null;
+    shop_name?: string | null;
+    shop_logo_url?: string | null;
     user_id: string;
     created_at: string;
     last_modified: string | null;
@@ -438,62 +442,56 @@
           <a
             href="/surfboards/{board.id}"
             data-sveltekit-prefetch
-            class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
+            class="group flex flex-col bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
           >
+            <!-- Image zone -->
             <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
               {#if board.image_url}
-                {#if index < eagerImageCount}
-                  <img
-                    src={board.image_url}
-                    alt={board.name}
-                    class="absolute inset-0 w-full h-full object-cover"
-                    loading="eager"
-                    fetchpriority="high"
-                    decoding="async"
-                  />
-                {:else}
-                  <img
-                    src={board.image_url}
-                    alt={board.name}
-                    class="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                {/if}
+                <img
+                  src={board.image_url}
+                  alt={board.name}
+                  class="absolute inset-0 w-full h-full object-cover"
+                  loading={index < eagerImageCount ? 'eager' : 'lazy'}
+                  fetchpriority={index < eagerImageCount ? 'high' : undefined}
+                  decoding="async"
+                />
               {:else}
-                {#if index < eagerImageCount}
-                  <img
-                    src={placeholderThumbnail}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover"
-                    aria-hidden="true"
-                    loading="eager"
-                    fetchpriority="high"
-                    decoding="async"
-                  />
-                {:else}
-                  <img
-                    src={placeholderThumbnail}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover"
-                    aria-hidden="true"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                {/if}
+                <img
+                  src={placeholderThumbnail}
+                  alt=""
+                  class="absolute inset-0 w-full h-full object-cover"
+                  aria-hidden="true"
+                  loading={index < eagerImageCount ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
               {/if}
             </div>
-            <div class="p-3 md:p-4">
-              <h3 class="text-base md:text-lg font-semibold text-foreground leading-tight line-clamp-2">{formatBoardTitle(board)}</h3>
-              {#if board.make}
-                <p class="text-sm text-muted-foreground mt-1 line-clamp-1">{board.make}</p>
+
+            <!-- Info zone -->
+            <div class="flex flex-col flex-1 px-3 pt-3 pb-2.5 md:px-4 md:pt-3.5 md:pb-3">
+              <h3 class="text-sm md:text-base font-semibold text-foreground leading-snug line-clamp-2">{formatBoardTitle(board)}</h3>
+              {#if board.make || board.style}
+                <p class="text-xs text-muted-foreground mt-1 line-clamp-1">
+                  {[board.make, displayStyle(board.style)].filter(Boolean).join(' · ')}
+                </p>
               {/if}
-              {#if board.style}
-                <p class="text-sm text-muted-foreground mt-1">{displayStyle(board.style)}</p>
-              {/if}
-              {#if board.price}
-                <p class="text-base font-semibold text-primary mt-2">{formatPrice(board.price)}</p>
-              {/if}
+              <div class="flex items-end justify-between gap-2 mt-auto pt-1.5">
+                {#if board.price}
+                  <span class="text-base font-bold text-primary leading-none">{formatPrice(board.price)}</span>
+                {:else}
+                  <span></span>
+                {/if}
+                {#if board.owner_type === 'shop' && board.shop_name}
+                  <div class="flex items-center gap-1 min-w-0 flex-shrink">
+                    {#if board.shop_logo_url}
+                      <img src={board.shop_logo_url} alt="" class="w-4 h-4 rounded object-cover flex-shrink-0" />
+                    {/if}
+                    <span class="text-[11px] text-muted-foreground truncate">{board.shop_name}</span>
+                  </div>
+                {:else if board.owner_type === 'curated' || board.is_curated}
+                  <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Curated</span>
+                {/if}
+              </div>
             </div>
           </a>
         {/each}

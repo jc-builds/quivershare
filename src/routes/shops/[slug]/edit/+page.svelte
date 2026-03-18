@@ -185,42 +185,70 @@
         placeholder="Start typing... e.g. San Diego, CA"
       />
 
+      <!-- Branding section divider -->
+      <div class="pt-4 mt-2 border-t border-border">
+        <h2 class="text-base font-semibold text-foreground">Shop Branding</h2>
+        <p class="text-xs text-muted-foreground mt-1">Your logo and banner appear on your public shop page.</p>
+      </div>
+
       <!-- Logo -->
-      <div class="space-y-1">
-        <label for="logo" class="block text-sm font-medium text-muted-foreground">Logo (optional — upload to replace)</label>
-        {#if shop.logo_image_url && !logoPreview}
-          <img src={shop.logo_image_url} alt="Current logo" class="h-20 w-20 rounded-lg object-cover border border-border mb-2" />
-        {/if}
-        <input
-          id="logo"
-          name="logo"
-          type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
-          on:change={onLogoChange}
-          class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
-        />
-        {#if logoPreview}
-          <img src={logoPreview} alt="Logo preview" class="mt-2 h-20 w-20 rounded-lg object-cover border border-border" />
-        {/if}
+      <div class="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <div>
+          <label for="logo" class="block text-sm font-medium text-foreground">Logo</label>
+          <p class="text-xs text-muted-foreground mt-0.5">Square or near-square. Keep it simple and readable at small sizes. PNG/JPG/WebP, at least 400×400px.</p>
+        </div>
+        <div class="flex items-start gap-4">
+          <div class="w-20 h-20 rounded-lg border border-border bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+            {#if logoPreview}
+              <img src={logoPreview} alt="Logo preview" class="w-full h-full object-cover" />
+            {:else if shop.logo_image_url}
+              <img src={shop.logo_image_url} alt="Current logo" class="w-full h-full object-cover" />
+            {:else}
+              <span class="text-xs text-muted-foreground">No logo</span>
+            {/if}
+          </div>
+          <div class="flex-1 min-w-0">
+            <input
+              id="logo"
+              name="logo"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              on:change={onLogoChange}
+              class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
+            />
+            <p class="text-xs text-muted-foreground mt-1.5">Upload a new file to replace the current logo.</p>
+          </div>
+        </div>
       </div>
 
       <!-- Banner -->
-      <div class="space-y-1">
-        <label for="banner" class="block text-sm font-medium text-muted-foreground">Banner (optional — upload to replace)</label>
-        {#if shop.banner_image_url && !bannerPreview}
-          <img src={shop.banner_image_url} alt="Current banner" class="w-full h-32 rounded-lg object-cover border border-border mb-2" />
-        {/if}
-        <input
-          id="banner"
-          name="banner"
-          type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
-          on:change={onBannerChange}
-          class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
-        />
-        {#if bannerPreview}
-          <img src={bannerPreview} alt="Banner preview" class="mt-2 w-full h-32 rounded-lg object-cover border border-border" />
-        {/if}
+      <div class="rounded-xl border border-border bg-surface p-4 space-y-3">
+        <div>
+          <label for="banner" class="block text-sm font-medium text-foreground">Banner</label>
+          <p class="text-xs text-muted-foreground mt-0.5">Wide landscape image. Keep key content centered — edges may be cropped on smaller screens. Avoid small text. At least 1200×200px.</p>
+        </div>
+        <div class="rounded-lg border border-border bg-muted overflow-hidden">
+          {#if bannerPreview}
+            <img src={bannerPreview} alt="Banner preview" class="w-full h-36 object-cover" />
+          {:else if shop.banner_image_url}
+            <img src={shop.banner_image_url} alt="Current banner" class="w-full h-36 object-cover" />
+          {:else}
+            <div class="w-full h-24 flex items-center justify-center">
+              <span class="text-xs text-muted-foreground">No banner</span>
+            </div>
+          {/if}
+        </div>
+        <div>
+          <input
+            id="banner"
+            name="banner"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            on:change={onBannerChange}
+            class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
+          />
+          <p class="text-xs text-muted-foreground mt-1.5">Upload a new file to replace the current banner.</p>
+        </div>
       </div>
 
       <!-- Submit -->
