@@ -46,6 +46,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     `)
     .eq('id', id)
     .eq('user_id', uid)
+    .eq('owner_type', 'individual')
     .eq('is_deleted', false)
     .single();
 
@@ -80,12 +81,13 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard belongs to the user
+    // Verify the surfboard belongs to the user and is an individual board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
       .eq('user_id', user.id)
+      .eq('owner_type', 'individual')
       .single();
 
     if (boardError || !board) {
@@ -191,12 +193,13 @@ export const actions: Actions = {
       return fail(400, { message: 'Duplicate image IDs are not allowed' });
     }
 
-    // Verify the surfboard belongs to the user
+    // Verify the surfboard belongs to the user and is an individual board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
       .eq('user_id', user.id)
+      .eq('owner_type', 'individual')
       .single();
 
     if (boardError || !board) {
@@ -267,12 +270,13 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard belongs to the user
+    // Verify the surfboard belongs to the user and is an individual board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
       .eq('user_id', user.id)
+      .eq('owner_type', 'individual')
       .single();
 
     if (boardError || !board) {
@@ -344,12 +348,13 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard belongs to the user
+    // Verify the surfboard belongs to the user and is an individual board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
       .eq('user_id', user.id)
+      .eq('owner_type', 'individual')
       .single();
 
     if (boardError || !board) {
@@ -387,20 +392,18 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard belongs to the user
+    // Verify the surfboard belongs to the user and is an individual board
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, user_id')
+      .select('id')
       .eq('id', surfboardId)
+      .eq('user_id', user.id)
+      .eq('owner_type', 'individual')
       .eq('is_deleted', false)
       .single();
 
     if (boardError || !board) {
-      return fail(404, { message: 'Surfboard not found' });
-    }
-
-    if (board.user_id !== user.id) {
-      return fail(403, { message: 'Access denied' });
+      return fail(404, { message: 'Surfboard not found or access denied' });
     }
 
     // Delete the board (set is_deleted to true)

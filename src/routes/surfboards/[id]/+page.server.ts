@@ -170,16 +170,20 @@ export const actions: Actions = {
       return fail(400, { context: 'updateState', success: false, message: 'Missing board ID' });
     }
 
-    // Verify the board belongs to the user and is not deleted
+    // Verify the board belongs to the user, is individual-owned, and is not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('user_id')
+      .select('user_id, owner_type')
       .eq('id', id)
       .eq('is_deleted', false)
       .maybeSingle();
 
     if (boardError || !board) {
       return fail(404, { context: 'updateState', success: false, message: 'Surfboard not found' });
+    }
+
+    if (board.owner_type !== 'individual') {
+      return fail(403, { context: 'updateState', success: false, message: 'State changes for this board type must be made from the appropriate dashboard' });
     }
 
     if (board.user_id !== user.id) {

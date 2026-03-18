@@ -16,6 +16,7 @@ export const POST = async ({ request, locals, params }) => {
     .select('id')
     .eq('id', surfboardId)
     .eq('user_id', user.id)
+    .eq('owner_type', 'individual')
     .single();
 
   if (boardError || !board) {

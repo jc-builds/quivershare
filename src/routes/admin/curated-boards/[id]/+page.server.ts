@@ -206,6 +206,16 @@ export const actions: Actions = {
     const user = locals.user;
     if (!user) return fail(401, { message: 'Unauthorized' });
 
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { message: 'Access denied: Not an admin' });
+    }
+
     const surfboardId = params.id;
     if (!surfboardId) {
       return fail(400, { message: 'Missing surfboard ID' });
@@ -282,6 +292,16 @@ export const actions: Actions = {
   updateState: async ({ request, locals, params }) => {
     const user = locals.user;
     if (!user) return fail(401, { message: 'Unauthorized' });
+
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { message: 'Access denied: Not an admin' });
+    }
 
     const surfboardId = params.id;
     if (!surfboardId) {
@@ -411,7 +431,25 @@ export const actions: Actions = {
       return fail(400, { success: false, message: 'Invalid source type value' });
     }
 
-    const shop_id = source_type === 'shop' ? raw_shop_id : null;
+    let shop_id: string | null = null;
+    if (source_type === 'shop') {
+      if (!raw_shop_id) {
+        return fail(400, { success: false, message: 'Shop is required for shop listings' });
+      }
+
+      const { data: shop, error: shopError } = await locals.supabase
+        .from('shops')
+        .select('id')
+        .eq('id', raw_shop_id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (shopError || !shop) {
+        return fail(400, { success: false, message: 'Selected shop is invalid or inactive' });
+      }
+
+      shop_id = shop.id;
+    }
 
     // Build update payload
     const updatePayload = {
@@ -468,6 +506,16 @@ export const actions: Actions = {
     const user = locals.user;
     if (!user) {
       return fail(401, { message: 'Unauthorized' });
+    }
+
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { message: 'Access denied: Not an admin' });
     }
 
     const surfboardId = params.id;

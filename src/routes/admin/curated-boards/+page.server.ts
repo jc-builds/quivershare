@@ -60,6 +60,16 @@ export const actions: Actions = {
       return fail(401, { context: 'updateState', success: false, message: 'Unauthorized' });
     }
 
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { context: 'updateState', success: false, message: 'Admin access required' });
+    }
+
     const form = await request.formData();
     const boardId = form.get('boardId')?.toString();
     const newState = form.get('state')?.toString();
@@ -104,6 +114,16 @@ export const actions: Actions = {
       return fail(401, { context: 'deleteBoard', success: false, message: 'Unauthorized' });
     }
 
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { context: 'deleteBoard', success: false, message: 'Admin access required' });
+    }
+
     const form = await request.formData();
     const boardId = form.get('boardId')?.toString();
 
@@ -142,6 +162,16 @@ export const actions: Actions = {
     const user = locals.user;
     if (!user) {
       return fail(401, { context: 'recordMaintenanceReview', success: false, message: 'Unauthorized' });
+    }
+
+    const { data: profile, error: profileError } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_admin !== true) {
+      return fail(403, { context: 'recordMaintenanceReview', success: false, message: 'Admin access required' });
     }
 
     const form = await request.formData();
