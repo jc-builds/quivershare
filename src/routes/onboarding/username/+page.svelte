@@ -26,6 +26,8 @@
     form?.values?.redirectTo ??
     (new URLSearchParams($page.url.search).get('redirectTo') ?? '/');
 
+  $: isShopIntent = redirectTo === '/shops/new';
+
   const usernamePattern = '^[a-z0-9_]{3,20}$';
 
   // Location — shared component
@@ -66,9 +68,13 @@
 </svelte:head>
 
 <section class="max-w-md mx-auto px-4 py-8 sm:px-6 bg-background text-foreground">
-  <h1 class="text-2xl font-semibold tracking-tight mb-2 text-foreground">Finish setup</h1>
+  <h1 class="text-2xl font-semibold tracking-tight mb-2 text-foreground">
+    {isShopIntent ? 'Finish your profile to create your shop' : 'Finish setup'}
+  </h1>
   <p class="text-sm text-muted-foreground mb-6">
-    Set up your QuiverShare profile so other surfers know who you are.
+    {isShopIntent
+      ? 'Set up your QuiverShare profile, then you\u2019ll be taken to create your shop.'
+      : 'Set up your QuiverShare profile so other surfers know who you are.'}
   </p>
 
   <form method="POST" enctype="multipart/form-data" class="space-y-5 bg-surface-elevated/90 border border-border rounded-xl px-5 py-6 shadow-sm">

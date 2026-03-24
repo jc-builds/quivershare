@@ -1,7 +1,7 @@
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
-import { parseLocation, LocationValidationError } from '$lib/server/location';
+import { parseShopAddress, LocationValidationError } from '$lib/server/location';
 
 function isValidUrl(str: string): boolean {
   try {
@@ -38,6 +38,10 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
       country,
       latitude,
       longitude,
+      street_address,
+      postal_code,
+      full_address,
+      mapbox_id,
       logo_image_url,
       banner_image_url,
       owner_user_id,
@@ -115,7 +119,7 @@ export const actions: Actions = {
 
     let location;
     try {
-      location = parseLocation(form);
+      location = parseShopAddress(form);
     } catch (e) {
       if (e instanceof LocationValidationError) {
         return fail(400, { message: e.message, values });
@@ -187,6 +191,10 @@ export const actions: Actions = {
       country: location?.country ?? null,
       latitude: location?.lat ?? null,
       longitude: location?.lon ?? null,
+      street_address: location?.street_address ?? null,
+      postal_code: location?.postal_code ?? null,
+      full_address: location?.full_address ?? null,
+      mapbox_id: location?.mapbox_id ?? null,
     };
 
     if (logo_image_url !== undefined) updatePayload.logo_image_url = logo_image_url;

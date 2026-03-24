@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
-  import LocationAutocomplete from "$lib/components/LocationAutocomplete.svelte";
+  import ShopAddressAutocomplete from "$lib/components/ShopAddressAutocomplete.svelte";
   import type { StructuredLocation } from "$lib/types/location";
 
   export let form: {
@@ -230,12 +230,12 @@
         </div>
 
         <!-- Location -->
-        <LocationAutocomplete
+        <ShopAddressAutocomplete
           bind:value={selectedLocation}
           required={true}
-          label="Location"
-          id="location"
-          placeholder="Start typing... e.g. San Diego, CA"
+          label="Shop Address"
+          id="shop-address"
+          placeholder="Start typing an address..."
         />
 
         <!-- Logo -->

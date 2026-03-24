@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
-import { requireLocation, LocationValidationError } from '$lib/server/location';
+import { requireShopAddress, LocationValidationError } from '$lib/server/location';
 
 function slugify(name: string): string {
   return name
@@ -83,7 +83,7 @@ export const actions: Actions = {
 
     let location;
     try {
-      location = requireLocation(form);
+      location = requireShopAddress(form);
     } catch (e) {
       if (e instanceof LocationValidationError) {
         return fail(400, { message: e.message, values });
@@ -124,6 +124,10 @@ export const actions: Actions = {
         country: location.country,
         latitude: location.lat,
         longitude: location.lon,
+        street_address: location.street_address,
+        postal_code: location.postal_code,
+        full_address: location.full_address,
+        mapbox_id: location.mapbox_id,
         owner_user_id: user.id,
         is_active: true
       })

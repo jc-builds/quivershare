@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
-  import LocationAutocomplete from "$lib/components/LocationAutocomplete.svelte";
+  import ShopAddressAutocomplete from "$lib/components/ShopAddressAutocomplete.svelte";
   import type { StructuredLocation } from "$lib/types/location";
 
   export let data: {
@@ -18,6 +18,10 @@
       country: string | null;
       latitude: number | null;
       longitude: number | null;
+      street_address: string | null;
+      postal_code: string | null;
+      full_address: string | null;
+      mapbox_id: string | null;
       logo_image_url: string | null;
       banner_image_url: string | null;
       owner_user_id: string;
@@ -57,17 +61,21 @@
     message = 'You already have a shop! If you own multiple shops, reach out to info@quivershare.com.';
   }
 
-  // Location state
+  // Location state — hydrate from existing shop data including address fields
   let selectedLocation: StructuredLocation | null =
     shop.latitude && shop.longitude
       ? {
-          id: '',
-          label: shop.location_label || 'Selected location',
+          id: shop.mapbox_id ?? '',
+          label: shop.full_address || shop.location_label || 'Selected location',
           lat: shop.latitude,
           lon: shop.longitude,
           city: shop.city ?? '',
           region: shop.region ?? '',
           country: shop.country ?? '',
+          street_address: shop.street_address ?? undefined,
+          postal_code: shop.postal_code ?? undefined,
+          full_address: shop.full_address ?? undefined,
+          mapbox_id: shop.mapbox_id ?? undefined,
         }
       : null;
 
@@ -177,12 +185,12 @@
       </div>
 
       <!-- Location -->
-      <LocationAutocomplete
+      <ShopAddressAutocomplete
         bind:value={selectedLocation}
         required={false}
-        label="Location (optional)"
-        id="location"
-        placeholder="Start typing... e.g. San Diego, CA"
+        label="Shop Address (optional)"
+        id="shop-address"
+        placeholder="Start typing an address..."
       />
 
       <!-- Branding section divider -->

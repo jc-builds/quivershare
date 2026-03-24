@@ -44,6 +44,8 @@ export const actions: Actions = {
     const form = await request.formData();
     const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
+    const rawRedirect = form.get('redirectTo')?.toString() || '/';
+    const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/';
 
     if (!email || !password) {
       return fail(400, { error: 'Email and password are required.' });
@@ -67,13 +69,15 @@ export const actions: Actions = {
       return fail(400, { error: error.message });
     }
 
-    return { success: true, next: '/' };
+    return { success: true, next: redirectTo };
   },
 
   signup: async ({ request, locals, url }) => {
     const form = await request.formData();
     const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
+    const rawRedirect = form.get('redirectTo')?.toString() || '';
+    const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '';
 
     if (!email || !password) {
       return fail(400, { error: 'Email and password are required.' });
@@ -88,7 +92,9 @@ export const actions: Actions = {
     }
 
     const normalizedEmail = email.toLowerCase();
-    const emailRedirectTo = `${url.origin}/auth/email-callback`;
+    const emailRedirectTo = redirectTo
+      ? `${url.origin}/auth/email-callback?redirectTo=${encodeURIComponent(redirectTo)}`
+      : `${url.origin}/auth/email-callback`;
 
     // Only now do we touch Supabase Auth
     const { data, error } = await locals.supabase.auth.signUp({
@@ -121,6 +127,9 @@ export const actions: Actions = {
       }
     }
 
-    return { success: true, next: '/login?checkEmail=1' };
+    const checkEmailUrl = redirectTo
+      ? `/login?checkEmail=1&redirectTo=${encodeURIComponent(redirectTo)}`
+      : '/login?checkEmail=1';
+    return { success: true, next: checkEmailUrl };
   }
 };

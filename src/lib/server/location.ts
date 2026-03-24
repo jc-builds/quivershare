@@ -80,3 +80,37 @@ export function requireLocation(form: FormData): ParsedLocation {
   }
   return loc;
 }
+
+// ---------------------------------------------------------------------------
+// Shop-specific address parsing (extends base location with address fields)
+// ---------------------------------------------------------------------------
+
+export interface ParsedShopAddress extends ParsedLocation {
+  street_address: string | null;
+  postal_code: string | null;
+  full_address: string | null;
+  mapbox_id: string | null;
+}
+
+export function parseShopAddress(form: FormData): ParsedShopAddress | null {
+  const base = parseLocation(form);
+  if (!base) return null;
+
+  return {
+    ...base,
+    street_address: form.get('shop_street_address')?.toString()?.trim() || null,
+    postal_code: form.get('shop_postal_code')?.toString()?.trim() || null,
+    full_address: form.get('shop_full_address')?.toString()?.trim() || null,
+    mapbox_id: form.get('shop_mapbox_id')?.toString()?.trim() || null
+  };
+}
+
+export function requireShopAddress(form: FormData): ParsedShopAddress {
+  const addr = parseShopAddress(form);
+  if (!addr) {
+    throw new LocationValidationError(
+      'Address is required \u2014 please select an address from the suggestions'
+    );
+  }
+  return addr;
+}
