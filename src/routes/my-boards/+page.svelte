@@ -13,8 +13,7 @@
     width?: number;
     thickness?: number;
     condition?: string;
-    boosts?: { status: string }[];
-    created_at?: string; // ISO timestamp
+    created_at?: string;
     state?: 'active' | 'inactive';
   };
 
@@ -186,13 +185,6 @@
               >
                 Edit
               </button>
-              <button
-                type="button"
-                class="flex-1 min-w-[100px] inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
-                on:click={() => goto(`/surfboards/${board.id}/boost`)}
-              >
-                Boost
-              </button>
               <!-- State Toggle -->
               <form method="POST" action="?/updateState" class="flex-1 min-w-[100px]">
                 <input type="hidden" name="boardId" value={board.id} />
@@ -230,7 +222,6 @@
             <th class="px-4 py-3 font-medium">Dimensions</th>
             <th class="px-4 py-3 font-medium">Condition</th>
             <th class="px-4 py-3 font-medium">State</th>
-            <th class="px-4 py-3 font-medium">Boost</th>
             <th class="px-4 py-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
@@ -280,15 +271,6 @@
                     {board.state ?? 'unknown'}
                   </span>
                 {/if}
-              </td>
-              <td class="px-4 py-3">
-                <button
-                  type="button"
-                  class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-surface transition-colors"
-                  on:click={() => goto(`/surfboards/${board.id}/boost`)}
-                >
-                  Manage Boost
-                </button>
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-end gap-2">

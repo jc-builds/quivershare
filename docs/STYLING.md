@@ -54,7 +54,7 @@ All colors and design values are defined as CSS variables in `src/app.css` and m
 - `max-w-2xl` - Narrow forms (onboarding, profile edit)
 - `max-w-3xl` - Content pages (about, help)
 - `max-w-4xl` - Profile pages
-- `max-w-5xl` - Wide pages (boost, listings)
+- `max-w-5xl` - Wide pages (listings, dashboards)
 - `max-w-7xl` - Full-width layouts (search results)
 
 **Responsive padding:**

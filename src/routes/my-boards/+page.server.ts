@@ -19,8 +19,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       condition,
       created_at,
       state,
-      surfboard_images(image_url, position),
-      boosts(status)
+      surfboard_images(image_url, position)
     `)
     .eq('user_id', userId)
     .eq('owner_type', 'individual')
@@ -37,8 +36,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   // 4) Attach a single fallback image per board
   const boardsWithImage = (data ?? []).map((board) => ({
     ...board,
-    image_url: board.surfboard_images?.[0]?.image_url || null,
-    boosts: board.boosts ?? []
+    image_url: board.surfboard_images?.[0]?.image_url || null
   }));
 
   // 5) Check if user owns a shop (for the clarifying banner)

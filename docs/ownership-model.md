@@ -25,7 +25,7 @@ The board is owned by a single user.
 - **Canonical create route**: `/create-surfboard`
 - **Canonical edit route**: `/edit-surfboard/[id]`
 - **Canonical list/manage route**: `/my-boards`
-- **Public detail**: `/surfboards/[id]` — shows individual owner controls (Edit, Manage Boost).
+- **Public detail**: `/surfboards/[id]` — shows individual owner controls (Edit).
 - **Contact**: Buyer contacts the user directly via the contact form.
 
 ### `owner_type = 'shop'`
@@ -131,10 +131,6 @@ A shop with active (`is_deleted = false`) shop-owned boards should not be deleta
 ### Shop boards do not expose state toggle on the public detail page
 
 Active/inactive state management for shop boards is handled exclusively in the shop dashboard (`/shops/[slug]/dashboard`). The public detail page (`/surfboards/[id]`) does not render state toggle controls for shop boards. Individual boards retain their existing state toggle behavior on their edit surface.
-
-### Boost is individual-only in V1
-
-The boost system (`/surfboards/[id]/boost`, `/api/boost`) is currently scoped to individual boards using `user_id` ownership. Shop boards do not have access to boost in V1. The "Manage Boost" action only appears on the public detail page for individual board owners.
 
 ---
 

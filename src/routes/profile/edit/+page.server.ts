@@ -154,33 +154,6 @@ export const actions: Actions = {
           }
         }
 
-        // Cancel active boosts for this user
-        const { error: cancelBoostsError } = await locals.supabase
-          .from('boosts')
-          .update({ status: 'canceled' })
-          .eq('user_id', userId)
-          .in('status', ['pending', 'live']);
-
-        if (cancelBoostsError) {
-          console.error('Failed to cancel boosts during account deletion:', cancelBoostsError);
-          // Continue - don't fail the whole operation
-        }
-
-        // Reset boost credits to 0
-        const { error: resetCreditsError } = await locals.supabase
-          .from('boost_credits')
-          .update({ 
-            free_credits: 0,
-            paid_credits: 0,
-            total_credits: 0
-          })
-          .eq('user_id', userId);
-
-        if (resetCreditsError) {
-          console.error('Error resetting boost credits:', resetCreditsError);
-          // Continue - don't fail the whole operation
-        }
-
         // Delete profile picture from storage
         if (profile?.profile_picture_url && profile.profile_picture_url.includes('profile-pictures')) {
           try {

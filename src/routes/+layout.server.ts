@@ -12,7 +12,6 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
   const user = locals.user;
 
   let profile = null;
-  let boostCredits = null;
 
   if (user) {
     const { data } = await locals.supabase
@@ -36,16 +35,6 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
       const redirectTo = encodeURIComponent(pathname + (url.search || ''));
       throw redirect(303, `/onboarding/username?redirectTo=${redirectTo}`);
     }
-
-    const { data: creditsRow } = await locals.supabase
-      .from('boost_credits')
-      .select('total_credits')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    boostCredits = creditsRow
-      ? { total_credits: creditsRow.total_credits ?? null }
-      : { total_credits: null };
   }
 
   let shopSlug: string | null = null;
@@ -62,7 +51,6 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
     session,
     user,
     profile,
-    boostCredits,
     shopSlug
   };
 };

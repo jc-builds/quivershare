@@ -387,14 +387,7 @@
       <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{boardTitle}</h1>
       {#if data.canEdit && data.editHref}
         <div class="flex items-center gap-3">
-          {#if data.ownerType === 'individual'}
-            <a
-              href={`/surfboards/${data.board.id}/boost`}
-              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Manage Boost
-            </a>
-          {:else if data.ownerType === 'shop' && data.shopSlug}
+          {#if data.ownerType === 'shop' && data.shopSlug}
             <a
               href={`/shops/${data.shopSlug}/dashboard`}
               class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"

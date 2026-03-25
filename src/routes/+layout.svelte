@@ -14,7 +14,6 @@
       profile_picture_url: string | null;
       is_deleted?: boolean | null;
     } | null;
-    boostCredits: { total_credits: number | null } | null;
     shopSlug: string | null;
   };
 

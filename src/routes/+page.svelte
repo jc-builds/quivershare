@@ -57,7 +57,7 @@
             Surfboards. Nothing but surfboards.
           </p>
           <p class="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-            Find boards near you, list your own, and use built-in advertising tools for shops and shapers.
+            Find boards near you, list your own, or manage inventory for your surf shop.
           </p>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
@@ -71,9 +71,6 @@
         <div class="flex flex-col items-center text-center mt-4">
           <p class="text-xs sm:text-sm text-muted-foreground mt-2">
             Right now we're focused on New York, New Jersey, and the East Coast while we grow. We'll focus on other regions soon.
-          </p>
-          <p class="text-xs sm:text-sm text-muted-foreground">
-            Early adopters get <span class="font-semibold text-primary">one free 14-day Boost per board listed</span>, paid ads for your listing on Instagram and Facebook.
           </p>
         </div>
       </div>
@@ -230,17 +227,13 @@
             Step 3
           </p>
           <h3 class="mb-2 text-base font-semibold text-foreground">
-            Boost to reach more surfers
+            Connect with buyers
           </h3>
           <p class="text-sm leading-relaxed text-muted-foreground">
-            Run ads for your board on Instagram and Facebook using Meta's audience data, so the right people see it.
+            Interested surfers reach out through the listing. Arrange a meetup and get your board into the right hands.
           </p>
         </div>
       </div>
-
-      <p class="mt-8 text-center text-sm text-muted-foreground">
-        Boosts are currently offered as <span class="font-semibold text-primary">free credits to early sellers</span>, to help get your board seen!
-      </p>
     </div>
   </section>
 
@@ -283,10 +276,10 @@
         <div class="feature-card rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm transition-all hover:shadow-md hover:border-border/80">
           <div class="mb-5 h-1 w-12 rounded-full bg-primary/60"></div>
           <h3 class="mb-3 text-lg font-semibold text-foreground">
-            Promotion for Surfers & Shops
+            Built for Shops &amp; Shapers
           </h3>
           <p class="text-sm leading-relaxed text-muted-foreground">
-            Boost your listings with built-in advertising tools. Perfect for local surf shops, shapers, and regular surfers who want their board seen.
+            Surf shops and shapers can create a shop, manage inventory, and reach local surfers directly through the marketplace.
           </p>
         </div>
       </div>

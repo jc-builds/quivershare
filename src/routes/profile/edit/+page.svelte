@@ -337,7 +337,6 @@
           <ul class="list-disc list-inside space-y-1">
             <li>Your account will be permanently deleted</li>
             <li>All active listings will be removed from search</li>
-            <li>Boosts and credits will no longer be usable</li>
             <li>You will be logged out and won't be able to log back in</li>
           </ul>
         </div>
