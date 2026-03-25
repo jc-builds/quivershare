@@ -4,6 +4,34 @@
   import { enhance } from '$app/forms';
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
+  import { PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
+
+  let turnstileScriptLoaded = false;
+
+  function initTurnstile(node: HTMLElement) {
+    const render = () => {
+      if (window.turnstile) {
+        window.turnstile.render(node, {
+          sitekey: PUBLIC_TURNSTILE_SITE_KEY,
+          theme: 'dark'
+        });
+      }
+    };
+
+    if (window.turnstile) {
+      render();
+      return;
+    }
+
+    if (!turnstileScriptLoaded) {
+      turnstileScriptLoaded = true;
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.onload = render;
+      document.head.appendChild(script);
+    }
+  }
 
   export let data: {
     user: import('@supabase/supabase-js').User | null;
@@ -185,6 +213,7 @@
             </button>
 
             {#if !isVerified}
+              <div use:initTurnstile class="flex justify-center"></div>
               <button
                 type="submit"
                 formaction="?/signup"

@@ -9,6 +9,13 @@ declare global {
       getSession: () => Promise<Session | null>;
     }
   }
+
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: { sitekey: string; theme?: string }) => string;
+      reset: (widgetId?: string) => void;
+    };
+  }
 }
 
 export {};

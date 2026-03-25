@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { supabaseAdmin } from '$lib/server/supabaseAdmin';
+import { TURNSTILE_SECRET_KEY } from '$env/static/private';
 
 export const load: PageServerLoad = async () => {
   return {};
@@ -78,6 +79,29 @@ export const actions: Actions = {
     const password = String(form.get('password') ?? '');
     const rawRedirect = form.get('redirectTo')?.toString() || '';
     const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '';
+
+    const turnstileToken = form.get('cf-turnstile-response')?.toString() ?? '';
+    if (!turnstileToken) {
+      return fail(400, { error: 'Please complete the verification check.' });
+    }
+
+    try {
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: TURNSTILE_SECRET_KEY,
+          response: turnstileToken
+        })
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return fail(400, { error: 'Verification failed. Please try again.' });
+      }
+    } catch (e) {
+      console.error('Turnstile verification error:', e);
+      return fail(500, { error: 'Unable to verify request. Please try again.' });
+    }
 
     if (!email || !password) {
       return fail(400, { error: 'Email and password are required.' });
