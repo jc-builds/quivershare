@@ -288,8 +288,8 @@ export const actions: Actions = {
       });
     }
 
-    // Block contactSeller for curated and shop-owned boards
-    if (board.is_curated) {
+    // Block contactSeller for non-individual boards
+    if (board.owner_type === 'curated' || board.is_curated) {
       return fail(400, {
         context: 'contactSeller',
         success: false,

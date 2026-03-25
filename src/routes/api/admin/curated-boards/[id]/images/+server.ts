@@ -23,7 +23,7 @@ export const POST = async ({ request, locals, params }) => {
     .from('surfboards')
     .select('id')
     .eq('id', surfboardId)
-    .eq('is_curated', true)
+    .eq('owner_type', 'curated')
     .eq('is_deleted', false)
     .single();
 

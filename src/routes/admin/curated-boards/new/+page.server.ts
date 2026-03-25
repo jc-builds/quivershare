@@ -11,6 +11,14 @@ const ALLOWED_FIN_SETUPS = ['Single', '2+1', 'Twin', 'Twin + Trailer', 'Twinzer'
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) throw redirect(303, '/login');
 
+  const { data: adminProfile } = await locals.supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', locals.user.id)
+    .maybeSingle();
+
+  if (!adminProfile?.is_admin) throw redirect(303, '/');
+
   const { data: shops, error: shopsError } = await locals.supabase
     .from('shops')
     .select('id, name, location_label, city, region, latitude, longitude')
@@ -31,6 +39,16 @@ export const actions: Actions = {
   default: async ({ request, locals }) => {
     const user = locals.user;
     if (!user) throw redirect(303, '/login');
+
+    const { data: adminProfile } = await locals.supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!adminProfile?.is_admin) {
+      return fail(403, { message: 'Admin access required' });
+    }
 
     const form = await request.formData();
     

@@ -47,10 +47,11 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       shop_id,
       state,
       is_curated,
-      is_deleted
+      is_deleted,
+      owner_type
     `)
     .eq('id', id)
-    .eq('is_curated', true)
+    .eq('owner_type', 'curated')
     .eq('is_deleted', false)
     .single();
 
@@ -122,12 +123,11 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 
@@ -221,12 +221,11 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .single();
 
     if (boardError || !board) {
@@ -308,12 +307,11 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
       .select('id')
       .eq('id', surfboardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .single();
 
     if (boardError || !board) {
@@ -362,12 +360,11 @@ export const actions: Actions = {
       return fail(400, { success: false, message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, is_curated, is_deleted')
+      .select('id, is_deleted')
       .eq('id', surfboardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 
@@ -475,7 +472,8 @@ export const actions: Actions = {
       source_url,
       shop_id,
       state,
-      is_curated: true // Always keep curated boards as curated
+      owner_type: 'curated',
+      is_curated: true
     };
 
     // Use service role client to bypass RLS
@@ -523,12 +521,11 @@ export const actions: Actions = {
       return fail(400, { message: 'Missing surfboard ID' });
     }
 
-    // Verify the surfboard is curated
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('id, is_curated')
+      .select('id')
       .eq('id', surfboardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 

@@ -74,11 +74,12 @@ export const actions: Actions = {
           // Continue with best-effort cleanup
         }
 
-        // Fetch user's surfboards
+        // Fetch user's individual surfboards (do not touch shop or curated boards)
         const { data: surfboards, error: boardsError } = await locals.supabase
           .from('surfboards')
           .select('id')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('owner_type', 'individual');
 
         if (boardsError) {
           console.error('Error fetching surfboards for deletion:', boardsError);
@@ -99,7 +100,7 @@ export const actions: Actions = {
           }
         }
 
-        // Soft delete surfboards
+        // Soft delete individual surfboards only
         if (boardIds.length > 0) {
           const { error: deleteBoardsError } = await locals.supabase
             .from('surfboards')
@@ -107,7 +108,8 @@ export const actions: Actions = {
               is_deleted: true, 
               deleted_at: new Date().toISOString() 
             })
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .eq('owner_type', 'individual');
 
           if (deleteBoardsError) {
             console.error('Error soft-deleting surfboards:', deleteBoardsError);

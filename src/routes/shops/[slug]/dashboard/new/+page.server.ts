@@ -13,7 +13,7 @@ async function resolveShopAndAuthorize(locals: App.Locals, slug: string) {
 
   const { data: shop, error: shopErr } = await locals.supabase
     .from('shops')
-    .select('id, name, slug, owner_user_id, location_label, city, region, country, latitude, longitude')
+    .select('id, name, slug, owner_user_id, is_active, location_label, city, region, country, latitude, longitude')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -29,6 +29,10 @@ async function resolveShopAndAuthorize(locals: App.Locals, slug: string) {
     if (!profile?.is_admin) {
       throw error(403, 'You do not have permission to manage this shop');
     }
+  }
+
+  if (!shop.is_active) {
+    throw error(403, 'This shop is inactive and cannot accept new listings');
   }
 
   return { user, shop };

@@ -69,6 +69,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
       surfboard_images(image_url, position)
     `)
     .eq('user_id', profile.id)
+    .eq('owner_type', 'individual')
     .eq('state', 'active')
     .eq('is_deleted', false)
     .order('position', { foreignTable: 'surfboard_images', ascending: true })

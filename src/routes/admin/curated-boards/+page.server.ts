@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
       last_check_result,
       surfboard_images(image_url, position)
     `)
-    .eq('is_curated', true)
+    .eq('owner_type', 'curated')
     .eq('is_deleted', false);
 
   if (status === 'active') query = query.eq('state', 'active');
@@ -82,12 +82,11 @@ export const actions: Actions = {
       return fail(400, { context: 'updateState', success: false, message: 'Invalid state value' });
     }
 
-    // Verify the board is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('is_curated')
+      .select('id')
       .eq('id', boardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 
@@ -131,12 +130,11 @@ export const actions: Actions = {
       return fail(400, { context: 'deleteBoard', success: false, message: 'Missing board ID' });
     }
 
-    // Verify the board is curated and not deleted
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('is_curated')
+      .select('id')
       .eq('id', boardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 
@@ -190,9 +188,9 @@ export const actions: Actions = {
 
     const { data: board, error: boardError } = await locals.supabase
       .from('surfboards')
-      .select('is_curated')
+      .select('id')
       .eq('id', boardId)
-      .eq('is_curated', true)
+      .eq('owner_type', 'curated')
       .eq('is_deleted', false)
       .single();
 
