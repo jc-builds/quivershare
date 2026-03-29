@@ -60,7 +60,7 @@
   <section class="relative w-full overflow-hidden" aria-labelledby="hero-title">
     <div class="relative h-[50vh] min-h-[360px] md:h-[56vh] md:min-h-[440px] lg:h-[60vh]">
       <img
-        src="/hero-boards.png"
+        src="/hero-boards.jpg"
         alt="Colorful surfboards lined up in a rack"
         class="absolute inset-0 w-full h-full object-cover object-[center_40%] md:object-[center_35%]"
         loading="eager"
