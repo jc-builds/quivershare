@@ -412,10 +412,10 @@
           checked={boardState === 'active'}
           on:change={toggleState}
         />
-        <div class="w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-checked:border-primary bg-gray-200 border-gray-300">
+        <div class="w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-checked:border-primary bg-muted border-border">
           <div class="h-4 w-4 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-4"></div>
         </div>
-        <span class="text-xs font-medium {boardState === 'active' ? 'text-foreground' : 'text-gray-700'}">
+        <span class="text-xs font-medium {boardState === 'active' ? 'text-foreground' : 'text-foreground-secondary'}">
           {boardState === 'active' ? 'Active' : 'Inactive'}
         </span>
       </label>
@@ -747,10 +747,10 @@
 
       <!-- Image Upload Zone -->
       <div
-        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         role="button"
         class:border-primary={dragActive}
-        class:bg-surface-elevated={dragActive}
+        class:bg-muted={dragActive}
         on:dragover|preventDefault={handleDragOver}
         on:dragleave={() => (dragActive = false)}
         on:drop|preventDefault={handleDrop}
@@ -795,7 +795,7 @@
 
       {#if message}
         <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-          <span class={message.startsWith('❌') ? 'text-red-400' : ''}>{message}</span>
+          <span class={message.startsWith('❌') ? 'text-destructive' : ''}>{message}</span>
         </div>
       {/if}
     </form>
@@ -808,7 +808,7 @@
       </p>
       <button
         type="button"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         on:click={() => {
           showDeleteBoardConfirm = true;
           deleteBoardConfirmText = '';
@@ -843,7 +843,7 @@
             Are you sure you want to delete this listing? This action cannot be undone.
           </p>
           
-          <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+          <div class="bg-surface rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
             <p class="font-medium text-foreground mb-2">What will happen:</p>
             <ul class="list-disc list-inside space-y-1">
               <li>This listing will be permanently deleted</li>
@@ -855,7 +855,7 @@
 
           <div class="space-y-2">
             <label for="delete-board-confirm" class="block text-sm font-medium text-foreground">
-              Type <span class="font-mono font-semibold text-red-400">{requiredDeleteConfirmText}</span> to confirm:
+              Type <span class="font-mono font-semibold text-destructive">{requiredDeleteConfirmText}</span> to confirm:
             </label>
             <input
               id="delete-board-confirm"
@@ -874,7 +874,7 @@
           <div class="flex gap-2 justify-end">
             <button
               type="button"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               on:click={() => {
                 showDeleteBoardConfirm = false;
                 deleteBoardConfirmText = '';
@@ -884,7 +884,7 @@
             </button>
             <button
               type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
             >
               Confirm Delete
@@ -905,10 +905,10 @@
           Remove this image? This action cannot be undone.
         </p>
         <div class="flex gap-2 justify-end mt-4">
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition" on:click={() => (showConfirm = false)}
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition" on:click={() => (showConfirm = false)}
             >Cancel</button
           >
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}
             >Delete</button
           >
         </div>
@@ -922,14 +922,14 @@
       class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
     >
       <button
-        class="absolute top-4 right-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
+        class="absolute top-4 right-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
         on:click={closeLightbox}
         aria-label="Close"
       >
         ×
       </button>
       <button
-        class="absolute left-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
+        class="absolute left-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
         on:click={prevImage}
         aria-label="Previous">‹</button
       >
@@ -939,7 +939,7 @@
         class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
       />
       <button
-        class="absolute right-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
+        class="absolute right-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition"
         on:click={nextImage}
         aria-label="Next">›</button
       >

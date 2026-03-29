@@ -198,7 +198,7 @@
           {#if profilePicturePreview && profilePicturePreview !== data.profile.profile_picture_url}
             <button
               type="button"
-              class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-transparent bg-transparent text-muted-foreground hover:bg-surface hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               on:click={removeProfilePicture}
             >
               Remove
@@ -273,14 +273,14 @@
     {/if}
 
     {#if form?.error}
-      <div class="mt-4 rounded-lg border border-red-500/60 bg-surface p-3 text-sm text-red-400">
+      <div class="mt-4 rounded-lg border border-destructive/60 bg-surface p-3 text-sm text-destructive">
         <span>{form.error}</span>
       </div>
     {/if}
 
     <!-- Submit Buttons -->
     <div class="flex gap-2 justify-end">
-      <a href="/profile/{data.profile.username}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+      <a href="/profile/{data.profile.username}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         Cancel
       </a>
       <button type="submit" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed" disabled={uploadingPicture}>
@@ -297,7 +297,7 @@
     </p>
     <button
       type="button"
-      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       on:click={() => {
         showDeleteConfirm = true;
         deleteConfirmText = '';
@@ -332,7 +332,7 @@
           Are you sure you want to delete your account? This action cannot be undone.
         </p>
         
-        <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+        <div class="bg-surface rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
           <p class="font-medium text-foreground mb-2">What will happen:</p>
           <ul class="list-disc list-inside space-y-1">
             <li>Your account will be permanently deleted</li>
@@ -343,7 +343,7 @@
 
         <div class="space-y-2">
           <label for="delete-confirm" class="block text-sm font-medium text-foreground">
-            Type <span class="font-mono font-semibold text-red-400">{requiredConfirmText}</span> to confirm:
+            Type <span class="font-mono font-semibold text-destructive">{requiredConfirmText}</span> to confirm:
           </label>
           <input
             id="delete-confirm"
@@ -362,7 +362,7 @@
         <div class="flex gap-2 justify-end">
           <button
             type="button"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             on:click={() => {
               showDeleteConfirm = false;
               deleteConfirmText = '';
@@ -372,7 +372,7 @@
           </button>
           <button
             type="submit"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={deleteConfirmText !== requiredConfirmText}
           >
             Confirm Delete

@@ -137,7 +137,7 @@
   $: canonicalUrl = `https://www.quivershare.com/surfboards/${data.board.id}`;
   $: ogImage = data.images.length > 0
     ? data.images[0].image_url
-    : 'https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png';
+    : 'https://www.quivershare.com/og-logo-card.png';
 
   // Condition mapping for JSON-LD
   const CONDITION_SCHEMA_MAP: Record<string, string> = {
@@ -390,7 +390,7 @@
           {#if data.ownerType === 'shop' && data.shopSlug}
             <a
               href={`/shops/${data.shopSlug}/dashboard`}
-              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-surface transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-surface-elevated border border-border text-foreground hover:bg-muted transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Shop Dashboard
             </a>
@@ -472,7 +472,7 @@
               {#if i === 2 && allImages.length > 3}
                 <button
                   type="button"
-                  class="absolute bottom-3 right-3 bg-surface-elevated/90 backdrop-blur border border-border text-foreground text-xs px-3 py-1.5 rounded-full shadow-sm transition-all hover:bg-surface-elevated"
+                  class="absolute bottom-3 right-3 bg-surface backdrop-blur border border-border text-foreground text-xs px-3 py-1.5 rounded-full shadow-sm transition-all hover:bg-muted"
                   on:click|stopPropagation={openGallery}
                   on:keydown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -586,7 +586,7 @@
                 View listing on {curatedSourceLabel || 'original site'}
               </button>
             {:else}
-              <p class="text-sm text-red-400">
+              <p class="text-sm text-destructive">
                 Original listing URL is unavailable. This curated board cannot be contacted via QuiverShare.
               </p>
             {/if}
@@ -662,7 +662,7 @@
                 <!-- First Name -->
                 <div class="space-y-1">
                   <label for="first_name" class="block text-sm font-medium text-muted-foreground">
-                    First Name <span class="text-red-400">*</span>
+                    First Name <span class="text-destructive">*</span>
                   </label>
                   <input
                     id="first_name"
@@ -693,7 +693,7 @@
                 <!-- Email -->
                 <div class="space-y-1">
                   <label for="email" class="block text-sm font-medium text-muted-foreground">
-                    Email <span class="text-red-400">*</span>
+                    Email <span class="text-destructive">*</span>
                   </label>
                   <input
                     id="email"
@@ -724,7 +724,7 @@
                 <!-- Message -->
                 <div class="space-y-1">
                   <label for="message" class="block text-sm font-medium text-muted-foreground">
-                    Message <span class="text-red-400">*</span>
+                    Message <span class="text-destructive">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -748,11 +748,11 @@
                 <!-- Success/Error Messages -->
                 {#if form?.context === 'contactSeller'}
                   {#if form.success}
-                    <p class="text-sm text-green-600 dark:text-green-400">
+                    <p class="text-sm text-success">
                       {form.message || 'Your message has been sent to the seller.'}
                     </p>
                   {:else if form.message}
-                    <p class="text-sm text-red-400">
+                    <p class="text-sm text-destructive">
                       {form.message}
                     </p>
                   {/if}
@@ -801,7 +801,7 @@
       <!-- Close button -->
       <button
         type="button"
-        class="absolute top-4 right-4 z-10 bg-surface-elevated/90 backdrop-blur border border-border text-foreground rounded-full p-2 shadow-sm hover:bg-surface-elevated transition-colors"
+        class="absolute top-4 right-4 z-10 bg-surface backdrop-blur border border-border text-foreground rounded-full p-2 shadow-sm hover:bg-surface-elevated transition-colors"
         on:click={closeLightbox}
         aria-label="Close gallery"
         tabindex="0"
@@ -827,7 +827,7 @@
       {#if allImages.length > 1}
         <button
           type="button"
-          class="absolute left-4 top-1/2 -translate-y-1/2 bg-surface-elevated/90 backdrop-blur border border-border text-foreground rounded-full p-3 shadow-sm hover:bg-surface-elevated transition-colors"
+          class="absolute left-4 top-1/2 -translate-y-1/2 bg-surface backdrop-blur border border-border text-foreground rounded-full p-3 shadow-sm hover:bg-surface-elevated transition-colors"
           on:click|stopPropagation={prevLightboxImage}
           aria-label="Previous image"
           tabindex="0"
@@ -836,7 +836,7 @@
         </button>
         <button
           type="button"
-          class="absolute right-4 top-1/2 -translate-y-1/2 bg-surface-elevated/90 backdrop-blur border border-border text-foreground rounded-full p-3 shadow-sm hover:bg-surface-elevated transition-colors"
+          class="absolute right-4 top-1/2 -translate-y-1/2 bg-surface backdrop-blur border border-border text-foreground rounded-full p-3 shadow-sm hover:bg-surface-elevated transition-colors"
           on:click|stopPropagation={nextLightboxImage}
           aria-label="Next image"
           tabindex="0"
@@ -845,7 +845,7 @@
         </button>
 
         <!-- Image counter -->
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-surface-elevated/90 backdrop-blur border border-border text-foreground rounded-full px-4 py-2 text-sm shadow-sm">
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-surface backdrop-blur border border-border text-foreground rounded-full px-4 py-2 text-sm shadow-sm">
           {lightboxIndex + 1} / {allImages.length}
         </div>
       {/if}

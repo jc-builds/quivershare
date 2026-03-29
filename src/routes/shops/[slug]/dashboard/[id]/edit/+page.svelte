@@ -273,10 +273,10 @@
       <label class="flex items-center gap-3 cursor-pointer select-none">
         <span class="text-xs uppercase tracking-wide text-muted-foreground">State:</span>
         <input type="checkbox" class="sr-only peer" checked={boardState === "active"} on:change={toggleState} />
-        <div class="w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-checked:border-primary bg-gray-200 border-gray-300">
+        <div class="w-9 h-5 rounded-full border flex items-center px-0.5 transition-colors peer-checked:bg-primary peer-checked:border-primary bg-muted border-border">
           <div class="h-4 w-4 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-4"></div>
         </div>
-        <span class="text-xs font-medium {boardState === 'active' ? 'text-foreground' : 'text-gray-700'}">
+        <span class="text-xs font-medium {boardState === 'active' ? 'text-foreground' : 'text-foreground-secondary'}">
           {boardState === "active" ? "Active" : "Inactive"}
         </span>
       </label>
@@ -284,15 +284,15 @@
 
     <form class="space-y-4" on:submit|preventDefault={saveBoard}>
       <div class="space-y-1">
-        <label for="name" class="block text-sm font-medium text-muted-foreground">Board Name <span class="text-red-400">*</span></label>
+        <label for="name" class="block text-sm font-medium text-muted-foreground">Board Name <span class="text-destructive">*</span></label>
         <input id="name" type="text" bind:value={surfboard.name} placeholder="e.g. Star Cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
       </div>
       <div class="space-y-1">
-        <label for="make" class="block text-sm font-medium text-muted-foreground">Make / Brand <span class="text-red-400">*</span></label>
+        <label for="make" class="block text-sm font-medium text-muted-foreground">Make / Brand <span class="text-destructive">*</span></label>
         <input id="make" type="text" bind:value={surfboard.make} placeholder="e.g. Album, Firewire, JS" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
       </div>
       <div class="space-y-1">
-        <label for="length" class="block text-sm font-medium text-muted-foreground">Length <span class="text-red-400">*</span></label>
+        <label for="length" class="block text-sm font-medium text-muted-foreground">Length <span class="text-destructive">*</span></label>
         <select id="length" bind:value={surfboard.length} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
           <option disabled selected>Select length</option>
           {#each Array(79) as _, i}
@@ -328,7 +328,7 @@
         </select>
       </div>
       <div class="space-y-1">
-        <label for="style" class="block text-sm font-medium text-muted-foreground">Board Style <span class="text-red-400">*</span></label>
+        <label for="style" class="block text-sm font-medium text-muted-foreground">Board Style <span class="text-destructive">*</span></label>
         <select id="style" bind:value={surfboard.style} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
           <option value="">Select style</option>
           <option>Shortboard</option><option>Mid-length</option><option>Longboard</option><option value="Groveler / Fish">Groveler / Fish</option>
@@ -339,11 +339,11 @@
         </select>
       </div>
       <div class="space-y-1">
-        <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-red-400">*</span></label>
+        <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-destructive">*</span></label>
         <input id="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
       </div>
       <div class="space-y-1">
-        <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-red-400">*</span></label>
+        <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-destructive">*</span></label>
         <select id="condition" bind:value={surfboard.condition} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
           <option disabled selected>Select condition</option>
           <option>New</option><option>Lightly Used</option><option>Used</option><option>Well-loved</option><option>Needs Repair</option>
@@ -360,10 +360,10 @@
       </div>
 
       <div
-        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         role="button"
         class:border-primary={dragActive}
-        class:bg-surface-elevated={dragActive}
+        class:bg-muted={dragActive}
         on:dragover|preventDefault={handleDragOver}
         on:dragleave={() => (dragActive = false)}
         on:drop|preventDefault={handleDrop}
@@ -399,7 +399,7 @@
 
       {#if message}
         <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-          <span class="text-red-400">{message}</span>
+          <span class="text-destructive">{message}</span>
         </div>
       {/if}
     </form>
@@ -412,7 +412,7 @@
       </p>
       <button
         type="button"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         on:click={() => {
           showDeleteBoardConfirm = true;
           deleteBoardConfirmText = "";
@@ -452,7 +452,7 @@
             undone.
           </p>
           <div
-            class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground"
+            class="bg-surface rounded-lg p-4 space-y-2 text-sm text-muted-foreground"
           >
             <p class="font-medium text-foreground mb-2">What will happen:</p>
             <ul class="list-disc list-inside space-y-1">
@@ -467,7 +467,7 @@
               for="delete-board-confirm"
               class="block text-sm font-medium text-foreground"
             >
-              Type <span class="font-mono font-semibold text-red-400"
+              Type <span class="font-mono font-semibold text-destructive"
                 >{requiredDeleteConfirmText}</span
               > to confirm:
             </label>
@@ -485,7 +485,7 @@
           <div class="flex gap-2 justify-end">
             <button
               type="button"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               on:click={() => {
                 showDeleteBoardConfirm = false;
                 deleteBoardConfirmText = "";
@@ -495,7 +495,7 @@
             </button>
             <button
               type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
             >
               Confirm Delete
@@ -511,8 +511,8 @@
       <div class="bg-surface-elevated border border-border rounded-xl shadow-lg w-full max-w-sm p-5 text-foreground">
         <p class="text-sm">Remove this image? This action cannot be undone.</p>
         <div class="flex gap-2 justify-end mt-4">
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition" on:click={() => (showConfirm = false)}>Cancel</button>
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}>Delete</button>
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition" on:click={() => (showConfirm = false)}>Cancel</button>
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}>Delete</button>
         </div>
       </div>
     </div>
@@ -520,10 +520,10 @@
 
   {#if lightboxOpen && managedImages[lightboxIndex]}
     <div class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
-      <button class="absolute top-4 right-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={closeLightbox} aria-label="Close">&times;</button>
-      <button class="absolute left-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={prevImage} aria-label="Previous">&#8249;</button>
+      <button class="absolute top-4 right-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={closeLightbox} aria-label="Close">&times;</button>
+      <button class="absolute left-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={prevImage} aria-label="Previous">&#8249;</button>
       <img src={getLightboxSrc(managedImages[lightboxIndex])} alt="Enlarged view" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" />
-      <button class="absolute right-4 bg-surface-elevated/90 text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={nextImage} aria-label="Next">&#8250;</button>
+      <button class="absolute right-4 bg-surface text-foreground rounded-full p-2 sm:p-3 shadow-sm border border-border hover:bg-surface-elevated transition" on:click={nextImage} aria-label="Next">&#8250;</button>
     </div>
   {/if}
 </main>

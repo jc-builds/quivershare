@@ -130,10 +130,10 @@
 </script>
 
 <nav
-  class="w-full border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-50"
+  class="w-full border-b border-border bg-surface sticky top-0 z-50"
 >
   <div
-    class="mx-auto flex h-16 items-center justify-between px-4 md:px-8 lg:max-w-6xl"
+    class="mx-auto flex h-14 items-center justify-between px-4 md:px-8 lg:max-w-6xl"
   >
     <!-- Logo -->
     <a
@@ -144,7 +144,7 @@
       <img
         src="/FullLogo_Transparent_NoBuffer.png"
         alt="QuiverShare"
-        class="h-10 w-auto"
+        class="h-11 w-auto"
       />
     </a>
 
@@ -167,9 +167,9 @@
         <div class="relative hidden md:block" bind:this={profileMenuElement}>
           <button
             type="button"
-            class="inline-flex items-center rounded-md px-2 py-2 text-sm border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface {profileMenuOpen
-              ? 'bg-surface-elevated border-border'
-              : 'bg-primary-soft border-primary/20 hover:bg-primary-soft-alt hover:border-primary/40'}"
+            class="inline-flex items-center rounded-full p-1 border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface {profileMenuOpen
+              ? 'bg-muted border-border'
+              : 'border-transparent hover:bg-muted'}"
             aria-label="Open profile menu"
             on:click={toggleProfileMenu}
           >
@@ -262,7 +262,7 @@
         </button>
         {#if mobileMenuOpen}
           <div
-            class="absolute top-16 left-0 right-0 border-b border-border bg-surface-elevated shadow-lg z-[100] md:hidden"
+            class="absolute top-14 left-0 right-0 border-b border-border bg-surface shadow-lg z-[100] md:hidden"
             bind:this={mobileMenuElement}
           >
             <div class="px-4 py-3 border-b border-border">
@@ -331,7 +331,7 @@
         </button>
         {#if mobileMenuOpen}
           <div
-            class="absolute top-16 left-0 right-0 border-b border-border bg-surface-elevated shadow-lg z-[100] md:hidden"
+            class="absolute top-14 left-0 right-0 border-b border-border bg-surface shadow-lg z-[100] md:hidden"
             bind:this={mobileMenuElement}
           >
             <div class="py-1 nav-li-font">
@@ -361,7 +361,7 @@
         {#if $page.url.pathname !== "/login"}
           <a
             href="/login"
-            class="hidden md:inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-alt border border-border"
+            class="hidden md:inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-alt transition-colors"
             data-sveltekit-prefetch
           >
             Login / Sign Up

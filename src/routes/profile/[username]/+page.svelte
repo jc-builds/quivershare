@@ -109,7 +109,7 @@
             <a href="/my-boards" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background shadow-sm">
               My Boards
             </a>
-            <a href="/profile/edit" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+            <a href="/profile/edit" class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
               Edit Profile
             </a>
           {/if}
@@ -143,7 +143,7 @@
           </thead>
           <tbody>
             {#each data.boards as board}
-              <tr class="border-b border-border/60 last:border-0 hover:bg-surface/80 transition-colors">
+              <tr class="border-b border-border/60 last:border-0 hover:bg-muted transition-colors">
                 <td class="px-4 py-3 align-middle">
                   <div class="w-16 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border">
                     <img

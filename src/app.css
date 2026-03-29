@@ -1,63 +1,56 @@
-/* Load Inter (closest to Notion's Inter) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Make Tailwind default to your sans stack (set in tailwind.config.js) */
 @layer base {
   html {
     font-family: theme('fontFamily.sans');
   }
 }
 
-/* Custom font stack variable (kept for targeted overrides if needed) */
 :root {
   --font-family-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif,
     "Segoe UI Emoji", "Segoe UI Symbol";
 
-  /* Design tokens - Radix-inspired color system */
-  /* Grays / neutrals */
-  --background: #020617;
-  --surface: #020617;
-  --surface-elevated: #020617;
-  --border: #1f2937;
-  --foreground: #e5e7eb;
-  --muted: #111827;
-  --muted-foreground: #9ca3af;
+  /* Backgrounds */
+  --background: #fafaf8;
+  --background-alt: #f2f1ef;
 
-  /* Sky accent inspired by Radix sky */
-  --primary-soft: #082d41;
-  --primary-soft-alt: #08354c;
-  --primary: #2ec8ee;
-  --primary-alt: #68ddfd;
-  --primary-foreground: #020617;
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
 
-  /* Secondary / accent */
-  --accent: #38bdf8;
-  --accent-foreground: #020617;
+  /* Neutral fills */
+  --muted: #f0efed;
 
-  /* Status colors */
-  --success: #22c55e;
-  --success-foreground: #022c22;
-  --warning: #facc15;
-  --warning-foreground: #1f2937;
-  --destructive: #ef4444;
-  --destructive-foreground: #f9fafb;
+  /* Borders */
+  --border: #e0ddd8;
+  --border-subtle: #ece9e4;
+
+  /* Text */
+  --foreground: #1a1a2e;
+  --foreground-secondary: #6b7280;
+  --foreground-muted: #9ca3af;
+
+  /* Primary brand — sky / coastal blue */
+  --primary: #0891b2;
+  --primary-hover: #0e7490;
+  --primary-foreground: #ffffff;
+  --primary-tint: #f0f9fb;
+
+  /* Status */
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Dark accent — hero, footer, intentional dark sections */
+  --dark: #020617;
 }
 
-/* Example alternative accent theme (optional, for future toggling) */
-.theme-mint {
-  --primary-soft: #033a34;
-  --primary-soft-alt: #01453d;
-  --primary: #25d0ab;
-  --primary-alt: #70e1c8;
-  --primary-foreground: #022c22;
-}
-
-/* Force the Notion/Inter look on nav lists and their children (anchors/buttons) */
 @layer utilities {
   .nav-li-font,
   .nav-li-font *:not(svg):not(path) {
@@ -67,7 +60,6 @@
   }
 }
 
-/* Logo font utility */
 .font-londrina {
   font-family: "Londrina Solid", system-ui, -apple-system, "Segoe UI", Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",

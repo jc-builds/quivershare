@@ -136,15 +136,15 @@
 
     <form method="POST" class="space-y-4" on:submit|preventDefault={handleSubmit}>
       <div class="space-y-1">
-        <label for="name" class="block text-sm font-medium text-muted-foreground">Board Name <span class="text-red-400">*</span></label>
+        <label for="name" class="block text-sm font-medium text-muted-foreground">Board Name <span class="text-destructive">*</span></label>
         <input id="name" name="name" type="text" bind:value={surfboard.name} placeholder="e.g. Star Cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
       </div>
       <div class="space-y-1">
-        <label for="make" class="block text-sm font-medium text-muted-foreground">Make / Brand <span class="text-red-400">*</span></label>
+        <label for="make" class="block text-sm font-medium text-muted-foreground">Make / Brand <span class="text-destructive">*</span></label>
         <input id="make" name="make" type="text" bind:value={surfboard.make} placeholder="e.g. Album, Firewire, JS" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
       </div>
       <div class="space-y-1">
-        <label for="length" class="block text-sm font-medium text-muted-foreground">Length <span class="text-red-400">*</span></label>
+        <label for="length" class="block text-sm font-medium text-muted-foreground">Length <span class="text-destructive">*</span></label>
         <select id="length" name="length" bind:value={surfboard.length} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required>
           <option disabled selected>Select length</option>
           {#each Array(79) as _, i}
@@ -180,18 +180,18 @@
         </select>
       </div>
       <div class="space-y-1">
-        <label for="style" class="block text-sm font-medium text-muted-foreground">Board Style <span class="text-red-400">*</span></label>
+        <label for="style" class="block text-sm font-medium text-muted-foreground">Board Style <span class="text-destructive">*</span></label>
         <select id="style" name="style" bind:value={surfboard.style} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required>
           <option value="">Select style</option>
           <option>Shortboard</option><option>Mid-length</option><option>Longboard</option><option value="Groveler / Fish">Groveler / Fish</option><option>Gun</option>
         </select>
       </div>
       <div class="space-y-1">
-        <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-red-400">*</span></label>
+        <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-destructive">*</span></label>
         <input id="price" name="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
       </div>
       <div class="space-y-1">
-        <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-red-400">*</span></label>
+        <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-destructive">*</span></label>
         <select id="condition" name="condition" bind:value={surfboard.condition} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required>
           <option disabled selected value="">Select condition</option>
           <option>New</option><option>Lightly Used</option><option>Used</option><option>Well-loved</option><option>Needs Repair</option>
@@ -209,9 +209,9 @@
 
       <div
         role="button"
-        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         class:border-primary={dragActive}
-        class:bg-surface-elevated={dragActive}
+        class:bg-muted={dragActive}
         on:dragover|preventDefault={handleDragOver}
         on:dragleave={() => (dragActive = false)}
         on:drop|preventDefault={handleDrop}
@@ -245,7 +245,7 @@
 
       {#if message}
         <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-          <span class="text-red-400">{message}</span>
+          <span class="text-destructive">{message}</span>
         </div>
       {/if}
     </form>

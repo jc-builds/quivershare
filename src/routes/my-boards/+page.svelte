@@ -124,7 +124,7 @@
 
 
   {#if errorMessage}
-    <p class="text-center text-red-400">Error: {errorMessage}</p>
+    <p class="text-center text-destructive">Error: {errorMessage}</p>
   {:else if boards.length === 0}
     <p class="text-center text-muted-foreground">You haven't added any boards yet.</p>
   {:else}
@@ -173,14 +173,14 @@
             <div class="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
-                class="flex-1 min-w-[100px] inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                class="flex-1 min-w-[100px] inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                 on:click={() => viewBoard(board.id)}
               >
                 View
               </button>
               <button
                 type="button"
-                class="flex-1 min-w-[100px] inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                class="flex-1 min-w-[100px] inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                 on:click={(e) => handleEditClick(e, board.id)}
               >
                 Edit
@@ -191,7 +191,7 @@
                 <input type="hidden" name="state" value={board.state === 'active' ? 'inactive' : 'active'} />
                 <button
                   type="submit"
-                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}"
+                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt' : 'bg-muted text-foreground-secondary border-border hover:bg-muted'}"
                   title={board.state === 'active' ? 'Set to inactive' : 'Set to active'}
                 >
                   {board.state === 'active' ? 'Inactivate' : 'Activate'}
@@ -200,7 +200,7 @@
               <!-- Delete Button -->
               <button
                 type="button"
-                class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm flex-1 min-w-[100px]"
+                class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors shadow-sm flex-1 min-w-[100px]"
                 on:click={() => openDeleteBoardConfirm(board.id)}
               >
                 Delete
@@ -227,7 +227,7 @@
         </thead>
         <tbody>
           {#each boards as board}
-            <tr class="border-b border-border/50 hover:bg-surface/70 transition-colors">
+            <tr class="border-b border-border/50 hover:bg-muted transition-colors">
               <td class="px-4 py-3">
                 <div class="w-16 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border">
                   <img
@@ -280,7 +280,7 @@
                     <input type="hidden" name="state" value={board.state === 'active' ? 'inactive' : 'active'} />
                     <button
                       type="submit"
-                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}"
+                      class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt' : 'bg-muted text-foreground-secondary border-border hover:bg-muted'}"
                       title={board.state === 'active' ? 'Set to inactive' : 'Set to active'}
                     >
                       {board.state === 'active' ? 'Inactivate' : 'Activate'}
@@ -288,14 +288,14 @@
                   </form>
                   <button
                     type="button"
-                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                     on:click={() => viewBoard(board.id)}
                   >
                     View
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                     on:click={(e) => handleEditClick(e, board.id)}
                   >
                     Edit
@@ -303,7 +303,7 @@
                   <!-- Delete Button -->
                   <button
                     type="button"
-                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors shadow-sm"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors shadow-sm"
                     on:click={() => openDeleteBoardConfirm(board.id)}
                   >
                     Delete
@@ -343,7 +343,7 @@
           Are you sure you want to delete this listing? This action cannot be undone.
         </p>
 
-        <div class="bg-surface/50 rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
+        <div class="bg-surface rounded-lg p-4 space-y-2 text-sm text-muted-foreground">
           <p class="font-medium text-foreground mb-2">What will happen:</p>
           <ul class="list-disc list-inside space-y-1">
             <li>This listing will be permanently deleted</li>
@@ -355,7 +355,7 @@
 
         <div class="space-y-2">
           <label for="delete-board-confirm" class="block text-sm font-medium text-foreground">
-            Type <span class="font-mono font-semibold text-red-400">{requiredDeleteConfirmText}</span> to confirm:
+            Type <span class="font-mono font-semibold text-destructive">{requiredDeleteConfirmText}</span> to confirm:
           </label>
           <input
             id="delete-board-confirm"
@@ -373,14 +373,14 @@
         <div class="flex gap-2 justify-end">
           <button
             type="button"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             on:click={closeDeleteBoardConfirm}
           >
             Cancel
           </button>
           <button
             type="submit"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
           >
             Confirm Delete

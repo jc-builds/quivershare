@@ -90,7 +90,7 @@
         <div class="flex items-center gap-3 flex-shrink-0">
           <a
             href="/shops/{data.shop.slug}/edit"
-            class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors"
+            class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors"
           >
             Edit Shop
           </a>
@@ -145,7 +145,7 @@
       </h2>
 
       {#if data.boards.length === 0}
-        <div class="rounded-xl border border-border bg-surface-elevated/80 p-8 text-center">
+        <div class="rounded-xl border border-border bg-surface p-8 text-center">
           {#if data.isOwnerOrAdmin}
             <p class="text-foreground font-medium">Your shop doesn't have any boards yet.</p>
             <p class="text-sm text-muted-foreground mt-2">Add your first listing from the Shop Dashboard to start showing boards here.</p>
@@ -175,7 +175,7 @@
             <a
               href="/surfboards/{board.id}"
               data-sveltekit-prefetch
-              class="block bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
+              class="block bg-surface rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
             >
               <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
                 {#if board.image_url}

@@ -244,9 +244,9 @@
           <p class="text-xs text-muted-foreground">Square or near-square. Keep it simple and readable at small sizes. PNG/JPG/WebP, at least 400×400px.</p>
           <div
             role="button"
-            class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             class:border-primary={logoDragActive}
-            class:bg-surface-elevated={logoDragActive}
+            class:bg-muted={logoDragActive}
             on:dragover|preventDefault={onLogoDragOver}
             on:dragleave={() => (logoDragActive = false)}
             on:drop|preventDefault={onLogoDrop}
@@ -287,9 +287,9 @@
           <p class="text-xs text-muted-foreground">Wide landscape image. Keep key content centered — edges may be cropped on smaller screens. Avoid small text. PNG/JPG/WebP, at least 1200×200px.</p>
           <div
             role="button"
-            class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-5 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             class:border-primary={bannerDragActive}
-            class:bg-surface-elevated={bannerDragActive}
+            class:bg-muted={bannerDragActive}
             on:dragover|preventDefault={onBannerDragOver}
             on:dragleave={() => (bannerDragActive = false)}
             on:drop|preventDefault={onBannerDrop}
@@ -344,7 +344,7 @@
 
       {#if message && !submitting}
         <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-          <span class="text-red-400">{message}</span>
+          <span class="text-destructive">{message}</span>
         </div>
       {/if}
     </form>

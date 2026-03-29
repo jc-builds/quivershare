@@ -1,26 +1,38 @@
 <script lang="ts">
-  import './styles.css';
-  import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
-  import type { StructuredLocation } from '$lib/types/location';
-  import { goto } from '$app/navigation';
+  import { formatPrice } from '$lib/formatPrice';
 
-  let selectedLocation: StructuredLocation | null = null;
-  let searchRadius = 15;
-  let searchError = '';
+  export let data: {
+    featuredBoards: Array<{
+      id: string;
+      name: string;
+      make: string | null;
+      length: number | null;
+      price: number | null;
+      style: string | null;
+      condition: string | null;
+      city: string | null;
+      region: string | null;
+      image_url: string | null;
+      is_curated?: boolean | null;
+      owner_type?: string | null;
+      shop_id?: string | null;
+      shop_name?: string | null;
+      shop_logo_url?: string | null;
+    }>;
+  };
 
-  function handleSearchSubmit(e: Event) {
-    e.preventDefault();
-    if (!selectedLocation) {
-      searchError = 'Please select a location from the suggestions';
-      return;
-    }
-    searchError = '';
-    const params = new URLSearchParams();
-    params.set('loc_label', selectedLocation.label);
-    params.set('loc_lat', selectedLocation.lat.toString());
-    params.set('loc_lon', selectedLocation.lon.toString());
-    params.set('distance', searchRadius.toString());
-    goto(`/s?${params.toString()}`);
+  const placeholderThumbnail = 'https://via.placeholder.com/400x533?text=No+Image';
+
+  function formatBoardTitle(board: { length: number | null; name: string }): string {
+    if (board.length == null || Number.isNaN(board.length)) return board.name;
+    const feet = Math.floor(board.length / 12);
+    const inches = board.length % 12;
+    return `${feet}'${inches}" ${board.name}`;
+  }
+
+  function displayStyle(style: string | null): string | null {
+    if (!style) return null;
+    return style === 'Groveler' ? 'Groveler / Fish' : style;
   }
 </script>
 
@@ -35,253 +47,190 @@
   <meta property="og:title" content="Used Surfboard Marketplace | QuiverShare" />
   <meta property="og:description" content="Buy and sell used surfboards in New York, New Jersey, and the East Coast on QuiverShare, the surfboard marketplace built for surfers." />
   <meta property="og:url" content="https://www.quivershare.com/" />
-  <meta property="og:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta property="og:image" content="https://www.quivershare.com/og-logo-card.png" />
   <meta property="og:site_name" content="QuiverShare" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Used Surfboard Marketplace | QuiverShare" />
   <meta name="twitter:description" content="Buy and sell used surfboards in New York, New Jersey, and the East Coast on QuiverShare, the surfboard marketplace built for surfers." />
-  <meta name="twitter:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta name="twitter:image" content="https://www.quivershare.com/og-logo-card.png" />
 </svelte:head>
 
 <main>
-  <!-- Hero Section -->
-  <section class="w-full min-h-[80vh] flex items-center bg-gradient-to-b from-background via-background to-surface/40 py-20 md:py-28" aria-labelledby="hero-title">
-    <div class="mx-auto max-w-4xl px-4 md:px-6 lg:px-8 w-full">
-      <div class="flex flex-col items-center text-center space-y-8 md:space-y-10">
-        <div class="space-y-6 md:space-y-8">
-          <h1 id="hero-title" class="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-foreground">
-            Used Surfboard Marketplace<br />
-            for New York &amp; New Jersey
-          </h1>
-          <p class="text-xl md:text-2xl font-semibold text-foreground/80">
-            Surfboards. Nothing but surfboards.
-          </p>
-          <p class="text-lg md:text-xl leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-            Find boards near you, list your own, or manage inventory for your surf shop.
-          </p>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
-          <a href="/s" class="inline-flex items-center justify-center rounded-lg border border-border bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background" data-sveltekit-prefetch>
-            Browse boards near you
-          </a>
-          <a href="/create-surfboard" class="inline-flex items-center justify-center rounded-lg border border-border bg-surface/50 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:border-border focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background" data-sveltekit-prefetch>
-            List a board
-          </a>
-        </div>
-        <div class="flex flex-col items-center text-center mt-4">
-          <p class="text-xs sm:text-sm text-muted-foreground mt-2">
-            Right now we're focused on New York, New Jersey, and the East Coast while we grow. We'll focus on other regions soon.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- <!-- Social Proof / Logo Strip -->
-<!-- <section class="w-full py-16 md:py-20 bg-surface/30 border-y border-border"> -->
-<!--   <div class="mx-auto max-w-5xl px-4 md:px-6 lg:px-8 w-full"> -->
-<!--     <div class="logo-marquee-wrapper relative w-full overflow-hidden"> -->
-<!--       <!-- Gradient masks --> 
-<!--       <div class="logo-marquee-gradient logo-marquee-gradient-left absolute top-0 bottom-0 w-32 z-10 pointer-events-none left-0 bg-gradient-to-r from-surface/30 to-transparent"></div> -->
-<!--       <div class="logo-marquee-gradient logo-marquee-gradient-right absolute top-0 bottom-0 w-32 z-10 pointer-events-none right-0 bg-gradient-to-l from-surface/30 to-transparent"></div> -->
-<!--        -->
-<!--       <!-- Marquee container --> 
-<!--       <div class="logo-marquee-inner flex flex-nowrap w-fit will-change-transform"> -->
-<!--         <!-- First strip --> 
-<!--         <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0"> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span> -->
-<!--         </div> -->
-<!--         <!-- Duplicate strip for seamless loop --> 
-<!--         <div class="logo-marquee-strip flex flex-nowrap w-fit gap-6 lg:gap-10 flex-shrink-0" aria-hidden="true"> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Montauk Surf Co.</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Rockaway Board Shop</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">OBX Foam & Fiberglass</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Pacific Glide</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">East Coast Shapers</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Left Point Surf Supply</span> -->
-<!--           <span class="logo-item h-11 lg:h-12 w-fit inline-flex items-center px-5 py-2.5 border border-border/50 rounded-lg text-sm text-muted-foreground font-medium whitespace-nowrap bg-surface-elevated/50 backdrop-blur-sm">Long Beach Boardroom</span> -->
-<!--         </div> -->
-<!--       </div> -->
-<!--     </div> -->
-<!--     <p class="text-center text-xs md:text-sm text-muted-foreground/80 mt-10 mb-0 font-medium tracking-wide uppercase">Trusted by local surfers & shops</p> -->
-<!--   </div> -->
-<!-- </section> -->
-
-
-  <!-- Search Section -->
-  <section class="border-t border-border bg-background py-16 md:py-20" aria-labelledby="search-title">
-    <div class="mx-auto max-w-2xl px-4 md:px-6 lg:px-8">
-      <div class="mb-10 text-center">
-        <h2
-          id="search-title"
-          class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-3"
-        >
-          Search boards near you
-        </h2>
-        <p class="text-base md:text-lg text-muted-foreground">
-          Enter your location and radius to find surfboard listings.
-        </p>
-      </div>
-      <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm">
-        <form on:submit|preventDefault={handleSearchSubmit} aria-label="Search surfboards by location" class="flex flex-col gap-5">
-          <LocationAutocomplete
-            bind:value={selectedLocation}
-            required={false}
-            label="Location"
-            id="search-location"
-            placeholder="Enter city, state, or zip code…"
-            clearable={true}
-          />
-
-          {#if searchError}
-            <p class="text-sm text-red-400">{searchError}</p>
-          {/if}
-
-          <div>
-            <label
-              for="search-radius"
-              class="block text-sm font-medium text-foreground mb-2"
-            >
-              Within
-            </label>
-            <div class="flex items-center gap-3">
-              <input
-                id="search-radius"
-                type="number"
-                min="1"
-                max="500"
-                bind:value={searchRadius}
-                class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-              />
-              <span class="whitespace-nowrap text-sm text-muted-foreground">
-                miles
-              </span>
+  <!-- Hero -->
+  <section class="relative w-full overflow-hidden" aria-labelledby="hero-title">
+    <div class="relative h-[50vh] min-h-[360px] md:h-[56vh] md:min-h-[440px] lg:h-[60vh]">
+      <img
+        src="/hero-boards.png"
+        alt="Colorful surfboards lined up in a rack"
+        class="absolute inset-0 w-full h-full object-cover object-[center_40%] md:object-[center_35%]"
+        loading="eager"
+        fetchpriority="high"
+        decoding="sync"
+      />
+      <div class="absolute inset-0 flex items-end">
+        <div class="w-full px-4 md:px-8 pb-8 md:pb-12 lg:max-w-6xl lg:mx-auto">
+          <div class="max-w-lg bg-white/70 backdrop-blur-md border border-white/40 rounded-2xl px-6 py-6 md:px-8 md:py-8 shadow-sm">
+            <h1 id="hero-title" class="text-2xl md:text-3xl lg:text-4xl font-bold leading-[1.15] tracking-tight text-foreground">
+              The surfboard marketplace for New York &amp; New Jersey
+            </h1>
+            <p class="mt-3 text-sm md:text-base text-foreground/70 leading-relaxed">
+              Find boards near you, list your own, or manage inventory for your surf shop.
+            </p>
+            <div class="flex flex-wrap gap-3 mt-5">
+              <a
+                href="/s"
+                class="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt"
+                data-sveltekit-prefetch
+              >
+                Browse boards
+              </a>
+              <a
+                href="/create-surfboard"
+                class="inline-flex items-center justify-center rounded-lg border border-border bg-white/80 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-white"
+                data-sveltekit-prefetch
+              >
+                List a board
+              </a>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-          <button
-            type="submit"
-            class="inline-flex w-full items-center justify-center rounded-lg border border-border bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-alt focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-elevated md:w-auto"
+  <!-- Inventory -->
+  {#if data.featuredBoards.length > 0}
+    <section class="bg-background pt-10 pb-8 md:pt-14 md:pb-10" aria-labelledby="inventory-title">
+      <div class="max-w-7xl mx-auto px-4 md:px-8">
+        <div class="flex items-baseline justify-between mb-6">
+          <h2 id="inventory-title" class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
+            Boards near New York &amp; New Jersey
+          </h2>
+          <a
+            href="/s"
+            class="text-sm font-medium text-primary hover:text-primary-alt transition-colors whitespace-nowrap"
+            data-sveltekit-prefetch
           >
-            Search Boards
-          </button>
-        </form>
-      </div>
-    </div>
-  </section>
+            View all &rarr;
+          </a>
+        </div>
 
-  <!-- How it works Section -->
-  <section
-    class="border-t border-border bg-background py-16 md:py-20"
-    aria-labelledby="how-it-works-title"
-  >
-    <div class="mx-auto max-w-4xl px-4 md:px-6 lg:px-8">
-      <div class="mb-10 text-center">
-        <h2
-          id="how-it-works-title"
-          class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-3"
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+          {#each data.featuredBoards as board, index (board.id)}
+            <a
+              href="/surfboards/{board.id}"
+              data-sveltekit-prefetch
+              class="group flex flex-col bg-surface rounded-xl border border-border hover:shadow-md transition-all duration-200 no-underline"
+            >
+              <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
+                {#if board.image_url}
+                  <img
+                    src={board.image_url}
+                    alt={board.name}
+                    class="absolute inset-0 w-full h-full object-cover"
+                    loading={index < 2 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                {:else}
+                  <img
+                    src={placeholderThumbnail}
+                    alt=""
+                    class="absolute inset-0 w-full h-full object-cover"
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                {/if}
+              </div>
+
+              <div class="flex flex-col flex-1 px-3 pt-3 pb-2.5 md:px-4 md:pt-3.5 md:pb-3">
+                <h3 class="text-sm md:text-base font-semibold text-foreground leading-snug line-clamp-2">{formatBoardTitle(board)}</h3>
+                {#if board.make || board.style}
+                  <p class="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {[board.make, displayStyle(board.style)].filter(Boolean).join(' · ')}
+                  </p>
+                {/if}
+                <div class="flex items-end justify-between gap-2 mt-auto pt-1.5">
+                  {#if board.price}
+                    <span class="text-base font-bold text-primary leading-none">{formatPrice(board.price)}</span>
+                  {:else}
+                    <span></span>
+                  {/if}
+                  {#if board.owner_type === 'shop' && board.shop_name}
+                    <div class="flex items-center gap-1 min-w-0 flex-shrink">
+                      {#if board.shop_logo_url}
+                        <img src={board.shop_logo_url} alt="" class="w-4 h-4 rounded object-cover flex-shrink-0" />
+                      {/if}
+                      <span class="text-[11px] text-muted-foreground truncate">{board.shop_name}</span>
+                    </div>
+                  {:else if board.owner_type === 'curated' || board.is_curated}
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Curated</span>
+                  {/if}
+                </div>
+              </div>
+            </a>
+          {/each}
+        </div>
+
+        <div class="mt-6 text-center">
+          <a
+            href="/s"
+            class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            data-sveltekit-prefetch
+          >
+            Browse all boards
+          </a>
+        </div>
+      </div>
+    </section>
+  {/if}
+
+  <!-- Entry Points -->
+  <section class="bg-muted py-12 md:py-16" aria-labelledby="entry-points-title">
+    <div class="max-w-5xl mx-auto px-4 md:px-8">
+      <h2 id="entry-points-title" class="text-lg md:text-xl font-semibold tracking-tight text-foreground mb-6">
+        Browse, sell, or run your shop
+      </h2>
+      <div class="grid gap-4 md:grid-cols-3 md:gap-5">
+        <a
+          href="/s"
+          class="group flex flex-col rounded-xl border border-border bg-surface px-5 py-5 md:px-6 md:py-6 transition-all duration-200 hover:shadow-md no-underline"
+          data-sveltekit-prefetch
         >
-          How QuiverShare works
-        </h2>
-        <p class="text-base md:text-lg text-muted-foreground">
-          A simple flow for both surfers and sellers / shops.
-        </p>
-      </div>
-
-      <div class="grid gap-6 md:grid-cols-3 md:gap-8">
-        <!-- Step 1 -->
-        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
-          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
-            Step 1
+          <h3 class="text-base font-semibold text-foreground">Browse boards</h3>
+          <p class="mt-2 text-sm text-muted-foreground leading-relaxed flex-1">
+            Explore used surfboards from surfers and shops across New York and New Jersey.
           </p>
-          <h3 class="mb-2 text-base font-semibold text-foreground">
-            Browse boards near you
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            Enter your location, pick a radius, and see used boards nearby. Filter by size, style, or price when you're ready.
-          </p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
-          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
-            Step 2
-          </p>
-          <h3 class="mb-2 text-base font-semibold text-foreground">
-            List your board in minutes
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            Add photos, dims, fin setup, and price. Your listing is built around the details surfers actually care about.
-          </p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-7 shadow-sm">
-          <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase mb-2">
-            Step 3
-          </p>
-          <h3 class="mb-2 text-base font-semibold text-foreground">
-            Connect with buyers
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            Interested surfers reach out through the listing. Arrange a meetup and get your board into the right hands.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Feature Cards Section -->
-  <section
-    class="border-t border-border bg-background py-16 md:py-20"
-    aria-labelledby="features-title"
-  >
-    <div class="mx-auto max-w-6xl px-4 md:px-6 lg:px-8">
-      <div class="mb-12 md:mb-16 text-center max-w-2xl mx-auto">
-        <h2
-          id="features-title"
-          class="text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-3"
+          <span class="mt-4 text-sm font-medium text-primary group-hover:text-primary-alt transition-colors">
+            Browse boards &rarr;
+          </span>
+        </a>
+        <a
+          href="/create-surfboard"
+          class="group flex flex-col rounded-xl border border-border bg-surface px-5 py-5 md:px-6 md:py-6 transition-all duration-200 hover:shadow-md no-underline"
+          data-sveltekit-prefetch
         >
-          Why surfers use QuiverShare
-        </h2>
-        <p class="text-base md:text-lg text-muted-foreground">
-          It's a marketplace built around how surfers actually buy and sell boards.
-        </p>
-      </div>
-      <div class="grid gap-6 md:grid-cols-3 md:gap-8">
-        <div class="feature-card rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm transition-all hover:shadow-md hover:border-border/80">
-          <div class="mb-5 h-1 w-12 rounded-full bg-primary/60"></div>
-          <h3 class="mb-3 text-lg font-semibold text-foreground">
-            Built for Surfboards
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            QuiverShare focuses only on surfboards, no furniture, no random classifieds. Search by length, volume, fin setup, and more.
+          <h3 class="text-base font-semibold text-foreground">List a board</h3>
+          <p class="mt-2 text-sm text-muted-foreground leading-relaxed flex-1">
+            Post your board with photos and details, and connect with local buyers.
           </p>
-        </div>
-        <div class="feature-card rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm transition-all hover:shadow-md hover:border-border/80">
-          <div class="mb-5 h-1 w-12 rounded-full bg-primary/60"></div>
-          <h3 class="mb-3 text-lg font-semibold text-foreground">
-            Local First, Travel Friendly
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            Find boards near you for easy meetups, or hunt for the perfect board at your next surf destination.
+          <span class="mt-4 text-sm font-medium text-primary group-hover:text-primary-alt transition-colors">
+            List a board &rarr;
+          </span>
+        </a>
+        <a
+          href="/shops/new"
+          class="group flex flex-col rounded-xl border border-border bg-surface px-5 py-5 md:px-6 md:py-6 transition-all duration-200 hover:shadow-md no-underline"
+          data-sveltekit-prefetch
+        >
+          <h3 class="text-base font-semibold text-foreground">Create your shop</h3>
+          <p class="mt-2 text-sm text-muted-foreground leading-relaxed flex-1">
+            Set up a shop page and manage your board inventory in one place.
           </p>
-        </div>
-        <div class="feature-card rounded-xl border border-border bg-surface-elevated/50 p-6 md:p-8 shadow-sm transition-all hover:shadow-md hover:border-border/80">
-          <div class="mb-5 h-1 w-12 rounded-full bg-primary/60"></div>
-          <h3 class="mb-3 text-lg font-semibold text-foreground">
-            Built for Shops &amp; Shapers
-          </h3>
-          <p class="text-sm leading-relaxed text-muted-foreground">
-            Surf shops and shapers can create a shop, manage inventory, and reach local surfers directly through the marketplace.
-          </p>
-        </div>
+          <span class="mt-4 text-sm font-medium text-primary group-hover:text-primary-alt transition-colors">
+            Create your shop &rarr;
+          </span>
+        </a>
       </div>
     </div>
   </section>

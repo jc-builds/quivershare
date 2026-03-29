@@ -69,7 +69,7 @@
 <div class="space-y-1">
   {#if label}
     <label for={id} class="block text-sm font-medium text-muted-foreground">
-      {label}{#if required}<span class="text-red-400"> *</span>{/if}
+      {label}{#if required}<span class="text-destructive"> *</span>{/if}
     </label>
   {/if}
   <div class="relative">
@@ -95,7 +95,7 @@
           <li>
             <button
               type="button"
-              class="w-full text-left px-3 py-2 hover:bg-surface transition-colors text-foreground"
+              class="w-full text-left px-3 py-2 hover:bg-muted transition-colors text-foreground"
               on:click={() => select(s)}
             >
               {s.label}

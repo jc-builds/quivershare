@@ -18,41 +18,47 @@ export default {
         ],
       },
       colors: {
-        background: "var(--background)",
+        background: {
+          DEFAULT: "var(--background)",
+          alt: "var(--background-alt)",
+        },
+
         surface: "var(--surface)",
         "surface-elevated": "var(--surface-elevated)",
-        border: "var(--border)",
-        foreground: "var(--foreground)",
+
+        border: {
+          DEFAULT: "var(--border)",
+          subtle: "var(--border-subtle)",
+        },
+
+        foreground: {
+          DEFAULT: "var(--foreground)",
+          secondary: "var(--foreground-secondary)",
+          muted: "var(--foreground-muted)",
+        },
+
         muted: "var(--muted)",
-        "muted-foreground": "var(--muted-foreground)",
+        "muted-foreground": "var(--foreground-secondary)",
 
         primary: {
           DEFAULT: "var(--primary)",
-          soft: "var(--primary-soft)",
-          softAlt: "var(--primary-soft-alt)",
-          alt: "var(--primary-alt)",
+          hover: "var(--primary-hover)",
+          alt: "var(--primary-hover)",
           foreground: "var(--primary-foreground)",
+          tint: "var(--primary-tint)",
+          soft: "var(--primary-tint)",
+          softAlt: "var(--primary-tint)",
         },
 
-        accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
-        },
-
-        success: {
-          DEFAULT: "var(--success)",
-          foreground: "var(--success-foreground)",
-        },
-
-        warning: {
-          DEFAULT: "var(--warning)",
-          foreground: "var(--warning-foreground)",
-        },
+        success: "var(--success)",
+        warning: "var(--warning)",
 
         destructive: {
           DEFAULT: "var(--destructive)",
           foreground: "var(--destructive-foreground)",
         },
+
+        dark: "var(--dark)",
       },
     },
   },

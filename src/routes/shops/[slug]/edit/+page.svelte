@@ -105,7 +105,7 @@
 
     {#if message}
       <div class="mb-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-        <span class={message.startsWith('You already') ? 'text-primary' : 'text-red-400'}>{message}</span>
+        <span class={message.startsWith('You already') ? 'text-primary' : 'text-destructive'}>{message}</span>
       </div>
     {/if}
 
@@ -222,7 +222,7 @@
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               on:change={onLogoChange}
-              class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
+              class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted file:transition file:cursor-pointer"
             />
             <p class="text-xs text-muted-foreground mt-1.5">Upload a new file to replace the current logo.</p>
           </div>
@@ -253,9 +253,9 @@
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/webp"
             on:change={onBannerChange}
-            class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-surface-elevated file:transition file:cursor-pointer"
-          />
-          <p class="text-xs text-muted-foreground mt-1.5">Upload a new file to replace the current banner.</p>
+              class="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted file:transition file:cursor-pointer"
+            />
+            <p class="text-xs text-muted-foreground mt-1.5">Upload a new file to replace the current banner.</p>
         </div>
       </div>
 

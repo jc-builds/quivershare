@@ -60,13 +60,13 @@
       </select>
       <a
         href="/shops/{shop.slug}/edit"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
       >
         Shop Settings
       </a>
       <a
         href="/shops/{shop.slug}"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
       >
         View Shop
       </a>
@@ -80,7 +80,7 @@
   </div>
 
   {#if errorMessage}
-    <p class="text-center text-red-400 mb-4">Error: {errorMessage}</p>
+    <p class="text-center text-destructive mb-4">Error: {errorMessage}</p>
   {/if}
 
   {#if boards.length === 0 && !errorMessage}
@@ -138,7 +138,7 @@
               </a>
               <button
                 type="button"
-                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                 on:click={() => viewBoard(board.id)}
               >
                 View
@@ -148,7 +148,7 @@
                 <input type="hidden" name="state" value={board.state === 'active' ? 'inactive' : 'active'} />
                 <button
                   type="submit"
-                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-surface-elevated text-foreground border-border hover:bg-surface' : 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt'}"
+                  class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-surface-elevated text-foreground border-border hover:bg-muted' : 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt'}"
                 >
                   {board.state === 'active' ? 'Set inactive' : 'Set active'}
                 </button>
@@ -174,7 +174,7 @@
         </thead>
         <tbody>
           {#each boards as board}
-            <tr class="border-b border-border/50 hover:bg-surface/70 transition-colors">
+            <tr class="border-b border-border/50 hover:bg-muted transition-colors">
               <td class="px-3 py-2">
                 <div class="w-11 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border flex-shrink-0">
                   <img
@@ -219,7 +219,7 @@
                   </a>
                   <button
                     type="button"
-                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors"
+                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-elevated text-foreground border border-border hover:bg-muted transition-colors"
                     on:click={() => viewBoard(board.id)}
                   >
                     View
@@ -229,7 +229,7 @@
                     <input type="hidden" name="state" value={board.state === 'active' ? 'inactive' : 'active'} />
                     <button
                       type="submit"
-                      class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-surface-elevated text-foreground border-border hover:bg-surface' : 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt'}"
+                      class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors shadow-sm {board.state === 'active' ? 'bg-surface-elevated text-foreground border-border hover:bg-muted' : 'bg-primary text-primary-foreground border-primary hover:bg-primary-alt'}"
                     >
                       {board.state === 'active' ? 'Set inactive' : 'Set active'}
                     </button>

@@ -66,10 +66,10 @@
 
   const RESULT_COLORS: Record<string, string> = {
     no_change: 'bg-surface text-muted-foreground border border-border',
-    price_changed: 'bg-blue-500/10 text-blue-400 border border-blue-500/30',
-    sold: 'bg-red-500/10 text-red-400 border border-red-500/30',
-    source_unavailable: 'bg-orange-500/10 text-orange-400 border border-orange-500/30',
-    link_changed: 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
+    price_changed: 'bg-blue-500/10 text-blue-700 border border-blue-500/30',
+    sold: 'bg-destructive/10 text-destructive border border-destructive/30',
+    source_unavailable: 'bg-orange-500/10 text-orange-700 border border-orange-500/30',
+    link_changed: 'bg-purple-500/10 text-purple-700 border border-purple-500/30'
   };
 
   function resultBadge(result: string | null | undefined): { label: string; cls: string } {
@@ -237,7 +237,7 @@
         {/if}
 
         {#if reviewError}
-          <p class="text-sm text-red-400">{reviewError}</p>
+          <p class="text-sm text-destructive">{reviewError}</p>
         {/if}
 
         <div class="flex gap-2 pt-1">
@@ -284,7 +284,7 @@
   </div>
 
   {#if errorMessage}
-    <p class="text-center text-red-400">Error: {errorMessage}</p>
+    <p class="text-center text-destructive">Error: {errorMessage}</p>
   {:else if boards.length === 0}
     <p class="text-center text-muted-foreground">No curated boards yet.</p>
   {:else}
@@ -349,7 +349,7 @@
               </button>
               <button
                 type="button"
-                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors shadow-sm"
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium bg-surface text-foreground border border-border hover:bg-muted transition-colors shadow-sm"
                 on:click={() => editBoard(board.id)}
               >
                 Edit
@@ -357,7 +357,7 @@
               <div class="relative">
                 <button
                   type="button"
-                  class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm font-bold bg-surface-elevated text-muted-foreground border border-border hover:bg-surface hover:text-foreground transition-colors"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm font-bold bg-surface text-muted-foreground border border-border hover:bg-muted hover:text-foreground transition-colors"
                   on:click|stopPropagation={() => toggleMenu(board.id)}
                   aria-label="More actions"
                 >
@@ -380,7 +380,7 @@
                       <input type="hidden" name="boardId" value={board.id} />
                       <button
                         type="submit"
-                        class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        class="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                         on:click={(e) => { if (!confirm('Delete this curated board? This cannot be undone.')) e.preventDefault(); }}
                       >
                         Delete
@@ -413,7 +413,7 @@
         </thead>
         <tbody>
           {#each boards as board}
-            <tr class="border-b border-border/50 hover:bg-surface/70 transition-colors">
+            <tr class="border-b border-border/50 hover:bg-muted transition-colors">
               <td class="px-3 py-2">
                 <div class="w-11 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border flex-shrink-0">
                   <img
@@ -480,7 +480,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-elevated text-foreground border border-border hover:bg-surface transition-colors"
+                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface text-foreground border border-border hover:bg-muted transition-colors"
                     on:click={() => editBoard(board.id)}
                   >
                     Edit
@@ -488,7 +488,7 @@
                   <div class="relative">
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold bg-surface-elevated text-muted-foreground border border-border hover:bg-surface hover:text-foreground transition-colors"
+                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold bg-surface text-muted-foreground border border-border hover:bg-muted hover:text-foreground transition-colors"
                       on:click|stopPropagation={() => toggleMenu(board.id)}
                       aria-label="More actions"
                     >
@@ -511,7 +511,7 @@
                           <input type="hidden" name="boardId" value={board.id} />
                           <button
                             type="submit"
-                            class="w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                            class="w-full text-left px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                             on:click={(e) => { if (!confirm('Delete this curated board? This cannot be undone.')) e.preventDefault(); }}
                           >
                             Delete

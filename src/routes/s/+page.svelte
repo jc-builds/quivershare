@@ -366,24 +366,24 @@
   <meta property="og:title" content="Used Surfboards for Sale in NY & NJ | QuiverShare" />
   <meta property="og:description" content="Browse used surfboards for sale in New York and New Jersey. Filter by style, length, volume, and more on QuiverShare." />
   <meta property="og:url" content="https://www.quivershare.com/s" />
-  <meta property="og:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta property="og:image" content="https://www.quivershare.com/og-logo-card.png" />
   <meta property="og:site_name" content="QuiverShare" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Used Surfboards for Sale in NY & NJ | QuiverShare" />
   <meta name="twitter:description" content="Browse used surfboards for sale in New York and New Jersey. Filter by style, length, volume, and more on QuiverShare." />
-  <meta name="twitter:image" content="https://www.quivershare.com/FullLogo_Transparent_NoBuffer.png" />
+  <meta name="twitter:image" content="https://www.quivershare.com/og-logo-card.png" />
 </svelte:head>
 
 <svelte:window on:keydown={handleGlobalKeydown} />
 
 <div class="min-h-screen bg-background">
   <div class="max-w-7xl mx-auto px-6 py-6">
-    <div class="rounded-xl border border-border bg-surface-elevated/80 shadow-sm p-6 sm:p-8 mb-6">
+    <div class="mb-6">
       <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
         Used Surfboards for Sale in New York &amp; New Jersey
       </h1>
-      <p class="max-w-2xl text-sm sm:text-base text-muted-foreground mt-3">
-        Browse used surfboards for sale across New York and New Jersey. Find shortboards, fish, midlengths, and longboards listed by surfers throughout the Northeast.
+      <p class="max-w-xl text-sm text-muted-foreground mt-2">
+        Browse used surfboards across New York and New Jersey. Filter by style, length, volume, and more.
       </p>
     </div>
     <div class="flex items-center justify-between gap-4 mb-4">
@@ -414,7 +414,7 @@
     <div class="flex items-center gap-3 mb-6">
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/80 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+        class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
         aria-expanded={isFiltersOpen}
         aria-controls="filters-drawer"
         on:click={openFiltersDrawer}
@@ -433,7 +433,7 @@
     </div>
 
     {#if boards.length === 0}
-      <div class="bg-surface-elevated/80 rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
+      <div class="bg-surface rounded-xl p-8 md:p-12 text-center border border-border shadow-sm">
         <p class="text-muted-foreground">No boards match your filters.</p>
       </div>
     {:else}
@@ -442,7 +442,7 @@
           <a
             href="/surfboards/{board.id}"
             data-sveltekit-prefetch
-            class="group flex flex-col bg-surface-elevated/80 rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
+            class="group flex flex-col bg-surface rounded-xl border border-border hover:shadow-md transition-all duration-200 no-underline"
           >
             <!-- Image zone -->
             <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
@@ -501,7 +501,7 @@
     {#if totalPages > 1}
       <div class="flex justify-center items-center gap-3 mt-8">
         <button
-          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface"
           disabled={currentPage === 1}
           on:click={() => goToPage(currentPage - 1)}
         >
@@ -511,7 +511,7 @@
           Page {currentPage} of {totalPages}
         </span>
         <button
-          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface-elevated/50 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-elevated/50"
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface"
           disabled={currentPage === totalPages}
           on:click={() => goToPage(currentPage + 1)}
         >
@@ -520,7 +520,7 @@
       </div>
     {/if}
 
-    <section class="rounded-xl border border-border bg-surface-elevated/80 shadow-sm p-6 sm:p-8 mt-12">
+    <section class="rounded-xl border border-border bg-surface shadow-sm p-6 sm:p-8 mt-12">
       <h2 class="text-lg sm:text-xl font-semibold tracking-tight text-foreground">
         Buying Used Surfboards in New York &amp; New Jersey
       </h2>
@@ -561,7 +561,7 @@
       </div>
 
       <div class="p-4 space-y-6">
-        <div class="bg-surface-elevated/80 rounded-xl p-4 border border-border shadow-sm">
+        <div class="bg-surface rounded-xl p-4 border border-border shadow-sm">
           <LocationAutocomplete
             bind:value={selectedLocation}
             required={false}
@@ -587,7 +587,7 @@
             </div>
           </div>
           {#if data.locLabel && data.distance}
-            <div class="mt-4 p-3 bg-primary-soft/30 rounded-lg border border-primary/20">
+            <div class="mt-4 p-3 bg-primary-tint rounded-lg border border-primary/20">
               <div class="text-foreground font-medium mb-2 text-xs">
                 Active: {data.distance} miles from {data.locLabel}
               </div>
@@ -614,7 +614,7 @@
           {/if}
         </div>
 
-        <div class="bg-surface-elevated/80 rounded-xl p-4 space-y-4 border border-border shadow-sm">
+        <div class="bg-surface rounded-xl p-4 space-y-4 border border-border shadow-sm">
           <h3 class="font-semibold text-lg text-foreground">Filters</h3>
 
           <div>

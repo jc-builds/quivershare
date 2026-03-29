@@ -83,31 +83,24 @@
 <slot />
 
 <!-- Global Footer -->
-<footer class="w-full bg-surface border-t border-border mt-12">
-  <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-6 text-center space-y-2">
-    <p class="text-sm text-muted-foreground">
-      © {new Date().getFullYear()} QuiverShare — Built by surfers, for surfers.
-    </p>
-
-    <p class="text-sm text-muted-foreground">
-      Contact:
-      <a
-        href="mailto:support@quivershare.com"
-        class="hover:text-foreground underline"
-      >
-        info@quivershare.com
-      </a>
-    </p>
-
-    <div
-      class="flex items-center justify-center gap-4 text-sm text-muted-foreground"
-    >
-      <a href="/terms" class="hover:text-foreground underline"
-        >Terms of Service</a
-      >
-      <a href="/privacy" class="hover:text-foreground underline"
-        >Privacy Policy</a
-      >
+<footer class="w-full border-t border-border bg-background mt-0">
+  <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-10 md:py-12">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+      <div class="text-sm text-foreground font-semibold tracking-tight">
+        QuiverShare
+        <p class="mt-1 text-xs font-normal text-muted-foreground">Built by surfers, for surfers.</p>
+      </div>
+      <nav class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        <a href="/s" class="hover:text-foreground transition-colors">Browse</a>
+        <a href="/about" class="hover:text-foreground transition-colors">About</a>
+        <a href="/help" class="hover:text-foreground transition-colors">Help</a>
+        <a href="/terms" class="hover:text-foreground transition-colors">Terms</a>
+        <a href="/privacy" class="hover:text-foreground transition-colors">Privacy</a>
+      </nav>
+    </div>
+    <div class="mt-8 pt-5 border-t border-border-subtle flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground">
+      <p>&copy; {new Date().getFullYear()} QuiverShare</p>
+      <a href="mailto:info@quivershare.com" class="hover:text-foreground transition-colors">info@quivershare.com</a>
     </div>
   </div>
 </footer>

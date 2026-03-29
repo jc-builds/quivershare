@@ -139,7 +139,7 @@
       <!-- Delete button -->
       <button
         type="button"
-        class="absolute top-1 right-1 bg-black/60 text-[10px] text-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/80 z-10"
+        class="absolute top-1 right-1 bg-black/60 text-[10px] text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/80 z-10"
         on:click|stopPropagation={() =>
           img.kind === 'existing' ? deleteExisting(img) : deleteNew(i)}
         aria-label="Remove image"

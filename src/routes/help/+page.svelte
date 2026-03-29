@@ -86,7 +86,7 @@
     {#each faqs as item (item.id)}
       <details
         id={item.id}
-        class="group rounded-xl border border-border bg-surface-elevated/80 shadow-sm overflow-hidden"
+        class="group rounded-xl border border-border bg-surface shadow-sm overflow-hidden"
       >
         <summary
           class="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 cursor-pointer select-none"
@@ -125,7 +125,7 @@
       <a href="/create-surfboard" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary-alt transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         List a Board
       </a>
-      <a href="/s" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-surface-elevated transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+      <a href="/s" class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         Browse Boards
       </a>
     </div>

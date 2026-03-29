@@ -200,7 +200,7 @@
       <!-- Board Name -->
       <div class="space-y-1">
         <label for="name" class="block text-sm font-medium text-muted-foreground">
-          Board Name <span class="text-red-400">*</span>
+          Board Name <span class="text-destructive">*</span>
         </label>
         <input
           id="name"
@@ -216,7 +216,7 @@
       <!-- Make -->
       <div class="space-y-1">
         <label for="make" class="block text-sm font-medium text-muted-foreground">
-          Make / Brand <span class="text-red-400">*</span>
+          Make / Brand <span class="text-destructive">*</span>
         </label>
         <input
           id="make"
@@ -232,7 +232,7 @@
       <!-- Length -->
       <div class="space-y-1">
         <label for="length" class="block text-sm font-medium text-muted-foreground">
-          Length <span class="text-red-400">*</span>
+          Length <span class="text-destructive">*</span>
         </label>
         <select
           id="length"
@@ -354,7 +354,7 @@
       <!-- Style -->
       <div class="space-y-1">
         <label for="style" class="block text-sm font-medium text-muted-foreground">
-          Board Style <span class="text-red-400">*</span>
+          Board Style <span class="text-destructive">*</span>
         </label>
         <select
           id="style"
@@ -375,7 +375,7 @@
       <!-- Price -->
       <div class="space-y-1">
         <label for="price" class="block text-sm font-medium text-muted-foreground">
-          Price ($) <span class="text-red-400">*</span>
+          Price ($) <span class="text-destructive">*</span>
         </label>
         <input
           id="price"
@@ -393,7 +393,7 @@
       <!-- Condition -->
       <div class="space-y-1">
         <label for="condition" class="block text-sm font-medium text-muted-foreground">
-          Condition <span class="text-red-400">*</span>
+          Condition <span class="text-destructive">*</span>
         </label>
         <select
           id="condition"
@@ -438,9 +438,9 @@
       <!-- Images (optional, not submitted yet) -->
       <div
         role="button"
-        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        class="border-2 border-dashed border-border rounded-xl bg-surface text-center cursor-pointer px-4 py-6 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         class:border-primary={dragActive}
-        class:bg-surface-elevated={dragActive}
+        class:bg-muted={dragActive}
         on:dragover|preventDefault={handleDragOver}
         on:dragleave={() => (dragActive = false)}
         on:drop|preventDefault={handleDrop}
@@ -488,7 +488,7 @@
 
       {#if message}
         <div class="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
-          <span class={message.startsWith('⚠️') ? 'text-yellow-400' : message.startsWith('❌') ? 'text-red-400' : ''}>{message}</span>
+          <span class={message.startsWith('⚠️') ? 'text-warning' : message.startsWith('❌') ? 'text-destructive' : ''}>{message}</span>
         </div>
       {/if}
     </form>

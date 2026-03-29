@@ -13,7 +13,7 @@
       if (window.turnstile) {
         window.turnstile.render(node, {
           sitekey: PUBLIC_TURNSTILE_SITE_KEY,
-          theme: 'dark'
+          theme: 'light'
         });
       }
     };
@@ -226,7 +226,7 @@
           </div>
 
           {#if error}
-            <p class="text-sm text-red-500">{error}</p>
+            <p class="text-sm text-destructive">{error}</p>
           {/if}
 
           <p class="text-xs text-muted-foreground text-center">
