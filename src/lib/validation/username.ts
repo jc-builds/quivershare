@@ -17,7 +17,7 @@ export const USERNAME_PATTERN = '^[A-Za-z0-9](?:[A-Za-z0-9._-]{1,22}[A-Za-z0-9])
 export const USERNAME_HINT =
   '3\u201324 characters. Letters, numbers, periods, underscores, and hyphens. Must start and end with a letter or number.';
 
-export const USERNAME_PLACEHOLDER = 'e.g. Jack.Cooney or surf-shop-1';
+export const USERNAME_PLACEHOLDER = 'e.g. johnDoe_123!';
 
 /** Auto-generated usernames start with `user_` (case-insensitive). */
 export const isAutoUsername = (u: string | null | undefined): boolean =>
