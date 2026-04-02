@@ -2,8 +2,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { parseLocation, LocationValidationError } from '$lib/server/location';
-
-const isAutoUsername = (u: string | null | undefined) => !!u && u.startsWith('user_');
+import { validateUsername, isAutoUsername } from '$lib/validation/username';
 
 const RESERVED = new Set([
   'admin', 'support', 'quivershare', 'api', 'login', 'logout',
@@ -47,14 +46,14 @@ export const actions: Actions = {
     const form = await request.formData();
 
     // Username (required)
-    const usernameRaw = (form.get('username') as string | null) ?? '';
-    const username = usernameRaw.toLowerCase().trim();
+    const username = ((form.get('username') as string | null) ?? '').trim();
     const redirectTo = (form.get('redirectTo') as string | null) || url.searchParams.get('redirectTo') || '/';
 
-    // Validate username
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    // Validate username format
+    const usernameError = validateUsername(username);
+    if (usernameError) {
       return fail(400, { 
-        fieldErrors: { username: 'Use 3–20 chars: a–z, 0–9, _' }, 
+        fieldErrors: { username: usernameError }, 
         values: { 
           username, 
           full_name: form.get('full_name')?.toString() ?? '',
@@ -64,7 +63,7 @@ export const actions: Actions = {
         } 
       });
     }
-    if (RESERVED.has(username)) {
+    if (RESERVED.has(username.toLowerCase())) {
       return fail(400, { 
         fieldErrors: { username: 'That name is reserved' }, 
         values: { 

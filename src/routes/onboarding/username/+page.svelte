@@ -3,6 +3,7 @@
   import { pageTitle } from '$lib/title';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import type { StructuredLocation } from '$lib/types/location';
+  import { USERNAME_MIN, USERNAME_MAX, USERNAME_PATTERN, USERNAME_HINT, USERNAME_PLACEHOLDER } from '$lib/validation/username';
 
   export let form:
     | {
@@ -27,8 +28,6 @@
     (new URLSearchParams($page.url.search).get('redirectTo') ?? '/');
 
   $: isShopIntent = redirectTo === '/shops/new';
-
-  const usernamePattern = '^[a-z0-9_]{3,20}$';
 
   // Location — shared component
   let selectedLocation: StructuredLocation | null = null;
@@ -89,16 +88,18 @@
         id="username"
         name="username"
         bind:value={username}
-        placeholder="3–20 chars • lowercase, numbers, and _"
+        placeholder={USERNAME_PLACEHOLDER}
         class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        minlength="3"
-        maxlength="20"
-        pattern={usernamePattern}
+        minlength={USERNAME_MIN}
+        maxlength={USERNAME_MAX}
+        pattern={USERNAME_PATTERN}
         autocomplete="username"
         required
         aria-invalid={!!form?.fieldErrors?.username}
         aria-errormessage="username-error"
+        aria-describedby="username-hint"
       />
+      <p id="username-hint" class="mt-1 text-xs text-muted-foreground">{USERNAME_HINT}</p>
       {#if form?.fieldErrors?.username}
         <p id="username-error" class="mt-1 text-xs text-destructive">{form.fieldErrors.username}</p>
       {/if}

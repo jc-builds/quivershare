@@ -1,11 +1,9 @@
 // src/routes/+layout.server.ts
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
+import { isAutoUsername } from '$lib/validation/username';
 
 const ALLOW_PREFIXES = ['/login', '/logout', '/onboarding', '/auth'];
-
-const isAutoUsername = (u: string | null | undefined) =>
-  !!u && u.startsWith('user_');
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
   const session = (await locals.getSession?.()) ?? null;

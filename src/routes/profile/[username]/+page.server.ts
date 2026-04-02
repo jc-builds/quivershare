@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-  const username = params.username?.toLowerCase();
+  const username = params.username;
 
   if (!username) {
     throw error(404, 'Profile not found');
