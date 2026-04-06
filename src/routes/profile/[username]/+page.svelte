@@ -147,14 +147,14 @@
                 <td class="px-4 py-3 align-middle">
                   <div class="w-16 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border">
                     <img
-                      src={board.image_url ??
-                        "https://via.placeholder.com/800x600?text=No+Image"}
+                      src={board.image_url ?? "/no-image.svg"}
                       alt={board.name}
                       class="w-full h-full object-cover"
                       loading="lazy"
-                      on:error={(e) =>
-                        ((e.currentTarget as HTMLImageElement).src =
-                          "https://via.placeholder.com/800x600?text=No+Image")}
+                      on:error={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
+                      }}
                     />
                   </div>
                 </td>

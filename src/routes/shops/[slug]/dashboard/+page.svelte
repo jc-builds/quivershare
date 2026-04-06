@@ -103,11 +103,14 @@
         <div class="bg-surface-elevated border border-border rounded-xl overflow-hidden">
           <div class="w-full aspect-[3/4] max-h-[350px] bg-surface overflow-hidden">
             <img
-              src={board.image_url ?? "https://via.placeholder.com/800x600?text=No+Image"}
+              src={board.image_url ?? "/no-image.svg"}
               alt={board.name}
               class="object-cover w-full h-full"
               loading="lazy"
-              on:error={(e) => ((e.currentTarget as HTMLImageElement).src = "https://via.placeholder.com/800x600?text=No+Image")}
+              on:error={(e) => {
+                const img = e.currentTarget as HTMLImageElement;
+                if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
+              }}
             />
           </div>
 
@@ -178,11 +181,14 @@
               <td class="px-3 py-2">
                 <div class="w-11 aspect-[3/4] rounded-md overflow-hidden bg-surface border border-border flex-shrink-0">
                   <img
-                    src={board.image_url ?? "https://via.placeholder.com/800x600?text=No+Image"}
+                    src={board.image_url ?? "/no-image.svg"}
                     alt={board.name}
                     class="object-cover w-full h-full"
                     loading="lazy"
-                    on:error={(e) => ((e.currentTarget as HTMLImageElement).src = "https://via.placeholder.com/800x600?text=No+Image")}
+                    on:error={(e) => {
+                      const img = e.currentTarget as HTMLImageElement;
+                      if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
+                    }}
                   />
                 </div>
               </td>

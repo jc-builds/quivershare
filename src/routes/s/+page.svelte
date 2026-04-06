@@ -62,7 +62,7 @@
     | 'created_desc';
 
   // State
-  const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
+  const placeholderThumbnail = '/no-image.svg';
   const eagerImageCount = browser && window.innerWidth < 768 ? 1 : 2;
   let boards: Board[] = data.boards ?? [];
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;

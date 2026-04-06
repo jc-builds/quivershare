@@ -31,7 +31,7 @@
     isOwnerOrAdmin?: boolean;
   };
 
-  const placeholderThumbnail = 'https://via.placeholder.com/400x300?text=No+Image';
+  const placeholderThumbnail = '/no-image.svg';
 
   function formatBoardTitle(board: { name: string; length: number | null }): string {
     if (board.length == null || Number.isNaN(board.length)) return board.name;

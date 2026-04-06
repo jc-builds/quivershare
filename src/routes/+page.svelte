@@ -21,7 +21,7 @@
     }>;
   };
 
-  const placeholderThumbnail = 'https://via.placeholder.com/400x533?text=No+Image';
+  const placeholderThumbnail = '/no-image.svg';
 
   function formatBoardTitle(board: { length: number | null; name: string }): string {
     if (board.length == null || Number.isNaN(board.length)) return board.name;

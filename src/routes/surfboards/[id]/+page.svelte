@@ -433,7 +433,8 @@
                 decoding="sync"
                 fetchpriority="high"
                 on:error={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
                 }}
               />
             </button>
@@ -463,7 +464,8 @@
                   decoding="sync"
                   fetchpriority="high"
                   on:error={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/400x533?text=No+Image';
+                    const img = e.currentTarget as HTMLImageElement;
+                    if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
                   }}
                 />
               </button>
@@ -818,7 +820,8 @@
           loading="lazy"
           decoding="async"
           on:error={(e) => {
-            (e.currentTarget as HTMLImageElement).src = 'https://via.placeholder.com/1200x1200?text=No+Image';
+            const img = e.currentTarget as HTMLImageElement;
+            if (!img.src.endsWith('/no-image.svg')) img.src = '/no-image.svg';
           }}
         />
       {/if}
