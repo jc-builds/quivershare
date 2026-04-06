@@ -163,7 +163,7 @@
             type="text"
             bind:value={name}
             placeholder="e.g. Westside Surf Co."
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
             required
           />
           {#if slugPreview}
@@ -184,7 +184,7 @@
             name="description"
             bind:value={description}
             placeholder="Tell surfers about your shop..."
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 min-h-[100px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
           ></textarea>
         </div>
 
@@ -197,7 +197,7 @@
             type="url"
             bind:value={website_url}
             placeholder="https://www.yourshop.com"
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
             required
           />
         </div>
@@ -211,7 +211,7 @@
             type="email"
             bind:value={email}
             placeholder="contact@yourshop.com"
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
             required
           />
         </div>
@@ -225,7 +225,7 @@
             type="tel"
             bind:value={phone}
             placeholder="(555) 123-4567"
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-60"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
           />
         </div>
 

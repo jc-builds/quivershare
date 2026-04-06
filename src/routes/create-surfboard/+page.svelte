@@ -208,7 +208,7 @@
           type="text"
           bind:value={surfboard.name}
           placeholder="e.g. Star Cruiser"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         />
       </div>
@@ -224,7 +224,7 @@
           type="text"
           bind:value={surfboard.make}
           placeholder="e.g. Album, Firewire, JS"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         />
       </div>
@@ -238,7 +238,7 @@
           id="length"
           name="length"
           bind:value={surfboard.length}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         >
           <option disabled selected>Select length</option>
@@ -265,7 +265,7 @@
           max="24"
           bind:value={surfboard.width}
           placeholder="e.g. 21"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -283,7 +283,7 @@
           max="4.5"
           bind:value={surfboard.thickness}
           placeholder="e.g. 2.75"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -301,7 +301,7 @@
           max="100"
           bind:value={surfboard.volume}
           placeholder="e.g. 40"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -314,7 +314,7 @@
           id="fin_system"
           name="fin_system"
           bind:value={surfboard.fin_system}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select fin system (optional)</option>
           <option>FCS</option>
@@ -334,7 +334,7 @@
           id="fin_setup"
           name="fin_setup"
           bind:value={surfboard.fin_setup}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select fin setup (optional)</option>
           <option>Single</option>
@@ -360,7 +360,7 @@
           id="style"
           name="style"
           bind:value={surfboard.style}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         >
           <option value="">Select style</option>
@@ -385,7 +385,7 @@
           min="0"
           bind:value={surfboard.price}
           placeholder="e.g. 850"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         />
       </div>
@@ -399,7 +399,7 @@
           id="condition"
           name="condition"
           bind:value={surfboard.condition}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         >
           <option disabled selected value="">Select condition</option>
@@ -430,7 +430,7 @@
           id="notes"
           name="notes"
           bind:value={surfboard.notes}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           placeholder="Anything special about this board?"
         ></textarea>
       </div>

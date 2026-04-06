@@ -215,7 +215,7 @@
               step="1"
               required
               bind:value={reviewNewPrice}
-              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               placeholder="Enter new price"
             />
           </div>
@@ -230,7 +230,7 @@
               name="new_source_url"
               required
               bind:value={reviewNewSourceUrl}
-              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               placeholder="https://..."
             />
           </div>
@@ -266,7 +266,7 @@
     <h1 class="text-3xl font-semibold tracking-tight text-foreground">Curated Boards</h1>
     <div class="flex items-center gap-3">
       <select
-        class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         value={currentStatus}
         on:change={(e) => goto(`/admin/curated-boards?status=${e.currentTarget.value}`)}
       >

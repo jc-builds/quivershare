@@ -76,7 +76,7 @@
     <input
       {id}
       type="text"
-      class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+      class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
       {placeholder}
       value={query}
       on:input={onInput}

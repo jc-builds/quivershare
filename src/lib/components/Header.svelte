@@ -167,7 +167,7 @@
         <div class="relative hidden md:block" bind:this={profileMenuElement}>
           <button
             type="button"
-            class="inline-flex items-center rounded-full p-1 border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface {profileMenuOpen
+            class="inline-flex items-center rounded-full p-1 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface {profileMenuOpen
               ? 'bg-muted border-border'
               : 'border-transparent hover:bg-muted'}"
             aria-label="Open profile menu"

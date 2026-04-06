@@ -465,7 +465,7 @@
           type="text"
           bind:value={surfboard.name}
           placeholder="e.g. Star Cruiser"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           required
         />
       </div>
@@ -481,7 +481,7 @@
           type="text"
           bind:value={surfboard.make}
           placeholder="e.g. Album, Firewire, JS"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -494,7 +494,7 @@
           id="length"
           name="length"
           bind:value={surfboard.length}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option disabled selected value="">Select length</option>
           {#each Array(79) as _, i}
@@ -520,7 +520,7 @@
           max="24"
           bind:value={surfboard.width}
           placeholder="e.g. 21"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -538,7 +538,7 @@
           max="4.5"
           bind:value={surfboard.thickness}
           placeholder="e.g. 2.75"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -556,7 +556,7 @@
           max="100"
           bind:value={surfboard.volume}
           placeholder="e.g. 40"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -569,7 +569,7 @@
           id="fin_system"
           name="fin_system"
           bind:value={surfboard.fin_system}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select fin system (optional)</option>
           <option>FCS</option>
@@ -589,7 +589,7 @@
           id="fin_setup"
           name="fin_setup"
           bind:value={surfboard.fin_setup}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select fin setup (optional)</option>
           <option>Single</option>
@@ -614,7 +614,7 @@
           id="style"
           name="style"
           bind:value={surfboard.style}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select style (optional)</option>
           <option>Shortboard</option>
@@ -641,7 +641,7 @@
           min="0"
           bind:value={surfboard.price}
           placeholder="e.g. 850"
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -654,7 +654,7 @@
           id="condition"
           name="condition"
           bind:value={surfboard.condition}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option disabled selected value="">Select condition</option>
           <option>New</option>
@@ -675,7 +675,7 @@
           name="source_type"
           bind:value={surfboard.source_type}
           on:change={() => { if (surfboard.source_type !== 'shop') surfboard.shop_id = ''; }}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         >
           <option value="">Select source type</option>
           <option>facebook</option>
@@ -695,7 +695,7 @@
           type="url"
           bind:value={surfboard.source_url}
           placeholder="https://..."
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
       </div>
 
@@ -708,7 +708,7 @@
             id="shop_id"
             name="shop_id"
             bind:value={surfboard.shop_id}
-            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+            class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           >
             <option value="">Select shop</option>
             {#each data.shops as shop}
@@ -737,7 +737,7 @@
           id="notes"
           name="notes"
           bind:value={surfboard.notes}
-          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+          class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
           placeholder="Anything special about this board?"
         ></textarea>
       </div>
@@ -808,7 +808,7 @@
       </p>
       <button
         type="button"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         on:click={() => {
           showDeleteBoardConfirm = true;
           deleteBoardConfirmText = '';
@@ -822,7 +822,7 @@
   <!-- Delete Board Confirmation Modal -->
   {#if showDeleteBoardConfirm}
     <div 
-      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" 
+      class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" 
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-board-title"
@@ -861,7 +861,7 @@
               id="delete-board-confirm"
               type="text"
               bind:value={deleteBoardConfirmText}
-              class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               placeholder={requiredDeleteConfirmText}
               autocomplete="off"
             />
@@ -884,7 +884,7 @@
             </button>
             <button
               type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
             >
               Confirm Delete
@@ -908,7 +908,7 @@
           <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition" on:click={() => (showConfirm = false)}
             >Cancel</button
           >
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={confirmDelete}
             >Delete</button
           >
         </div>

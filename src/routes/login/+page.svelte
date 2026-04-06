@@ -175,7 +175,7 @@
           <input type="hidden" name="redirectTo" value={redirectTo} />
 
           <div class="space-y-1">
-            <label for="email" class="text-sm font-medium">Email</label>
+            <label for="email" class="text-sm font-medium text-muted-foreground">Email</label>
             <input
               id="email"
               name="email"
@@ -184,12 +184,12 @@
               required
               autocomplete="email"
               disabled={isDisabled}
-              class="w-full rounded-md border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2 disabled:opacity-60"
+              class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
             />
           </div>
 
           <div class="space-y-1">
-            <label for="password" class="text-sm font-medium">Password</label>
+            <label for="password" class="text-sm font-medium text-muted-foreground">Password</label>
             <input
               id="password"
               name="password"
@@ -199,7 +199,7 @@
               minlength="8"
               autocomplete="current-password"
               disabled={isDisabled}
-              class="w-full rounded-md border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2 disabled:opacity-60"
+              class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors disabled:opacity-60"
             />
           </div>
 
@@ -207,7 +207,7 @@
             <button
               type="submit"
               disabled={isDisabled}
-              class="w-full px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-60"
+              class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary-alt transition-colors disabled:opacity-60"
             >
               {submitting === 'login' ? 'Signing in\u2026' : 'Sign in'}
             </button>
@@ -218,7 +218,7 @@
                 type="submit"
                 formaction="?/signup"
                 disabled={isDisabled}
-                class="w-full px-4 py-2 rounded-lg text-sm font-semibold border disabled:opacity-60"
+                class="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-60"
               >
                 {submitting === 'signup' ? 'Creating account\u2026' : 'Create account'}
               </button>

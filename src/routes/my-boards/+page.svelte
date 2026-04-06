@@ -200,7 +200,7 @@
               <!-- Delete Button -->
               <button
                 type="button"
-                class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors shadow-sm flex-1 min-w-[100px]"
+                class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors shadow-sm flex-1 min-w-[100px]"
                 on:click={() => openDeleteBoardConfirm(board.id)}
               >
                 Delete
@@ -303,7 +303,7 @@
                   <!-- Delete Button -->
                   <button
                     type="button"
-                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors shadow-sm"
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border border-destructive/60 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors shadow-sm"
                     on:click={() => openDeleteBoardConfirm(board.id)}
                   >
                     Delete
@@ -320,7 +320,7 @@
 
 {#if showDeleteBoardConfirm}
   <div
-    class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+    class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
     role="dialog"
     aria-modal="true"
     aria-labelledby="delete-board-title"
@@ -361,7 +361,7 @@
             id="delete-board-confirm"
             type="text"
             bind:value={deleteBoardConfirmText}
-            class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
             placeholder={requiredDeleteConfirmText}
             autocomplete="off"
           />
@@ -380,7 +380,7 @@
           </button>
           <button
             type="submit"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
           >
             Confirm Delete

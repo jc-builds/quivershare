@@ -228,7 +228,7 @@
         id="bio"
         name="bio"
         bind:value={bio}
-        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         placeholder="Tell us about yourself..."
         rows="4"
         maxlength="500"
@@ -247,7 +247,7 @@
         id="home_break"
         name="home_break_label"
         type="text"
-        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+        class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         placeholder="e.g. 2nd Jetty on the Left, Trestles, Pipeline"
         bind:value={homeBreakLabel}
         maxlength="200"
@@ -297,7 +297,7 @@
     </p>
     <button
       type="button"
-      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       on:click={() => {
         showDeleteConfirm = true;
         deleteConfirmText = '';
@@ -311,7 +311,7 @@
 <!-- Delete Account Confirmation Modal -->
 {#if showDeleteConfirm}
   <div 
-    class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" 
+    class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" 
     role="dialog"
     aria-modal="true"
     aria-labelledby="delete-account-title"
@@ -349,7 +349,7 @@
             id="delete-confirm"
             type="text"
             bind:value={deleteConfirmText}
-            class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
             placeholder={requiredConfirmText}
             autocomplete="off"
           />
@@ -372,7 +372,7 @@
           </button>
           <button
             type="submit"
-            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={deleteConfirmText !== requiredConfirmText}
           >
             Confirm Delete

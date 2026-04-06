@@ -285,15 +285,15 @@
     <form class="space-y-4" on:submit|preventDefault={saveBoard}>
       <div class="space-y-1">
         <label for="name" class="block text-sm font-medium text-muted-foreground">Board Name <span class="text-destructive">*</span></label>
-        <input id="name" type="text" bind:value={surfboard.name} placeholder="e.g. Star Cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" required />
+        <input id="name" type="text" bind:value={surfboard.name} placeholder="e.g. Star Cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" required />
       </div>
       <div class="space-y-1">
         <label for="make" class="block text-sm font-medium text-muted-foreground">Make / Brand <span class="text-destructive">*</span></label>
-        <input id="make" type="text" bind:value={surfboard.make} placeholder="e.g. Album, Firewire, JS" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="make" type="text" bind:value={surfboard.make} placeholder="e.g. Album, Firewire, JS" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
       <div class="space-y-1">
         <label for="length" class="block text-sm font-medium text-muted-foreground">Length <span class="text-destructive">*</span></label>
-        <select id="length" bind:value={surfboard.length} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+        <select id="length" bind:value={surfboard.length} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors">
           <option disabled selected>Select length</option>
           {#each Array(79) as _, i}
             {@const inches = i + 54}
@@ -303,33 +303,33 @@
       </div>
       <div class="space-y-1">
         <label for="width" class="block text-sm font-medium text-muted-foreground">Width (in)</label>
-        <input id="width" type="number" step="0.25" min="18" max="24" bind:value={surfboard.width} placeholder="e.g. 21" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="width" type="number" step="0.25" min="18" max="24" bind:value={surfboard.width} placeholder="e.g. 21" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
       <div class="space-y-1">
         <label for="thickness" class="block text-sm font-medium text-muted-foreground">Thickness (in)</label>
-        <input id="thickness" type="number" step="0.01" min="2" max="4.5" bind:value={surfboard.thickness} placeholder="e.g. 2.75" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="thickness" type="number" step="0.01" min="2" max="4.5" bind:value={surfboard.thickness} placeholder="e.g. 2.75" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
       <div class="space-y-1">
         <label for="volume" class="block text-sm font-medium text-muted-foreground">Volume (L)</label>
-        <input id="volume" type="number" step="0.5" min="20" max="100" bind:value={surfboard.volume} placeholder="e.g. 40" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="volume" type="number" step="0.5" min="20" max="100" bind:value={surfboard.volume} placeholder="e.g. 40" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
       <div class="space-y-1">
         <label for="fin_system" class="block text-sm font-medium text-muted-foreground">Fin System</label>
-        <select id="fin_system" bind:value={surfboard.fin_system} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+        <select id="fin_system" bind:value={surfboard.fin_system} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors">
           <option value="">Select fin system (optional)</option>
           <option>FCS</option><option>FCS II</option><option>Futures</option><option>Glass On</option><option>Single Fin Box</option>
         </select>
       </div>
       <div class="space-y-1">
         <label for="fin_setup" class="block text-sm font-medium text-muted-foreground">Fin Setup</label>
-        <select id="fin_setup" bind:value={surfboard.fin_setup} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+        <select id="fin_setup" bind:value={surfboard.fin_setup} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors">
           <option value="">Select fin setup (optional)</option>
           <option>Single</option><option>2+1</option><option>Twin</option><option>Twin + Trailer</option><option>Twinzer</option><option>Tri</option><option>Quad</option><option>Tri/Quad</option><option>Bonzer</option><option>4+1</option>
         </select>
       </div>
       <div class="space-y-1">
         <label for="style" class="block text-sm font-medium text-muted-foreground">Board Style <span class="text-destructive">*</span></label>
-        <select id="style" bind:value={surfboard.style} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+        <select id="style" bind:value={surfboard.style} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors">
           <option value="">Select style</option>
           <option>Shortboard</option><option>Mid-length</option><option>Longboard</option><option value="Groveler / Fish">Groveler / Fish</option>
           {#if surfboard.style === 'Groveler'}
@@ -340,11 +340,11 @@
       </div>
       <div class="space-y-1">
         <label for="price" class="block text-sm font-medium text-muted-foreground">Price ($) <span class="text-destructive">*</span></label>
-        <input id="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="price" type="number" step="1" min="0" bind:value={surfboard.price} placeholder="e.g. 850" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
       <div class="space-y-1">
         <label for="condition" class="block text-sm font-medium text-muted-foreground">Condition <span class="text-destructive">*</span></label>
-        <select id="condition" bind:value={surfboard.condition} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition">
+        <select id="condition" bind:value={surfboard.condition} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors">
           <option disabled selected>Select condition</option>
           <option>New</option><option>Lightly Used</option><option>Used</option><option>Well-loved</option><option>Needs Repair</option>
         </select>
@@ -352,11 +352,11 @@
       <LocationAutocomplete bind:value={selectedLocation} required={true} label="Location" id="location" placeholder="Start typing... e.g. San Diego, CA" clearable={false} />
       <div class="space-y-1">
         <label for="notes" class="block text-sm font-medium text-muted-foreground">Notes</label>
-        <textarea id="notes" bind:value={surfboard.notes} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" placeholder="Anything special about this board?"></textarea>
+        <textarea id="notes" bind:value={surfboard.notes} class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" placeholder="Anything special about this board?"></textarea>
       </div>
       <div class="space-y-1">
         <label for="source_url" class="block text-sm font-medium text-muted-foreground">Landing Page URL</label>
-        <input id="source_url" type="url" bind:value={surfboard.source_url} placeholder="e.g. https://yourshop.com/boards/star-cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition" />
+        <input id="source_url" type="url" bind:value={surfboard.source_url} placeholder="e.g. https://yourshop.com/boards/star-cruiser" class="w-full rounded-lg border border-border bg-surface text-sm text-foreground placeholder:text-muted-foreground/70 px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors" />
       </div>
 
       <div
@@ -412,7 +412,7 @@
       </p>
       <button
         type="button"
-        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-destructive/60 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         on:click={() => {
           showDeleteBoardConfirm = true;
           deleteBoardConfirmText = "";
@@ -426,7 +426,7 @@
   <!-- Delete Board Confirmation Modal -->
   {#if showDeleteBoardConfirm}
     <div
-      class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-board-title"
@@ -475,7 +475,7 @@
               id="delete-board-confirm"
               type="text"
               bind:value={deleteBoardConfirmText}
-              class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
               placeholder={requiredDeleteConfirmText}
               autocomplete="off"
             />
@@ -495,7 +495,7 @@
             </button>
             <button
               type="submit"
-              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-white hover:bg-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={deleteBoardConfirmText !== requiredDeleteConfirmText}
             >
               Confirm Delete
@@ -512,7 +512,7 @@
         <p class="text-sm">Remove this image? This action cannot be undone.</p>
         <div class="flex gap-2 justify-end mt-4">
           <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface text-foreground hover:bg-muted transition" on:click={() => (showConfirm = false)}>Cancel</button>
-          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-white hover:bg-red-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500" on:click={confirmDelete}>Delete</button>
+          <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background" on:click={confirmDelete}>Delete</button>
         </div>
       </div>
     </div>

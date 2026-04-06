@@ -175,7 +175,7 @@
             <a
               href="/surfboards/{board.id}"
               data-sveltekit-prefetch
-              class="block bg-surface rounded-xl border border-border hover:border-primary/60 hover:shadow-lg transition-all duration-200 no-underline"
+              class="group flex flex-col bg-surface rounded-xl border border-border hover:shadow-md transition-all duration-200 no-underline"
             >
               <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
                 {#if board.image_url}
@@ -197,16 +197,17 @@
                   />
                 {/if}
               </div>
-              <div class="p-3 md:p-4">
-                <h3 class="text-base md:text-lg font-semibold text-foreground leading-tight line-clamp-2">{formatBoardTitle(board)}</h3>
-                {#if board.make}
-                  <p class="text-sm text-muted-foreground mt-1 line-clamp-1">{board.make}</p>
-                {/if}
-                {#if board.style}
-                  <p class="text-sm text-muted-foreground mt-1">{displayStyle(board.style)}</p>
+              <div class="flex flex-col flex-1 px-3 pt-3 pb-2.5 md:px-4 md:pt-3.5 md:pb-3">
+                <h3 class="text-sm md:text-base font-semibold text-foreground leading-snug line-clamp-2">{formatBoardTitle(board)}</h3>
+                {#if board.make || board.style}
+                  <p class="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {[board.make, displayStyle(board.style)].filter(Boolean).join(' · ')}
+                  </p>
                 {/if}
                 {#if board.price}
-                  <p class="text-base font-semibold text-primary mt-2">{formatPrice(board.price)}</p>
+                  <div class="mt-auto pt-1.5">
+                    <span class="text-base font-bold text-primary leading-none">{formatPrice(board.price)}</span>
+                  </div>
                 {/if}
               </div>
             </a>

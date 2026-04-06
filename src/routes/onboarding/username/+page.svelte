@@ -81,7 +81,7 @@
 
     <!-- Username (required) -->
     <div class="space-y-1.5">
-      <label for="username" class="block text-xs font-medium text-muted-foreground">
+      <label for="username" class="block text-sm font-medium text-muted-foreground">
         Username <span class="text-destructive">*</span>
       </label>
       <input
@@ -107,7 +107,7 @@
 
     <!-- Full Name (optional) -->
     <div class="space-y-1.5">
-      <label for="full_name" class="block text-xs font-medium text-muted-foreground">
+      <label for="full_name" class="block text-sm font-medium text-muted-foreground">
         Full Name (optional)
       </label>
       <input
@@ -128,7 +128,7 @@
 
     <!-- Profile Picture (optional) -->
     <div class="space-y-2">
-      <span class="block text-xs font-medium text-muted-foreground">
+      <span class="block text-sm font-medium text-muted-foreground">
         Profile Picture (optional)
       </span>
       <div class="flex items-center gap-4">
@@ -175,7 +175,7 @@
 
     <!-- Home Break (plain text) -->
     <div class="space-y-1.5">
-      <label for="home_break" class="block text-xs font-medium text-muted-foreground">
+      <label for="home_break" class="block text-sm font-medium text-muted-foreground">
         Home Break (optional)
       </label>
       <input
@@ -194,7 +194,7 @@
 
     <!-- Magic Board (optional) -->
     <div class="space-y-1.5">
-      <label for="magic_board" class="block text-xs font-medium text-muted-foreground">
+      <label for="magic_board" class="block text-sm font-medium text-muted-foreground">
         Magic Board (optional)
       </label>
       <input
