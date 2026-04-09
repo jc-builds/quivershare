@@ -84,7 +84,7 @@
 
 <!-- Global Footer -->
 <footer class="w-full border-t border-border bg-background mt-0">
-  <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-10 md:py-12">
+  <div class="mx-auto lg:max-w-6xl px-4 md:px-8 py-10 md:py-8">
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
       <div class="text-sm text-foreground font-semibold tracking-tight">
         QuiverShare

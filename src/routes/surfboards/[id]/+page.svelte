@@ -641,12 +641,11 @@
           <div class="space-y-4">
             <div>
               <p class="text-sm text-muted-foreground mb-1">Seller</p>
-              <p class="text-lg font-semibold text-foreground">{data.owner.full_name || data.owner.username}</p>
               <a
                 href="/profile/{data.owner.username}"
-                class="text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
+                class="text-lg font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
               >
-                @{data.owner.username}
+                {data.owner.username}
               </a>
             </div>
 

@@ -4,6 +4,7 @@
   import { get } from 'svelte/store';
   import { browser } from '$app/environment';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
+  import BoardCard from '$lib/components/BoardCard.svelte';
   import type { StructuredLocation } from '$lib/types/location';
   import { formatPrice } from '$lib/formatPrice';
 
@@ -62,7 +63,6 @@
     | 'created_desc';
 
   // State
-  const placeholderThumbnail = '/no-image.svg';
   const eagerImageCount = browser && window.innerWidth < 768 ? 1 : 2;
   let boards: Board[] = data.boards ?? [];
   let sortBy: SortOption = (data.sort ?? 'created_desc') as SortOption;
@@ -323,17 +323,6 @@
   };
   const styleOptions = ["Shortboard", "Mid-length", "Longboard", "Groveler / Fish", "Gun"];
 
-  function displayStyle(style: string | null): string | null {
-    if (!style) return null;
-    return style === 'Groveler' ? 'Groveler / Fish' : style;
-  }
-
-  function formatBoardTitle(board: Board): string {
-    if (board.length == null || Number.isNaN(board.length)) return board.name;
-    const feet = Math.floor(board.length / 12);
-    const inches = board.length % 12;
-    return `${feet}'${inches}" ${board.name}`;
-  }
 
   // Hydrate filter UI state from URL query parameters
   $: {
@@ -377,59 +366,73 @@
 <svelte:window on:keydown={handleGlobalKeydown} />
 
 <div class="min-h-screen bg-background">
-  <div class="max-w-7xl mx-auto px-6 py-6">
-    <div class="mb-6">
-      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <!-- Intro -->
+    <div class="mb-5">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
         Used Surfboards for Sale in New York &amp; New Jersey
       </h1>
-      <p class="max-w-xl text-sm text-muted-foreground mt-2">
+      <p class="max-w-xl text-sm text-muted-foreground mt-1.5">
         Browse used surfboards across New York and New Jersey. Filter by style, length, volume, and more.
       </p>
     </div>
-    <div class="flex items-center justify-between gap-4 mb-4">
-      <h3 class="text-xl font-semibold text-foreground">
-        {displayedResultsCount} Results
-        {#if hasActiveFilters}
-          <span class="text-sm font-normal text-muted-foreground"> for {activeFilterLabels.join(' · ')}</span>
-        {/if}
-      </h3>
-      <div class="flex items-center gap-2">
-        <label for="sort-by-header" class="text-sm text-muted-foreground whitespace-nowrap">Sort:</label>
-        <select
-          id="sort-by-header"
-          bind:value={sortBy}
-          class="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
-          on:change={handleSortChange}
-        >
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-          <option value="name_asc">A-Z</option>
-          <option value="name_desc">Z-A</option>
-          <option value="created_asc">Oldest to Newest</option>
-          <option value="created_desc">Newest to Oldest</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="flex items-center gap-3 mb-6">
-      <button
-        type="button"
-        class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:ring-offset-background"
-        aria-expanded={isFiltersOpen}
-        aria-controls="filters-drawer"
-        on:click={openFiltersDrawer}
-      >
-        All Filters
-      </button>
+    <!-- Controls toolbar -->
+    <div class="border-t border-border pt-4 mb-5 space-y-3 sm:space-y-0">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-sm font-medium text-foreground whitespace-nowrap">{displayedResultsCount} results</span>
+          {#if hasActiveFilters}
+            <span class="text-xs text-muted-foreground truncate hidden sm:inline">for {activeFilterLabels.join(' · ')}</span>
+          {/if}
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <label for="sort-by-header" class="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">Sort:</label>
+          <select
+            id="sort-by-header"
+            bind:value={sortBy}
+            class="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+            on:change={handleSortChange}
+          >
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="name_asc">A-Z</option>
+            <option value="name_desc">Z-A</option>
+            <option value="created_asc">Oldest to Newest</option>
+            <option value="created_desc">Newest to Oldest</option>
+          </select>
+        </div>
+      </div>
+
       {#if hasActiveFilters}
+        <div class="flex flex-wrap items-center gap-1.5 sm:mt-2">
+          {#each activeFilterLabels as label}
+            <span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{label}</span>
+          {/each}
+        </div>
+      {/if}
+
+      <div class="flex items-center gap-2 sm:mt-3">
         <button
           type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus:ring-offset-background"
-          on:click={clearAllFilters}
+          class="inline-flex items-center justify-center rounded-lg border border-border bg-surface px-4 py-2.5 sm:py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background w-full sm:w-auto"
+          aria-expanded={isFiltersOpen}
+          aria-controls="filters-drawer"
+          on:click={openFiltersDrawer}
         >
-          Clear Filters
+          <svg class="w-4 h-4 mr-1.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+          All Filters
         </button>
-      {/if}
+        {#if hasActiveFilters}
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2.5 sm:py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            on:click={clearAllFilters}
+          >
+            Clear Filters
+          </button>
+        {/if}
+      </div>
     </div>
 
     {#if boards.length === 0}
@@ -439,61 +442,7 @@
     {:else}
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {#each boards as board, index (board.id)}
-          <a
-            href="/surfboards/{board.id}"
-            data-sveltekit-prefetch
-            class="group flex flex-col bg-surface rounded-xl border border-border hover:shadow-md transition-all duration-200 no-underline"
-          >
-            <!-- Image zone -->
-            <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
-              {#if board.image_url}
-                <img
-                  src={board.image_url}
-                  alt={board.name}
-                  class="absolute inset-0 w-full h-full object-cover"
-                  loading={index < eagerImageCount ? 'eager' : 'lazy'}
-                  fetchpriority={index < eagerImageCount ? 'high' : undefined}
-                  decoding="async"
-                />
-              {:else}
-                <img
-                  src={placeholderThumbnail}
-                  alt=""
-                  class="absolute inset-0 w-full h-full object-cover"
-                  aria-hidden="true"
-                  loading={index < eagerImageCount ? 'eager' : 'lazy'}
-                  decoding="async"
-                />
-              {/if}
-            </div>
-
-            <!-- Info zone -->
-            <div class="flex flex-col flex-1 px-3 pt-3 pb-2.5 md:px-4 md:pt-3.5 md:pb-3">
-              <h3 class="text-sm md:text-base font-semibold text-foreground leading-snug line-clamp-2">{formatBoardTitle(board)}</h3>
-              {#if board.make || board.style}
-                <p class="text-xs text-muted-foreground mt-1 line-clamp-1">
-                  {[board.make, displayStyle(board.style)].filter(Boolean).join(' · ')}
-                </p>
-              {/if}
-              <div class="flex items-end justify-between gap-2 mt-auto pt-1.5">
-                {#if board.price}
-                  <span class="text-base font-bold text-primary leading-none">{formatPrice(board.price)}</span>
-                {:else}
-                  <span></span>
-                {/if}
-                {#if board.owner_type === 'shop' && board.shop_name}
-                  <div class="flex items-center gap-1 min-w-0 flex-shrink">
-                    {#if board.shop_logo_url}
-                      <img src={board.shop_logo_url} alt="" class="w-4 h-4 rounded object-cover flex-shrink-0" />
-                    {/if}
-                    <span class="text-[11px] text-muted-foreground truncate">{board.shop_name}</span>
-                  </div>
-                {:else if board.owner_type === 'curated' || board.is_curated}
-                  <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Curated</span>
-                {/if}
-              </div>
-            </div>
-          </a>
+          <BoardCard {board} eager={index < eagerImageCount} showAttribution={true} />
         {/each}
       </div>
     {/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { formatPrice } from '$lib/formatPrice';
+  import BoardCard from '$lib/components/BoardCard.svelte';
 
   export let data: {
     shop: {
@@ -30,20 +30,6 @@
     }>;
     isOwnerOrAdmin?: boolean;
   };
-
-  const placeholderThumbnail = '/no-image.svg';
-
-  function formatBoardTitle(board: { name: string; length: number | null }): string {
-    if (board.length == null || Number.isNaN(board.length)) return board.name;
-    const feet = Math.floor(board.length / 12);
-    const inches = board.length % 12;
-    return `${board.name} — ${feet}'${inches}"`;
-  }
-
-  function displayStyle(style: string | null): string | null {
-    if (!style) return null;
-    return style === 'Groveler' ? 'Groveler / Fish' : style;
-  }
 
   function locationDisplay(shop: typeof data.shop): string | null {
     if (shop.location_label) return shop.location_label;
@@ -172,45 +158,7 @@
       {:else}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {#each data.boards as board (board.id)}
-            <a
-              href="/surfboards/{board.id}"
-              data-sveltekit-prefetch
-              class="group flex flex-col bg-surface rounded-xl border border-border hover:shadow-md transition-all duration-200 no-underline"
-            >
-              <div class="relative bg-muted rounded-t-xl overflow-hidden aspect-[3/4]">
-                {#if board.image_url}
-                  <img
-                    src={board.image_url}
-                    alt={board.name}
-                    class="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                {:else}
-                  <img
-                    src={placeholderThumbnail}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover"
-                    aria-hidden="true"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                {/if}
-              </div>
-              <div class="flex flex-col flex-1 px-3 pt-3 pb-2.5 md:px-4 md:pt-3.5 md:pb-3">
-                <h3 class="text-sm md:text-base font-semibold text-foreground leading-snug line-clamp-2">{formatBoardTitle(board)}</h3>
-                {#if board.make || board.style}
-                  <p class="text-xs text-muted-foreground mt-1 line-clamp-1">
-                    {[board.make, displayStyle(board.style)].filter(Boolean).join(' · ')}
-                  </p>
-                {/if}
-                {#if board.price}
-                  <div class="mt-auto pt-1.5">
-                    <span class="text-base font-bold text-primary leading-none">{formatPrice(board.price)}</span>
-                  </div>
-                {/if}
-              </div>
-            </a>
+            <BoardCard {board} />
           {/each}
         </div>
       {/if}
